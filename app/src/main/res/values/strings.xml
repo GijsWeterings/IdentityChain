@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">Trustchain-android</string>
+    <string name="app_name">TrustChain Android</string>
+    <string name="myip">My ip is:</string>
+    <string name="connect_hint">127.0.0.1</string>
+    <string name="connect_to">Connect to IP</string>
+    <string name="connect">connect</string>
 </resources>
