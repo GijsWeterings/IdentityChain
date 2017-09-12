@@ -5,19 +5,30 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import java.net.Inet4Address;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    ServerSocket serverSocket;
+    TextView status;
+    String messageLog = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        status = (TextView) findViewById(R.id.status);
         updateIP();
+
+        Thread socketServerThread = new Thread(new SocketServerThread());
+        socketServerThread.start();
     }
 
     /**
@@ -35,14 +46,13 @@ public class MainActivity extends AppCompatActivity {
      * @return a string representation of the device's external IP address
      */
     public void updateIP() {
-        final Handler handler = new Handler();
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try (java.util.Scanner s = new java.util.Scanner(new java.net.URL("https://api.ipify.org").openStream(), "UTF-8").useDelimiter("\\A")) {
                     final String ip = s.next();
                     // new thread to handle UI updates
-                    handler.post(new Runnable() {
+                    MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             updateIPField(ip);
@@ -77,5 +87,97 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    private class SocketServerThread extends Thread {
+        static final int SocketServerPORT = 0;
+        int count = 0;
+
+        @Override
+        public void run() {
+            try {
+                serverSocket = new ServerSocket(SocketServerPORT);
+                MainActivity.this.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        status.setText("Server is waiting for messages...");
+                    }
+                });
+
+                while (true) {
+                    Socket socket = serverSocket.accept();
+                    count++;
+                    messageLog += "#" + count + " from " + socket.getInetAddress()
+                            + ":" + socket.getPort() + "\n";
+
+                    MainActivity.this.runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            status.setText(messageLog);
+                        }
+                    });
+
+                    SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
+                            socket, count);
+                    socketServerReplyThread.run();
+
+                }
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private class SocketServerReplyThread extends Thread {
+
+        private Socket hostThreadSocket;
+        int cnt;
+
+        SocketServerReplyThread(Socket socket, int c) {
+            hostThreadSocket = socket;
+            cnt = c;
+        }
+
+        @Override
+        public void run() {
+            OutputStream outputStream;
+            String msgReply = "Hello from Android, you are #" + cnt;
+
+            try {
+                outputStream = hostThreadSocket.getOutputStream();
+                PrintStream printStream = new PrintStream(outputStream);
+                printStream.print(msgReply);
+                printStream.close();
+
+                messageLog += "replayed: " + msgReply + "\n";
+
+                MainActivity.this.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        status.setText(messageLog);
+                    }
+                });
+
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                messageLog += "Something wrong! " + e.toString() + "\n";
+            }
+
+            MainActivity.this.runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    status.setText(messageLog);
+                }
+            });
+        }
+
     }
 }
