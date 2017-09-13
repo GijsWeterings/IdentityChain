@@ -3,6 +3,9 @@ package nl.tudelft.cs4160.trustchain_android;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -17,26 +20,66 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     ServerSocket serverSocket;
-    TextView status;
     String messageLog = "";
+
+    TextView statusText;
+    TextView externalIPText;
+    TextView internalIPText;
+    Button connectionButton;
+    EditText editTextDestinationIP;
+    EditText editTextDestinationPort;
+
+    MainActivity thisActivity;
+
+    /**
+     * Listener for the connection button.
+     * On click a message is sent to the connected device.
+     */
+    View.OnClickListener connectionButtonListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View view) {
+            NetworkTask task = new NetworkTask(
+                    editTextDestinationIP.getText().toString(),
+                    Integer.parseInt(editTextDestinationPort.getText().toString()),
+                    thisActivity);
+            task.execute();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        status = (TextView) findViewById(R.id.status);
+        thisActivity = this;
+        statusText = (TextView) findViewById(R.id.status);
+        internalIPText = (TextView) findViewById(R.id.my_internal_ip);
+        externalIPText = (TextView) findViewById(R.id.my_external_ip);
+        editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
+        editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
+        connectionButton = (Button) findViewById(R.id.connection_button);
+
+        connectionButton.setOnClickListener(connectionButtonListener);
+
         updateIP();
+        updateInternalIPField(getLocalIPAddress());
 
         Thread socketServerThread = new Thread(new SocketServerThread());
         socketServerThread.start();
     }
 
     /**
-     * Updates the IP address textfield to the given IP address.
+     * Updates the external IP address textfield to the given IP address.
      */
-    public void updateIPField(String ipAddress) {
-        TextView myIp = (TextView) findViewById(R.id.my_ip);
-        myIp.setText(ipAddress);
+    public void updateExternalIPField(String ipAddress) {
+        externalIPText.setText(ipAddress);
+        System.out.println("IP ADDRESS: " + ipAddress);
+    }
+
+    /**
+     * Updates the internal IP address textfield to the given IP address.
+     */
+    public void updateInternalIPField(String ipAddress) {
+        internalIPText.setText(ipAddress);
         System.out.println("IP ADDRESS: " + ipAddress);
     }
 
@@ -55,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            updateIPField(ip);
+                            updateExternalIPField(ip);
                         }
                     });
                 } catch (java.io.IOException e) {
@@ -78,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             for (NetworkInterface netInt : netInterfaces) {
                 List<InetAddress> addresses = Collections.list(netInt.getInetAddresses());
                 for (InetAddress addr : addresses) {
-                    if(!addr.isLoopbackAddress()) {
+                    if(addr.isSiteLocalAddress()) {
                         return addr.getHostAddress();
                     }
                 }
@@ -91,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private class SocketServerThread extends Thread {
-        static final int SocketServerPORT = 0;
+        static final int SocketServerPORT = 8080;
         int count = 0;
 
         @Override
@@ -102,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void run() {
-                        status.setText("Server is waiting for messages...");
+                        statusText.setText("Server is waiting for messages...");
                     }
                 });
 
@@ -116,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void run() {
-                            status.setText(messageLog);
+                            statusText.setText(messageLog);
                         }
                     });
 
@@ -160,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void run() {
-                        status.setText(messageLog);
+                        statusText.setText(messageLog);
                     }
                 });
 
@@ -174,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void run() {
-                    status.setText(messageLog);
+                    statusText.setText(messageLog);
                 }
             });
         }

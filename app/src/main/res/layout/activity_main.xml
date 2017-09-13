@@ -16,10 +16,20 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/myip" />
+            android:text="@string/my_external_ip" />
 
         <TextView
-            android:id="@+id/my_ip"
+            android:id="@+id/my_external_ip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/my_internal_ip" />
+
+        <TextView
+            android:id="@+id/my_internal_ip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
@@ -30,11 +40,19 @@
             android:text="@string/connect_to" />
 
         <EditText
+            android:id="@+id/destination_IP"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/connect_hint" />
+            android:hint="@string/connect_ip_hint" />
+
+        <EditText
+            android:id="@+id/destination_port"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="@string/connect_port_hint"/>
 
         <Button
+            android:id="@+id/connection_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/connect" />
@@ -44,6 +62,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
+        <TextView
+            android:id="@+id/messages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
