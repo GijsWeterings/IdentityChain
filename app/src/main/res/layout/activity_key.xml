@@ -1,52 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="nl.tudelft.cs4160.trustchain_android.MainActivity">
+    tools:context="nl.tudelft.cs4160.trustchain_android.KeyActivity">
 
     <LinearLayout
         android:layout_width="368dp"
         android:layout_height="495dp"
         android:orientation="vertical"
-        tools:layout_editor_absoluteY="8dp"
-        tools:layout_editor_absoluteX="8dp">
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/myip" />
+            android:text="@string/public_key" />
 
-        <TextView
-            android:id="@+id/my_ip"
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/public_key"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="40dp"
-            android:text="@string/connect_to" />
+            android:text="@string/private_key" />
 
         <EditText
-            android:id="@+id/connect_to"
+            android:id="@+id/private_key"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/connect_hint" />
+            android:layout_height="wrap_content" />
 
         <Button
-            android:id="@+id/connect"
+            android:id="@+id/new_key"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/connect" />
+            android:text="@string/create_key" />
 
         <Button
-            android:id="@+id/key_options"
+            android:id="@+id/sign_data"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/key_options" />
+            android:text="Button" />
+
+        <EditText
+            android:id="@+id/signed_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 
-</android.support.constraint.ConstraintLayout>
+
+</android.support.design.widget.CoordinatorLayout>
