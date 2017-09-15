@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="nl.tudelft.cs4160.trustchain_android">
 
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
