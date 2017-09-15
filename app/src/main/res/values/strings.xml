@@ -4,4 +4,11 @@
     <string name="connect_hint">127.0.0.1</string>
     <string name="connect_to">Connect to IP</string>
     <string name="connect">connect</string>
+
+    <string name="title_activity_key">Key management</string>
+    <string name="key_options">Key options</string>
+    <string name="public_key">Public key</string>
+    <string name="private_key">Private key</string>
+    <string name="create_key">Create new key</string>
+    <string name="show_key">Show key</string>
 </resources>
