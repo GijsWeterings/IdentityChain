@@ -11,4 +11,9 @@
     <string name="private_key">Private key</string>
     <string name="create_key">Create new key</string>
     <string name="show_key">Show key</string>
+    <string name="verify_sig">Verify signature</string>
+    <string name="storage_permission_explanation">Give permission for storage!</string>
+    <string name="sign_data">Sign data!</string>
+    <string name="valid_signature">Valid signature</string>
+    <string name="invalid_signature">Invalid signature</string>
 </resources>

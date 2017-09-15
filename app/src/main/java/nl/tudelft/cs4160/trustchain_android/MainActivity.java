@@ -11,6 +11,7 @@ import java.security.Security;
 
 public class MainActivity extends AppCompatActivity {
 
+
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);}
 
