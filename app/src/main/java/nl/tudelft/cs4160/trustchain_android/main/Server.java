@@ -21,8 +21,10 @@ import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 class Server {
     Activity callingActivity;
     ServerSocket serverSocket;
-    String messageLog = "";
     TextView statusText;
+
+    String messageLog = "";
+    String responseLog = "";
 
     public Server(Activity callingActivity) {
         this.callingActivity = callingActivity;
@@ -66,12 +68,12 @@ class Server {
                     count++;
                     messageLog += "#" + count + " from " + socket.getInetAddress()
                             + ":" + socket.getPort() + "\n"
-                            + "message received: " + message.toString() + "\n";
+                            + "message received: " + message.toString();
                     callingActivity.runOnUiThread(new Runnable() {
 
                         @Override
                         public void run() {
-                            statusText.append("\n Server: " + messageLog);
+                            statusText.append("\n  Server: " + messageLog);
                         }
                     });
 
@@ -101,7 +103,7 @@ class Server {
         public void run() {
             OutputStream outputStream;
             String msgReply = "Hello from Android, you are #" + cnt;
-            messageLog = "";
+            responseLog = "";
 
             try {
                 outputStream = hostThreadSocket.getOutputStream();
@@ -109,16 +111,16 @@ class Server {
                 printStream.print(msgReply);
                 printStream.close();
 
-                messageLog += "replied: " + msgReply + "\n";
+                responseLog += "replied: " + msgReply + "\n";
             } catch (IOException e) {
                 e.printStackTrace();
-                messageLog += "Something wrong! " + e.toString() + "\n";
+                responseLog += "Something wrong! " + e.toString() + "\n";
             } finally {
                 callingActivity.runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
-                        statusText.append("\n Server: " + messageLog);
+                        statusText.append("\n  Server: " + responseLog);
                     }
                 });
             }
