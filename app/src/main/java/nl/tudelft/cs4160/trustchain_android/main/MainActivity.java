@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -13,13 +14,15 @@ import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 
 public class MainActivity extends AppCompatActivity {
     String messageLog = "";
-    TempBlock message;
+    TempBlockProto.Block message;
 
     TextView externalIPText;
     TextView localIPText;
+    TextView statusText;
     Button connectionButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
@@ -49,22 +52,35 @@ public class MainActivity extends AppCompatActivity {
         thisActivity = this;
         localIPText = (TextView) findViewById(R.id.my_local_ip);
         externalIPText = (TextView) findViewById(R.id.my_external_ip);
+        statusText = (TextView) findViewById(R.id.status);
+        statusText.setMovementMethod(new ScrollingMovementMethod());
         editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
         editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
         connectionButton = (Button) findViewById(R.id.connection_button);
 
-        connectionButton.setOnClickListener(connectionButtonListener);
-
         updateIP();
         updateLocalIPField(getLocalIPAddress());
+        constructTempBlock();
+
+        connectionButton.setOnClickListener(connectionButtonListener);
 
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
 
+    /**
+     * Construct a default block for testing purposes.
+     */
     public void constructTempBlock() {
-        TempBlock.Builder block = TempBlock.newBuilder();
-
+        message = TempBlockProto.Block.newBuilder()
+                .setPublickey(externalIPText.getText().toString() + "-" + localIPText.getText().toString())
+                .setSeqnumber(1)
+                .setLinkpublickey("linkPubKey")
+                .setLinkseqnumber(1)
+                .setPrevhash("prevHash")
+                .setSignature("signature")
+                .setMessage("Hello world!")
+                .build();
     }
 
 
