@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.Main;
+package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,8 +16,8 @@ import nl.tudelft.cs4160.trustchain_android.R;
 
 public class MainActivity extends AppCompatActivity {
     String messageLog = "";
+    TempBlock message;
 
-    TextView statusText;
     TextView externalIPText;
     TextView localIPText;
     Button connectionButton;
@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
             ClientTask task = new ClientTask(
                     editTextDestinationIP.getText().toString(),
                     Integer.parseInt(editTextDestinationPort.getText().toString()),
+                    message,
                     thisActivity);
             task.execute();
         }
@@ -46,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         thisActivity = this;
-        statusText = (TextView) findViewById(R.id.status);
         localIPText = (TextView) findViewById(R.id.my_local_ip);
         externalIPText = (TextView) findViewById(R.id.my_external_ip);
         editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
@@ -61,6 +61,12 @@ public class MainActivity extends AppCompatActivity {
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
+
+    public void constructTempBlock() {
+        TempBlock.Builder block = TempBlock.newBuilder();
+
+    }
+
 
     /**
      * Updates the external IP address textfield to the given IP address.

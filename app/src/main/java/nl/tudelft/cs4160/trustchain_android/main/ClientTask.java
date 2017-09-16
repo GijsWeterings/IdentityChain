@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.Main;
+package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -19,11 +19,14 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     Activity callingActivity;
     String destinationIP;
     int destinationPort;
+    TempBlock message;
+
     String response = "";
 
-    ClientTask(String ipAddress, int port, Activity callingActivity){
+    ClientTask(String ipAddress, int port, TempBlock message, Activity callingActivity){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
+        this.message = message;
         this.callingActivity = callingActivity;
     }
 
