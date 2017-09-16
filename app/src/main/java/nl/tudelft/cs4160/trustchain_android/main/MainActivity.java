@@ -1,7 +1,7 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
@@ -82,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
                 .build();
     }
 
-
     /**
      * Updates the external IP address textfield to the given IP address.
      */
@@ -129,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
      * Finds the local IP address of this device, loops trough network interfaces in order to find it.
      * The address that is not a loopback address is the IP of the device.
      * @return a string representation of the device's IP address
-     * TODO: remove when we end up not using any local addresses
      */
     public String getLocalIPAddress() {
         try {
