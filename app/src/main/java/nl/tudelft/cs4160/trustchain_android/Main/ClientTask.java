@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android;
+package nl.tudelft.cs4160.trustchain_android.Main;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -10,17 +10,18 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-/**
- * Created by meijer on 13-9-17.
- */
+import nl.tudelft.cs4160.trustchain_android.R;
 
-public class NetworkTask extends AsyncTask<Void, Void, Void> {
+/**
+ * Class is package private to prevent another activity from accessing it and breaking everything
+ */
+class ClientTask extends AsyncTask<Void, Void, Void> {
     Activity callingActivity;
     String destinationIP;
     int destinationPort;
     String response = "";
 
-    NetworkTask(String ipAddress, int port, Activity callingActivity){
+    ClientTask(String ipAddress, int port, Activity callingActivity){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
         this.callingActivity = callingActivity;
