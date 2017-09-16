@@ -1,12 +1,9 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.Activity;
-import android.renderscript.ScriptGroup;
 import android.widget.TextView;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;

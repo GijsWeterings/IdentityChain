@@ -4,6 +4,7 @@
     <string name="my_local_ip">My local ip is:</string>
     <string name="connect_ip_hint">127.0.0.1</string>
     <string name="connect_port_hint">port</string>
+    <string name="default_port">8080</string>
     <string name="connect_to">Connect to IP</string>
     <string name="connect">connect</string>
 </resources>

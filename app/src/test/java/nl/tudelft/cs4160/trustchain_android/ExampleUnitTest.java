@@ -2,7 +2,7 @@ package nl.tudelft.cs4160.trustchain_android;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Example local unit test, which will execute on the development machine (host).

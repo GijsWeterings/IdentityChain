@@ -7,8 +7,6 @@ import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -33,6 +31,10 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
         this.callingActivity = callingActivity;
     }
 
+    /**
+     * Sends the TempBlock as a message to the specified server (another phone)
+     * and listens for a response from the server.
+     */
     @Override
     protected Void doInBackground(Void... arg0) {
         Socket socket = null;
@@ -77,6 +79,9 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
         return null;
     }
 
+    /**
+     * After sending a message and receiving a response from the server, update the log.
+     */
     @Override
     protected void onPostExecute(Void result) {
         callingActivity.runOnUiThread(new Runnable() {
