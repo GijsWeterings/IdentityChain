@@ -7,10 +7,13 @@ import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
@@ -19,11 +22,11 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     Activity callingActivity;
     String destinationIP;
     int destinationPort;
-    TempBlock message;
+    TempBlockProto.Block message;
 
     String response = "";
 
-    ClientTask(String ipAddress, int port, TempBlock message, Activity callingActivity){
+    ClientTask(String ipAddress, int port, TempBlockProto.Block message, Activity callingActivity){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
         this.message = message;
@@ -36,6 +39,11 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
         try {
             socket = new Socket(destinationIP, destinationPort);
 
+            // send the block as a message to the server
+            message.writeTo(socket.getOutputStream());
+            socket.shutdownOutput();
+
+            // Get the response from the server
             ByteArrayOutputStream byteArrayOutputStream =
                     new ByteArrayOutputStream(1024);
             byte[] buffer = new byte[1024];
@@ -43,29 +51,25 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
             int bytesRead;
             InputStream inputStream = socket.getInputStream();
 
-    /*
-     * notice:
-     * inputStream.read() will block if no data return
-     */
+            // notice: inputStream.read() will block if no data return
             while ((bytesRead = inputStream.read(buffer)) != -1){
                 byteArrayOutputStream.write(buffer, 0, bytesRead);
                 response += byteArrayOutputStream.toString("UTF-8");
             }
-
         } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             response = "UnknownHostException: " + e.toString();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             response = "IOException: " + e.toString();
-        }finally{
+        } catch (Exception e) {
+            e.printStackTrace();
+            response = "Exception: " + e.toString();
+        } finally{
             if(socket != null){
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -79,7 +83,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
 
             @Override
             public void run() {
-                ((TextView) callingActivity.findViewById(R.id.messages)).setText(response);
+                ((TextView) callingActivity.findViewById(R.id.status)).append("\n Client: " + response);
             }
         });
         super.onPostExecute(result);

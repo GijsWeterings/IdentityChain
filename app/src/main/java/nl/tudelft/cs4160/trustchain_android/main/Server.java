@@ -1,15 +1,19 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.Activity;
+import android.renderscript.ScriptGroup;
 import android.widget.TextView;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
@@ -55,15 +59,19 @@ class Server {
                 });
 
                 while (true) {
+                    messageLog = "";
                     Socket socket = serverSocket.accept();
+                    TempBlockProto.Block message = TempBlockProto.Block.parseFrom(socket.getInputStream());
+
                     count++;
                     messageLog += "#" + count + " from " + socket.getInetAddress()
-                            + ":" + socket.getPort() + "\n";
+                            + ":" + socket.getPort() + "\n"
+                            + "message received: " + message.toString() + "\n";
                     callingActivity.runOnUiThread(new Runnable() {
 
                         @Override
                         public void run() {
-                            statusText.setText(messageLog);
+                            statusText.append("\n Server: " + messageLog);
                         }
                     });
 
@@ -76,7 +84,6 @@ class Server {
             }
         }
     }
-
 
     private class SocketServerReplyThread extends Thread {
         private Socket hostThreadSocket;
@@ -94,6 +101,7 @@ class Server {
         public void run() {
             OutputStream outputStream;
             String msgReply = "Hello from Android, you are #" + cnt;
+            messageLog = "";
 
             try {
                 outputStream = hostThreadSocket.getOutputStream();
@@ -110,7 +118,7 @@ class Server {
 
                     @Override
                     public void run() {
-                        statusText.setText(messageLog);
+                        statusText.append("\n Server: " + messageLog);
                     }
                 });
             }
