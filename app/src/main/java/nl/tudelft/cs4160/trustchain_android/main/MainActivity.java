@@ -17,7 +17,6 @@ import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 
 public class MainActivity extends AppCompatActivity {
-    String messageLog = "";
     TempBlockProto.Block message;
 
     TextView externalIPText;
