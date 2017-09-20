@@ -11,8 +11,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import nl.tudelft.cs4160.trustchain_android.R;
-import nl.tudelft.cs4160.trustchain_android.message.BlockProto;
-import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
