@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.message;
+package nl.tudelft.cs4160.trustchain_android.block;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;

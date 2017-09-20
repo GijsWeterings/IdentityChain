@@ -14,9 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.R;
-import nl.tudelft.cs4160.trustchain_android.message.BlockProto;
-import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
-import nl.tudelft.cs4160.trustchain_android.message.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 
 public class MainActivity extends AppCompatActivity {
     BlockProto.TrustChainBlock message;
