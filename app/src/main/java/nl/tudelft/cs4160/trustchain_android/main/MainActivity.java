@@ -49,6 +49,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        initVariables();
+        init();
+    }
+
+    private void initVariables() {
         thisActivity = this;
         localIPText = (TextView) findViewById(R.id.my_local_ip);
         externalIPText = (TextView) findViewById(R.id.my_external_ip);
@@ -57,22 +63,32 @@ public class MainActivity extends AppCompatActivity {
         editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
         editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
         connectionButton = (Button) findViewById(R.id.connection_button);
+    }
+
+    private void init() {
+        // TODO: database creation and key generation
+        // TODO: save genesis block in database instead of sending over the network
+        if(isStartedFirstTime()) {
+            message = TrustChainBlock.createGenesisBlock();
+        }
 
         updateIP();
         updateLocalIPField(getLocalIPAddress());
-        constructTempBlock();
 
         connectionButton.setOnClickListener(connectionButtonListener);
-
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
 
     /**
-     * Construct a default block for testing purposes.
+     * Checks if this is the first time the app is started and returns a boolean value indicating
+     * this state.
+     * @return state - false if the app has been initialized before, true if first time app started
      */
-    public void constructTempBlock() {
-        message = TrustChainBlock.createGenesisBlock();
+    public boolean isStartedFirstTime() {
+        // TODO: check if a genesis block is present in database
+        // TODO: check if a keypair is already created
+        return true;
     }
 
     /**

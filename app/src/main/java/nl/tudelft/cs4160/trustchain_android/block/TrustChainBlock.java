@@ -32,7 +32,6 @@ public class TrustChainBlock {
         return block;
     }
 
-
     /**
      * Creates a TrustChainBlock for the given input.
      * @param transaction - Details the message of the block
@@ -47,7 +46,11 @@ public class TrustChainBlock {
      */
     public static BlockProto.TrustChainBlock createBlock(byte[] transaction, byte[] pubk, int seq_num,
                                                   byte[] link_pubk, int link_seq_num, byte[] prev_hash,
-                                                  byte[] sig, Timestamp time) {
+                                                  byte[] sig) {
+        long millis = System.currentTimeMillis();
+        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
+                .setNanos((int) ((millis % 1000) * 1000000)).build();
+
         BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
                 .setTransaction(ByteString.copyFrom(transaction))
                 .setPublicKey(ByteString.copyFrom(pubk))
@@ -56,12 +59,17 @@ public class TrustChainBlock {
                 .setLinkSequenceNumber(link_seq_num)
                 .setPreviousHash(ByteString.copyFrom(prev_hash))
                 .setSignature(ByteString.copyFrom(sig))
-                .setInsertTime(time)
+                .setInsertTime(timestamp)
                 .build();
         return block;
     }
 
-
-
-
+    /**
+     * Checks if the given block is a genesis block
+     * @param block - TrustChainBlock that we want to check
+     * @return boolean - true if the block is a genesis block, false otherwise
+     */
+    public static boolean isGenesisBlock(BlockProto.TrustChainBlock block) {
+        return (block.getSequenceNumber() == GENESIS_SEQ) || (block.getPreviousHash() == GENESIS_HASH);
+    }
 }
