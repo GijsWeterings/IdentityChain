@@ -15,5 +15,5 @@ message TrustChainBlock {
     int32 link_sequence_number = 5;
     bytes previous_hash = 6;
     bytes signature = 7;
-    google.protobuf.Timestamp insert_time =8;
+    google.protobuf.Timestamp insert_time = 8;
 }

@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.message.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
 
 /**
@@ -20,11 +21,11 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     Activity callingActivity;
     String destinationIP;
     int destinationPort;
-    TempBlockProto.Block message;
+    BlockProto.TrustChainBlock message;
 
     String response = "";
 
-    ClientTask(String ipAddress, int port, TempBlockProto.Block message, Activity callingActivity){
+    ClientTask(String ipAddress, int port, BlockProto.TrustChainBlock message, Activity callingActivity){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
         this.message = message;

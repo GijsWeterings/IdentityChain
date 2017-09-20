@@ -3,8 +3,8 @@
 
 package nl.tudelft.cs4160.trustchain_android.message;
 
-public final class TrustChainBlockProto {
-  private TrustChainBlockProto() {}
+public final class BlockProto {
+  private BlockProto() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistryLite registry) {
   }
@@ -178,14 +178,14 @@ public final class TrustChainBlockProto {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.internal_static_message_TrustChainBlock_descriptor;
+      return nl.tudelft.cs4160.trustchain_android.message.BlockProto.internal_static_message_TrustChainBlock_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.internal_static_message_TrustChainBlock_fieldAccessorTable
+      return nl.tudelft.cs4160.trustchain_android.message.BlockProto.internal_static_message_TrustChainBlock_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.class, nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.Builder.class);
+              nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.class, nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.Builder.class);
     }
 
     public static final int TRANSACTION_FIELD_NUMBER = 1;
@@ -358,10 +358,10 @@ public final class TrustChainBlockProto {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock)) {
+      if (!(obj instanceof nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock)) {
         return super.equals(obj);
       }
-      nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock other = (nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock) obj;
+      nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock other = (nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock) obj;
 
       boolean result = true;
       result = result && getTransaction()
@@ -417,69 +417,69 @@ public final class TrustChainBlockProto {
       return hash;
     }
 
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(byte[] data)
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(java.io.InputStream input)
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseDelimitedFrom(java.io.InputStream input)
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseDelimitedFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parseFrom(
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -491,7 +491,7 @@ public final class TrustChainBlockProto {
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock prototype) {
+    public static Builder newBuilder(nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() {
@@ -511,20 +511,20 @@ public final class TrustChainBlockProto {
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:message.TrustChainBlock)
-        nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlockOrBuilder {
+        nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlockOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.internal_static_message_TrustChainBlock_descriptor;
+        return nl.tudelft.cs4160.trustchain_android.message.BlockProto.internal_static_message_TrustChainBlock_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.internal_static_message_TrustChainBlock_fieldAccessorTable
+        return nl.tudelft.cs4160.trustchain_android.message.BlockProto.internal_static_message_TrustChainBlock_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.class, nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.Builder.class);
+                nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.class, nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.Builder.class);
       }
 
-      // Construct using nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.newBuilder()
+      // Construct using nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -566,23 +566,23 @@ public final class TrustChainBlockProto {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.internal_static_message_TrustChainBlock_descriptor;
+        return nl.tudelft.cs4160.trustchain_android.message.BlockProto.internal_static_message_TrustChainBlock_descriptor;
       }
 
-      public nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock getDefaultInstanceForType() {
-        return nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.getDefaultInstance();
+      public nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock getDefaultInstanceForType() {
+        return nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.getDefaultInstance();
       }
 
-      public nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock build() {
-        nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock result = buildPartial();
+      public nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock build() {
+        nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock buildPartial() {
-        nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock result = new nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock(this);
+      public nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock buildPartial() {
+        nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock result = new nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock(this);
         result.transaction_ = transaction_;
         result.publicKey_ = publicKey_;
         result.sequenceNumber_ = sequenceNumber_;
@@ -626,16 +626,16 @@ public final class TrustChainBlockProto {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock) {
-          return mergeFrom((nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock)other);
+        if (other instanceof nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock) {
+          return mergeFrom((nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock other) {
-        if (other == nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock.getDefaultInstance()) return this;
+      public Builder mergeFrom(nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock other) {
+        if (other == nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock.getDefaultInstance()) return this;
         if (other.getTransaction() != com.google.protobuf.ByteString.EMPTY) {
           setTransaction(other.getTransaction());
         }
@@ -673,11 +673,11 @@ public final class TrustChainBlockProto {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock parsedMessage = null;
+        nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock) e.getUnfinishedMessage();
+          parsedMessage = (nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -1015,12 +1015,12 @@ public final class TrustChainBlockProto {
     }
 
     // @@protoc_insertion_point(class_scope:message.TrustChainBlock)
-    private static final nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock DEFAULT_INSTANCE;
+    private static final nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock();
+      DEFAULT_INSTANCE = new nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock();
     }
 
-    public static nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock getDefaultInstance() {
+    public static nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
@@ -1043,7 +1043,7 @@ public final class TrustChainBlockProto {
       return PARSER;
     }
 
-    public nl.tudelft.cs4160.trustchain_android.message.TrustChainBlockProto.TrustChainBlock getDefaultInstanceForType() {
+    public nl.tudelft.cs4160.trustchain_android.message.BlockProto.TrustChainBlock getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 

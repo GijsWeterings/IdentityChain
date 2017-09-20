@@ -14,10 +14,12 @@ import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.message.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
+import nl.tudelft.cs4160.trustchain_android.message.TrustChainBlock;
 
 public class MainActivity extends AppCompatActivity {
-    TempBlockProto.Block message;
+    BlockProto.TrustChainBlock message;
 
     TextView externalIPText;
     TextView localIPText;
@@ -71,15 +73,7 @@ public class MainActivity extends AppCompatActivity {
      * Construct a default block for testing purposes.
      */
     public void constructTempBlock() {
-        message = TempBlockProto.Block.newBuilder()
-                .setPublickey(externalIPText.getText().toString() + "-" + localIPText.getText().toString())
-                .setSeqnumber(1)
-                .setLinkpublickey("linkPubKey")
-                .setLinkseqnumber(1)
-                .setPrevhash("prevHash")
-                .setSignature("signature")
-                .setMessage("Hello world!")
-                .build();
+        message = TrustChainBlock.createGenesisBlock();
     }
 
     /**
