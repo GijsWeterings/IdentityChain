@@ -10,7 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import nl.tudelft.cs4160.trustchain_android.R;
-import nl.tudelft.cs4160.trustchain_android.message.TempBlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
@@ -60,7 +60,7 @@ class Server {
                 while (true) {
                     messageLog = "";
                     Socket socket = serverSocket.accept();
-                    TempBlockProto.Block message = TempBlockProto.Block.parseFrom(socket.getInputStream());
+                    BlockProto.TrustChainBlock message = BlockProto.TrustChainBlock.parseFrom(socket.getInputStream());
 
                     count++;
                     messageLog += "#" + count + " from " + socket.getInetAddress()
