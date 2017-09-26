@@ -1,8 +1,12 @@
 package nl.tudelft.cs4160.trustchain_android.database;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 
 public class TrustChainDBHelper extends SQLiteOpenHelper {
     public static final int DATABASE_VERSION = 1;
@@ -48,5 +52,26 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      */
     public void onDownGrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         onUpgrade(db, oldVersion, newVersion);
+    }
+
+    /**
+     * Insert a block into the database
+     * @param block - The protoblock that needs to be added to the database
+     * @param db - The database that holds the TrustChain.
+     * @return A long depicting the primary key value of the newly inserted row of the database.
+     */
+    public static long insertInDB(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
+        ContentValues values = new ContentValues();
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER, block.getSequenceNumber());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, block.getLinkPublicKey().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER, block.getLinkSequenceNumber());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, block.getPreviousHash().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, block.getSignature().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, TrustChainBlock.hash(block).toString());
+
+        return db.insert(TrustChainDBContract.BlockEntry.TABLE_NAME, null, values);
     }
 }

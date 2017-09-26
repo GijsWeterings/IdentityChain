@@ -1,5 +1,7 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
@@ -72,4 +74,15 @@ public class TrustChainBlock {
     public static boolean isGenesisBlock(BlockProto.TrustChainBlock block) {
         return (block.getSequenceNumber() == GENESIS_SEQ) || (block.getPreviousHash() == GENESIS_HASH);
     }
+
+    /**
+     * Returns a sha256 hash of the block.
+     * TODO: implement this method
+     * @param block
+     * @return
+     */
+    public static byte[] hash(BlockProto.TrustChainBlock block) {
+        return null;
+    }
+
 }
