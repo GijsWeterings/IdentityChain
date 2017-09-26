@@ -1,5 +1,6 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
@@ -16,9 +17,13 @@ import java.util.List;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 public class MainActivity extends AppCompatActivity {
     BlockProto.TrustChainBlock message;
+    TrustChainDBHelper dbHelper;
+    SQLiteDatabase db;
 
     TextView externalIPText;
     TextView localIPText;
@@ -66,10 +71,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
-        // TODO: database creation and key generation
-        // TODO: save genesis block in database instead of sending over the network
+        // TODO: key generation
+
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
+            dbHelper.insertInDB(message, db);
         }
 
         updateIP();
