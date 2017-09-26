@@ -13,7 +13,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "TrustChain.db";
 
     private final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE IF NOT EXISTS" + TrustChainDBContract.BlockEntry.TABLE_NAME + " (" +
+            "CREATE TABLE IF NOT EXISTS " + TrustChainDBContract.BlockEntry.TABLE_NAME + " (" +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_TX + " TEXT NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " TEXT NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " INTEGER NOT NULL," +
@@ -59,18 +59,21 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param block - The protoblock that needs to be added to the database
      * @param db - The database that holds the TrustChain.
      * @return A long depicting the primary key value of the newly inserted row of the database.
+     *          returns -1 as an error indicator.
      */
     public static long insertInDB(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
+//        if(db == null) {
+//            return -1;
+//        }
         ContentValues values = new ContentValues();
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toString());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toStringUtf8());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER, block.getSequenceNumber());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, block.getLinkPublicKey().toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, block.getLinkPublicKey().toStringUtf8());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER, block.getLinkSequenceNumber());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, block.getPreviousHash().toString());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, block.getSignature().toString());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toString());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, TrustChainBlock.hash(block).toString());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, block.getPreviousHash().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, block.getSignature().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, new String(TrustChainBlock.hash(block)));
 
         return db.insert(TrustChainDBContract.BlockEntry.TABLE_NAME, null, values);
     }
