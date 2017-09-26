@@ -2,23 +2,22 @@ package nl.tudelft.cs4160.trustchain_android;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
 import com.google.protobuf.ByteString;
 
-import org.w3c.dom.Text;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
-public class trustChainExplorerActivity extends AppCompatActivity {
+public class ChainExplorerActivity extends AppCompatActivity {
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
 
@@ -27,7 +26,7 @@ public class trustChainExplorerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_trust_chain_explorer);
+        setContentView(R.layout.activity_chain_explorer);
 
         initVariables();
         init();
@@ -40,6 +39,16 @@ public class trustChainExplorerActivity extends AppCompatActivity {
     private void init() {
         dbHelper = new TrustChainDBHelper(this);
         db = dbHelper.getReadableDatabase();
+        displayLocalChain(getAllBlocks());
+    }
+
+    public void displayLocalChain(List<BlockProto.TrustChainBlock> blockList) {
+        String blocksString = "";
+        Iterator<BlockProto.TrustChainBlock> iterator = blockList.iterator();
+        while(iterator.hasNext()) {
+            blocksString += iterator.next().toString() + "\n\n";
+        }
+        databaseContentText.setText(blocksString);
     }
 
     public List<BlockProto.TrustChainBlock> getAllBlocks() {
@@ -54,9 +63,8 @@ public class trustChainExplorerActivity extends AppCompatActivity {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME
         };
 
-
         String sortOrder =
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER+ "ASC";
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " ASC";
 
         Cursor cursor = db.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
@@ -68,27 +76,28 @@ public class trustChainExplorerActivity extends AppCompatActivity {
                 sortOrder                                       // How the rows should be ordered
         );
 
-        List res = new ArrayList<>();
+        List<BlockProto.TrustChainBlock> res = new ArrayList<>();
         BlockProto.TrustChainBlock.Builder builder = BlockProto.TrustChainBlock.newBuilder();
 
         while(cursor.moveToNext()) {
-            builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))));
-            builder.setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))));
-            builder.setSequenceNumber(cursor.getInt(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)));
-            builder.setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))));
-            builder.setLinkSequenceNumber(cursor.getInt(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)));
-            builder.setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))));
-            builder.setSignature(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))));
             int nanos = Timestamp.valueOf(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))).getNanos();
-            builder.setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos));
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
+
+            builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+            .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+            .setSequenceNumber(cursor.getInt(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+            .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+            .setLinkSequenceNumber(cursor.getInt(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+            .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+            .setSignature(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+            .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos));
 
             res.add(builder.build());
         }
@@ -96,7 +105,5 @@ public class trustChainExplorerActivity extends AppCompatActivity {
         cursor.close();
         return res;
     }
-
-
 
 }

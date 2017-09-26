@@ -18,7 +18,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".trustChainExplorerActivity"></activity>
+        <activity android:name=".ChainExplorerActivity"></activity>
     </application>
 
 </manifest>

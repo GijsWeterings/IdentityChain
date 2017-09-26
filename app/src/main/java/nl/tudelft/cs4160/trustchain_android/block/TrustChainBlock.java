@@ -1,7 +1,5 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
-import android.database.sqlite.SQLiteDatabase;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
@@ -25,6 +23,21 @@ public class TrustChainBlock {
                 .setTransaction(ByteString.EMPTY)
                 .setPublicKey(EMPTY_PK)
                 .setSequenceNumber(GENESIS_SEQ)
+                .setLinkPublicKey(EMPTY_PK)
+                .setLinkSequenceNumber(UNKNOWN_SEQ)
+                .setPreviousHash(GENESIS_HASH)
+                .setSignature(EMPTY_SIG)
+                .setInsertTime(Timestamp.getDefaultInstance())
+                .build();
+        return block;
+    }
+
+    // TODO: REMOVE
+    public static BlockProto.TrustChainBlock createTestBlock() {
+        BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
+                .setTransaction(ByteString.EMPTY)
+                .setPublicKey(EMPTY_PK)
+                .setSequenceNumber(2)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
@@ -82,7 +95,7 @@ public class TrustChainBlock {
      * @return
      */
     public static byte[] hash(BlockProto.TrustChainBlock block) {
-        return null;
+        return new byte[] {0x01};
     }
 
 }
