@@ -1,6 +1,7 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -19,6 +20,7 @@ import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
@@ -110,9 +112,30 @@ public class MainActivity extends AppCompatActivity {
      * @return state - false if the app has been initialized before, true if first time app started
      */
     public boolean isStartedFirstTime() {
-        // TODO: check if a genesis block is present in database
-        // TODO: check if a keypair is already created
+        // check if a genesis block is present in database
+        SQLiteDatabase dbReadable = dbHelper.getReadableDatabase();
+        String[] projection = {
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
+        };
+
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
+        String[] whereArgs = new String[] {Integer.toString(TrustChainBlock.GENESIS_SEQ)};
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                projection,                                     // The columns to return
+                whereClause,                                           // Filter for which rows to return
+                whereArgs,                                           // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                null                                           // How the rows should be ordered
+        );
+        if(cursor.getCount() == 1) {
+            return false;
+        }
         return true;
+
+        // TODO: check if a keypair is already created
     }
 
     /**

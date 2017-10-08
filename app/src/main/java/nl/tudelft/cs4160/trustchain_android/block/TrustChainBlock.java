@@ -8,11 +8,11 @@ import com.google.protobuf.Timestamp;
  */
 
 public class TrustChainBlock {
-    static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
-    static final int GENESIS_SEQ = 1;
-    static final int UNKNOWN_SEQ = 0;
-    static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
-    static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
+    public static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
+    public static final int GENESIS_SEQ = 1;
+    public static final int UNKNOWN_SEQ = 0;
+    public static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
+    public static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
 
     /**
      * Creates a TrustChain genesis block using protocol buffers.
