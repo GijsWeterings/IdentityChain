@@ -28,7 +28,6 @@ public class KeyActivity extends AppCompatActivity {
     private Button buttonNewKey;
     private Button signData;
     private TextView textPrivateKey;
-    private TextView textPublicKey;
     private TextView signedData;
     private Button verifySignature;
 
@@ -42,7 +41,6 @@ public class KeyActivity extends AppCompatActivity {
     private void init() {
         buttonNewKey = (Button) findViewById(R.id.new_key);
         textPrivateKey = (TextView) findViewById(R.id.private_key);
-        textPublicKey = (TextView) findViewById(R.id.public_key);
         signData = (Button) findViewById(R.id.sign_data);
         signedData = (TextView ) findViewById(R.id.signed_data);
         verifySignature = (Button) findViewById(R.id.verify_sig);
@@ -57,7 +55,6 @@ public class KeyActivity extends AppCompatActivity {
             Key.saveKey(getApplicationContext(), DEFAULT_PUB_KEY_FILE, kp.getPublic());
             Key.saveKey(getApplicationContext(), DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
         }
-        textPublicKey.setText(Base64.encodeToString(kp.getPublic().getEncoded(), Base64.DEFAULT));
         textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
 
@@ -83,7 +80,6 @@ public class KeyActivity extends AppCompatActivity {
                 KeyPair kp = Key.createNewKeyPair();
                 Key.saveKey(getApplicationContext(), DEFAULT_PUB_KEY_FILE, kp.getPublic());
                 Key.saveKey(getApplicationContext(), DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
-                textPublicKey.setText(Base64.encodeToString(kp.getPublic().getEncoded(), Base64.DEFAULT));
                 textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
             }

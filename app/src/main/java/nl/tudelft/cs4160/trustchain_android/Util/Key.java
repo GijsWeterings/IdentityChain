@@ -4,7 +4,11 @@ import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 
+import org.spongycastle.asn1.x9.X9ECParameters;
+import org.spongycastle.crypto.ec.CustomNamedCurves;
+import org.spongycastle.jce.ECNamedCurveTable;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.jce.spec.ECParameterSpec;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -15,10 +19,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -38,28 +42,35 @@ public class Key {
 
 
     public static KeyPair createNewKeyPair() {
-        return createNewKeyPair("secp256k1", "ECDSA", PROVIDER);
+        return createNewKeyPair("curve25519", "ECDSA", PROVIDER, true);
     }
 
-    public static KeyPair createNewKeyPair(String stdName, String algorithm, String provider) {
-        ECGenParameterSpec ecParamSpec = new ECGenParameterSpec(stdName);
-        KeyPairGenerator kpg;
+    public static KeyPair createNewKeyPair(String curveName, String algorithm, String provider, boolean custom) {
+        ECParameterSpec ecSpec = getParameterSpec(curveName, custom);
+        KeyPair keyPair = null;
         try {
-            kpg = KeyPairGenerator.getInstance(algorithm, provider);
-            kpg.initialize(ecParamSpec);
+            KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, provider);
+            g.initialize(ecSpec, new SecureRandom());
+            keyPair = g.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return null;
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
-            return null;
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
-            return null;
         }
-        return kpg.generateKeyPair();
+        return keyPair;
     }
 
+    private static ECParameterSpec getParameterSpec(String curveName, boolean custom) {
+        if(custom) {
+            X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
+            return new ECParameterSpec(ecP.getCurve(), ecP.getG(),
+                    ecP.getN(), ecP.getH(), ecP.getSeed());
+
+        }
+        return ECNamedCurveTable.getParameterSpec(curveName);
+    }
 
 
 
