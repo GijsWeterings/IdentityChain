@@ -3,6 +3,9 @@ package nl.tudelft.cs4160.trustchain_android.block;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * Created by meijer on 20-9-17.
  */
@@ -90,12 +93,17 @@ public class TrustChainBlock {
 
     /**
      * Returns a sha256 hash of the block.
-     * TODO: implement this method
-     * @param block
-     * @return
+     * @param block - a proto Trustchain block
+     * @return the sha256 hash of the byte array of the block
      */
     public static byte[] hash(BlockProto.TrustChainBlock block) {
-        return new byte[] {0x01};
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return md.digest(block.toByteArray());
     }
 
 }
