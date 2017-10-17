@@ -1,7 +1,13 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+
+import java.security.PublicKey;
+
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 /**
  * Created by meijer on 20-9-17.
@@ -49,34 +55,44 @@ public class TrustChainBlock {
 
     /**
      * Creates a TrustChainBlock for the given input.
-     * @param transaction - Details the message of the block
-     * @param pubk - Public Key of this user
-     * @param seq_num - Depicting the position in the chain
-     * @param link_pubk - Public Key of the linked user
-     * @param link_seq_num - Depicting the position in the linked chain
-     * @param prev_hash - Hash of the previous block in the chain
-     * @param sig - Signature of this block
-     * @param time - time the block was created
-     * @return
+     * @param transaction - Details the message of the block, can be null if there is a linked block
+     * @param db - database in which the previous blocks of this peer can be found
+     * @param mypubk - the public key of this peer
+     * @param linkedBlock - The halfblock that is linked to this to be created half block, can be null
+     * @param linkedpubk - The public key of the linked peer
+     * @return a new half block
      */
-    public static BlockProto.TrustChainBlock createBlock(byte[] transaction, byte[] pubk, int seq_num,
-                                                  byte[] link_pubk, int link_seq_num, byte[] prev_hash,
-                                                  byte[] sig) {
+    public static BlockProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
+                                                         byte[] mypubk, BlockProto.TrustChainBlock linkedBlock,
+                                                         byte[] linkpubk) {
+        BlockProto.TrustChainBlock latestBlock = getLatestBlock(db,mypubk);
+
         long millis = System.currentTimeMillis();
         Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
                 .setNanos((int) ((millis % 1000) * 1000000)).build();
 
-        BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
-                .setTransaction(ByteString.copyFrom(transaction))
-                .setPublicKey(ByteString.copyFrom(pubk))
-                .setSequenceNumber(seq_num)
-                .setLinkPublicKey(ByteString.copyFrom(link_pubk))
-                .setLinkSequenceNumber(link_seq_num)
-                .setPreviousHash(ByteString.copyFrom(prev_hash))
-                .setSignature(ByteString.copyFrom(sig))
-                .setInsertTime(timestamp)
-                .build();
-        return block;
+        BlockProto.TrustChainBlock.Builder builder = BlockProto.TrustChainBlock.newBuilder();
+        if(linkedBlock != null) {
+            builder.setTransaction(linkedBlock.getTransaction())
+                    .setLinkPublicKey(linkedBlock.getPublicKey())
+                    .setLinkSequenceNumber(linkedBlock.getSequenceNumber());
+        } else {
+            builder.setTransaction(ByteString.copyFrom(transaction))
+                    .setLinkPublicKey(ByteString.copyFrom(linkpubk))
+                    .setLinkSequenceNumber(TrustChainBlock.UNKNOWN_SEQ);
+        }
+
+        // if a latest block was found set the correct fields, if not the block won't be validated
+        // so it doesn't matter much that no exception is raised here.
+        if(latestBlock != null) {
+            builder.setSequenceNumber(latestBlock.getSequenceNumber() + 1)
+                    .setPreviousHash(ByteString.copyFrom(hash(latestBlock)));
+        }
+
+        builder.setPublicKey(mypubk);
+        builder.setSignature(EMPTY_SIG);
+
+        return builder.build();
     }
 
     /**
@@ -98,4 +114,23 @@ public class TrustChainBlock {
         return new byte[] {0x01};
     }
 
+
+    /**
+     * Signs this block with a given public key.
+     * TODO: implement this method
+     */
+    public static void sign(BlockProto.TrustChainBlock block, PublicKey myPubKey) {
+
+    }
+
+    /**
+     * Gets the latest block associated with the given public key from the database
+     * @param db - Database to search in
+     * @param pubkey - Public key of which the latest block should be found
+     */
+    public static BlockProto.TrustChainBlock getLatestBlock(SQLiteDatabase db, byte[] pubkey) {
+
+
+
+    }
 }

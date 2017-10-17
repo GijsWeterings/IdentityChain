@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.security.PublicKey;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,7 +24,9 @@ import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 
 public class MainActivity extends AppCompatActivity {
     BlockProto.TrustChainBlock message;
@@ -43,18 +46,12 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Listener for the connection button.
      * On click a message is sent to the connected device.
+     * This message should already be in the database.
      */
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-            ClientTask task = new ClientTask(
-                    editTextDestinationIP.getText().toString(),
-                    Integer.parseInt(editTextDestinationPort.getText().toString()),
-                    message,
-                    thisActivity);
-            task.execute();
-            //TODO: for testing purposes, block insertion in DB must be done in another place
-            dbHelper.insertInDB(createTestBlock(), db);
+        signBlock();
         }
     };
 
@@ -199,6 +196,67 @@ public class MainActivity extends AppCompatActivity {
         } catch(Exception e) {
             e.printStackTrace();
         }
+        return null;
+    }
+
+    //TODO: remove
+    public void signBlock() {
+        ClientTask task = new ClientTask(
+                editTextDestinationIP.getText().toString(),
+                Integer.parseInt(editTextDestinationPort.getText().toString()),
+                message,
+                thisActivity);
+        task.execute();
+        //TODO: for testing purposes, block insertion in DB must be done in another place
+        dbHelper.insertInDB(createTestBlock(), db);
+    }
+
+
+
+    /**
+     * Sign a half block and send block.
+     * Reads from database and inserts a new block in the database.
+     *
+     * Either a linked half block is given to the function or a transaction that needs to be send
+     *
+     * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
+     */
+    public void signBlock(PublicKey linkedPubKey,BlockProto.TrustChainBlock linkedBlock) {
+        // do nothing if linked block is not addressed to me
+        if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
+            return;
+        }
+        // do nothing if block is not a request
+        if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
+            return;
+        }
+        BlockProto.TrustChainBlock block = createBlock(null,dbHelper.getReadableDatabase(),getMyPublicKey().getEncoded(),
+                linkedBlock,null);
+        sign(block, getMyPublicKey());
+
+        // TODO: validate
+
+        // TODO: log?
+
+        // TODO: add block to database and send
+
+    }
+
+    /**
+     * Builds a half block with the transaction.
+     * Reads from database and inserts new halfblock in database.
+     * @param transaction
+     */
+    public void signBlock(byte[] transaction) {
+        // transaction should be a dictionary
+
+        // TODO: implement this method
+
+    }
+
+
+    // Placeholder TODO: change all places where this method gets called to correct method
+    public PublicKey getMyPublicKey() {
         return null;
     }
 
