@@ -77,4 +77,6 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
 
         return db.insert(TrustChainDBContract.BlockEntry.TABLE_NAME, null, values);
     }
+
+
 }
