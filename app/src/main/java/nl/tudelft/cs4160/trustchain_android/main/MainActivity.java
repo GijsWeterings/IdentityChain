@@ -236,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: validate
 
+
         // TODO: log?
 
         // TODO: add block to database and send

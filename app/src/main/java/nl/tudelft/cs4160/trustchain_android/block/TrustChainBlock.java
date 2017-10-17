@@ -1,5 +1,6 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.google.protobuf.ByteString;
@@ -7,6 +8,7 @@ import com.google.protobuf.Timestamp;
 
 import java.security.PublicKey;
 
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 /**
@@ -89,7 +91,7 @@ public class TrustChainBlock {
                     .setPreviousHash(ByteString.copyFrom(hash(latestBlock)));
         }
 
-        builder.setPublicKey(mypubk);
+        builder.setPublicKey(ByteString.copyFrom(mypubk));
         builder.setSignature(EMPTY_SIG);
 
         return builder.build();
@@ -127,10 +129,55 @@ public class TrustChainBlock {
      * Gets the latest block associated with the given public key from the database
      * @param db - Database to search in
      * @param pubkey - Public key of which the latest block should be found
+     *
+     *               TODO: add select max SEQ_NUM to query
      */
-    public static BlockProto.TrustChainBlock getLatestBlock(SQLiteDatabase db, byte[] pubkey) {
+    public static BlockProto.TrustChainBlock getLatestBlock(SQLiteDatabase dbReadable, byte[] pubkey) {
+        String[] projection = {
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_TX,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE,
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME
+        };
 
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8()};
 
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                projection,                                     // The columns to return
+                whereClause,                                           // Filter for which rows to return
+                whereArgs,                                           // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                null                                           // How the rows should be ordered
+        );
+        if(cursor.getCount() == 1) {
+            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
+            return BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
+                    .build();
+        }
+        return null;
     }
+
 }
