@@ -22,6 +22,7 @@ import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
@@ -32,6 +33,8 @@ import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLate
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 
 public class MainActivity extends AppCompatActivity {
@@ -264,14 +267,22 @@ public class MainActivity extends AppCompatActivity {
 
         sign(block, getMyPublicKey());
 
-        // TODO: validate
-
-
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
         // TODO: log?
 
-        // only if validated correclty
-        insertInDB(block,db);
-        sendBlock(block);
+        // only if validated correctly
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+            // TODO: log error "Signed block did not validate. Result: " + validation.toString()
+        } else {
+            insertInDB(block,db);
+            sendBlock(block);
+        }
     }
 
     /**
@@ -286,13 +297,22 @@ public class MainActivity extends AppCompatActivity {
                         getMyPublicKey(),null,linkPubKey);
         sign(block,getMyPublicKey());
 
-        // TODO: validate
-        validate(block,dbHelper);
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
         // TODO: log?
 
         // only if validated correctly
-        insertInDB(block,db);
-        sendBlock(block);
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+            // TODO: log error "Signed block did not validate. Result: " + validation.toString()
+        } else {
+            insertInDB(block,db);
+            sendBlock(block);
+        }
     }
 
 
