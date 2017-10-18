@@ -24,8 +24,10 @@ import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 
 public class MainActivity extends AppCompatActivity {
@@ -201,10 +203,11 @@ public class MainActivity extends AppCompatActivity {
 
     //TODO: remove
     public void signBlock() {
+        System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbHelper.getReadableDatabase(),EMPTY_PK.toByteArray()));
         ClientTask task = new ClientTask(
                 editTextDestinationIP.getText().toString(),
                 Integer.parseInt(editTextDestinationPort.getText().toString()),
-                message,
+                createTestBlock(),
                 thisActivity);
         task.execute();
         //TODO: for testing purposes, block insertion in DB must be done in another place
