@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.security.PublicKey;
@@ -27,10 +28,14 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
+import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 
 public class MainActivity extends AppCompatActivity {
+    final static String TRANSACTION = "Hello world!";
+
     BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
@@ -53,7 +58,11 @@ public class MainActivity extends AppCompatActivity {
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-        signBlock();
+            try {
+                signBlock(TRANSACTION.getBytes("UTF-8"),EMPTY_PK.toByteArray());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -93,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
-            dbHelper.insertInDB(message, db);
+            insertInDB(message, db);
         }
 
         updateIP();
@@ -204,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
     //TODO: remove
     public void signBlock() {
         System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbHelper.getReadableDatabase(),EMPTY_PK.toByteArray()));
+        System.out.println("LATEST BLOCK IN DB:\n" + getLatestBlock(dbHelper.getReadableDatabase(),EMPTY_PK.toByteArray()));
         ClientTask task = new ClientTask(
                 editTextDestinationIP.getText().toString(),
                 Integer.parseInt(editTextDestinationPort.getText().toString()),
@@ -211,9 +221,21 @@ public class MainActivity extends AppCompatActivity {
                 thisActivity);
         task.execute();
         //TODO: for testing purposes, block insertion in DB must be done in another place
-        dbHelper.insertInDB(createTestBlock(), db);
+        insertInDB(createTestBlock(), db);
     }
 
+    /**
+     * Sends a block to the connected peer.
+     * @param block - The block to be send
+     */
+    public void sendBlock(BlockProto.TrustChainBlock block) {
+        ClientTask task = new ClientTask(
+                editTextDestinationIP.getText().toString(),
+                Integer.parseInt(editTextDestinationPort.getText().toString()),
+                block,
+                thisActivity);
+        task.execute();
+    }
 
 
     /**
@@ -233,8 +255,10 @@ public class MainActivity extends AppCompatActivity {
         if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
             return;
         }
-        BlockProto.TrustChainBlock block = createBlock(null,dbHelper.getReadableDatabase(),getMyPublicKey().getEncoded(),
+        BlockProto.TrustChainBlock block = createBlock(null,dbHelper.getReadableDatabase(),
+                getMyPublicKey(),
                 linkedBlock,null);
+
         sign(block, getMyPublicKey());
 
         // TODO: validate
@@ -242,8 +266,9 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: log?
 
-        // TODO: add block to database and send
-
+        // only if validated correclty
+        insertInDB(block,db);
+        sendBlock(block);
     }
 
     /**
@@ -251,17 +276,26 @@ public class MainActivity extends AppCompatActivity {
      * Reads from database and inserts new halfblock in database.
      * @param transaction
      */
-    public void signBlock(byte[] transaction) {
-        // transaction should be a dictionary
+    public void signBlock(byte[] transaction, byte[] linkPubKey) {
+        // transaction should be a dictionary TODO: check if this is really needed
+        BlockProto.TrustChainBlock block =
+                createBlock(transaction,dbHelper.getReadableDatabase(),
+                        getMyPublicKey(),null,linkPubKey);
+        sign(block,getMyPublicKey());
 
-        // TODO: implement this method
+        // TODO: validate
 
+        // TODO: log?
+
+        // only if validated correctly
+        insertInDB(block,db);
+        sendBlock(block);
     }
 
 
     // Placeholder TODO: change all places where this method gets called to correct method
-    public PublicKey getMyPublicKey() {
-        return null;
+    public byte[] getMyPublicKey() {
+        return EMPTY_PK.toByteArray();
     }
 
 }
