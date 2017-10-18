@@ -10,12 +10,12 @@ public class ValidationResult {
     int status;
     List<String> errors;
 
-    final static int VALID = 0;
-    final static int PARTIAL = 1;
-    final static int PARTIAL_NEXT = 2;
-    final static int PARTIAL_PREVIOUS = 3;
-    final static int NO_INFO = 4;
-    final static int INVALID = 5;
+    public final static int VALID = 0;
+    public final static int PARTIAL = 1;
+    public final static int PARTIAL_NEXT = 2;
+    public final static int PARTIAL_PREVIOUS = 3;
+    public final static int NO_INFO = 4;
+    public final static int INVALID = 5;
 
     /**
      * Constructor, we always start out thinking everything is fine.
