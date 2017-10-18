@@ -122,7 +122,7 @@ public class TrustChainBlock {
      * Signs this block with a given public key.
      * TODO: implement this method
      */
-    public static void sign(BlockProto.TrustChainBlock block, PublicKey myPubKey) {
+    public static void sign(BlockProto.TrustChainBlock block, byte[] myPubKey) {
 
     }
 
@@ -196,12 +196,8 @@ public class TrustChainBlock {
                 null,
                 null
         );
-        System.out.println("CURSOR SIZE IN GETMAXSEQNUM " + cursor.getCount());
         if(cursor.getCount() == 1) {
             cursor.moveToFirst();
-            System.out.println(Arrays.toString(cursor.getColumnNames()));
-            System.out.println("CURSOR COLUM MAX VALUE: " + cursor.getInt(cursor.getColumnIndex(
-                    "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")")));
             res = cursor.getInt(cursor.getColumnIndex(
                     "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"));
         }
