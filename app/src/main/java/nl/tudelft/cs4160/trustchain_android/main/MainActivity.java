@@ -31,6 +31,7 @@ import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createT
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
+    SQLiteDatabase dbReadable;
+
 
     TextView externalIPText;
     TextView localIPText;
@@ -99,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
         // TODO: key generation
         dbHelper = new TrustChainDBHelper(thisActivity);
         db = dbHelper.getWritableDatabase();
+        dbReadable = dbHelper.getReadableDatabase();
 
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
@@ -121,7 +125,6 @@ public class MainActivity extends AppCompatActivity {
      */
     public boolean isStartedFirstTime() {
         // check if a genesis block is present in database
-        SQLiteDatabase dbReadable = dbHelper.getReadableDatabase();
         String[] projection = {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
         };
@@ -212,8 +215,8 @@ public class MainActivity extends AppCompatActivity {
 
     //TODO: remove
     public void signBlock() {
-        System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbHelper.getReadableDatabase(),EMPTY_PK.toByteArray()));
-        System.out.println("LATEST BLOCK IN DB:\n" + getLatestBlock(dbHelper.getReadableDatabase(),EMPTY_PK.toByteArray()));
+        System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbReadable,EMPTY_PK.toByteArray()));
+        System.out.println("LATEST BLOCK IN DB:\n" + getLatestBlock(dbReadable,EMPTY_PK.toByteArray()));
         ClientTask task = new ClientTask(
                 editTextDestinationIP.getText().toString(),
                 Integer.parseInt(editTextDestinationPort.getText().toString()),
@@ -255,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
         if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
             return;
         }
-        BlockProto.TrustChainBlock block = createBlock(null,dbHelper.getReadableDatabase(),
+        BlockProto.TrustChainBlock block = createBlock(null,dbReadable,
                 getMyPublicKey(),
                 linkedBlock,null);
 
@@ -279,12 +282,12 @@ public class MainActivity extends AppCompatActivity {
     public void signBlock(byte[] transaction, byte[] linkPubKey) {
         // transaction should be a dictionary TODO: check if this is really needed
         BlockProto.TrustChainBlock block =
-                createBlock(transaction,dbHelper.getReadableDatabase(),
+                createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,linkPubKey);
         sign(block,getMyPublicKey());
 
         // TODO: validate
-
+        validate(block,dbHelper);
         // TODO: log?
 
         // only if validated correctly
@@ -294,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Placeholder TODO: change all places where this method gets called to correct method
-    public byte[] getMyPublicKey() {
+    public static byte[] getMyPublicKey() {
         return EMPTY_PK.toByteArray();
     }
 

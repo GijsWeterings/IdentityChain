@@ -7,10 +7,14 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
 
 /**
  * Created by meijer on 20-9-17.
@@ -68,7 +72,7 @@ public class TrustChainBlock {
     public static BlockProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
                                                          byte[] mypubk, BlockProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
-        BlockProto.TrustChainBlock latestBlock = getLatestBlock(db,mypubk);
+        BlockProto.TrustChainBlock latestBlock = getBlock(db,mypubk,getMaxSeqNum(db,mypubk));
 
         long millis = System.currentTimeMillis();
         Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
@@ -127,17 +131,224 @@ public class TrustChainBlock {
     }
 
     /**
-     * Gets the latest block associated with the given public key from the database
+     * Validates this block against what is known in the database in 6 steps.
+     * Returns the validation result and errors. Any error will result in a false validation.
+     * @param block - block that needs to be validated
+     * @param dbHelper - dbHelper which contains the db to check against
+     * @return a tuple of a boolean validation result and a list of string errors TODO: tuples don't exist in java, maybe first entry of list as boolean value
+     */
+    public static ValidationResult validate(BlockProto.TrustChainBlock block, TrustChainDBHelper dbHelper) throws Exception {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        ValidationResult result = new ValidationResult();
+        List<String> errors = new ArrayList<>();
+
+        // ** Step 1: Get all the related blocks from the database **
+        // The validity of blocks is immutable. Once they are accepted they cannot change validation
+        // result. In such cases subsequent blocks can get validation errors and will not get
+        // inserted into the database. Thus we can assume that all retrieved blocks are all valid
+        // themselves. Blocks can get inserted into the database in any order, so we need to find
+        // successors, predecessors as well as the block itself and its linked block.
+        BlockProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        BlockProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
+        BlockProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()-1);
+        BlockProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()+1);
+
+        // ** Step 2: Determine the maximum validation level **
+        // Depending on the blocks we get from the database, we can decide to reduce the validation
+        // level. We must do this prior to flagging any errors. This way we are only ever reducing
+        // the validation level without having to resort to min()/max() every time we set it.
+        if(prevBlock == null && nextBlock == null) {
+            // If it is not a genesis block we know nothing about this public key, else pretend prevblock exists
+            if(!isGenesisBlock(block)) {
+                result.setNoInfo();
+            } else {
+                result.setPartialNext();
+            }
+        } else if(prevBlock == null) {
+            // If it is not a genesis block we are missing the previous block
+            if(!isGenesisBlock(block)){
+                result.setPartialPrevious();
+                // If there is a gap between this block and the next we have a full partial validation result
+                if(nextBlock.getSequenceNumber() != block.getSequenceNumber() + 1){
+                    result.setPartial();
+                }
+            }
+            // if it is a genesis block, ignore that there is no previous block, check for a gap for the next block
+            else if(nextBlock.getSequenceNumber() != block.getSequenceNumber() + 1) {
+                result.setPartialNext();
+            }
+        } else if(nextBlock == null) {
+            // The next block is missing so partial next at best
+            result.setPartialNext();
+            // If there is a gap between this and the previous block, full partial validation result
+            if(prevBlock.getSequenceNumber() != block.getSequenceNumber() - 1) {
+                result.setPartial();
+            }
+        } else {
+            // Both sides have known blocks, check for gaps
+            // check gap previous
+            if(prevBlock.getSequenceNumber() != block.getSequenceNumber() - 1) {
+                result.setPartialPrevious();
+                // check gap previous and next
+                if(nextBlock.getSequenceNumber() != block.getSequenceNumber() + 1){
+                    result.setPartial();
+                }
+            } else {
+                // check gap next block, if not the result stays valid
+                if(nextBlock.getSequenceNumber() != block.getSequenceNumber() + 1){
+                    result.setPartialNext();
+                }
+            }
+        }
+
+        // ** Step 3: validate that the block is sane, including the validity of the transaction **
+        // Some basic self checks are performed. It is possible to violate these when constructing a
+        // block in code or getting a block from the database. The wire format is such that it is
+        // impossible to hit many of these for blocks that went over the network.
+
+        // TODO: implement method to validate transaction
+
+        if(block.getSequenceNumber() < GENESIS_SEQ) {
+            result.setInvalid();
+            errors.add("Sequence number is prior to genesis");
+        }
+        if(block.getLinkSequenceNumber() < GENESIS_SEQ && block.getLinkSequenceNumber() != UNKNOWN_SEQ) {
+            result.setInvalid();
+            errors.add("Link sequence number not empty and is prior to genesis");
+        }
+        // TODO: check for validity of public key; if not: err("Public key is not valid")
+
+        // If public key is valid, check validity of signature
+
+        // TODO: implement signature checking
+
+        // If a block is linked with a block of the same owner it does not serve any purpose and is invalid.
+        if(block.getPublicKey().equals(block.getLinkPublicKey())) {
+            result.setInvalid();
+            errors.add("Self linked block");
+        }
+        // If it is implied that block is a genesis block, check if it correctly set up
+        if(isGenesisBlock(block)){
+            if(block.getSequenceNumber() == GENESIS_SEQ && block.getPreviousHash() != GENESIS_HASH) {
+                result.setInvalid();
+                errors.add("Sequence number implies previous hash should be Genesis Hash");
+            }
+            if(block.getSequenceNumber() != GENESIS_SEQ && block.getPreviousHash() == GENESIS_HASH) {
+                result.setInvalid();
+                errors.add("Sequence number implies previous hash should not be Genesis Hash");
+            }
+        }
+
+        // ** Step 4: does the database already know about this block? **
+        // If so it should be equal or else we caught a branch in someones trustchain.
+        if(dbBlock != null) {
+            // Sanity check to see if database returned the expected block, we want to make sure we
+            // have the right block before making a fraud claim.
+            if(!dbBlock.getPublicKey().equals(block.getPublicKey()) ||
+                    dbBlock.getSequenceNumber() != block.getSequenceNumber()) {
+                throw new Exception("Database returned unexpected block");
+            }
+            if(!dbBlock.getLinkPublicKey().equals(block.getLinkPublicKey())) {
+                result.setInvalid();
+                errors.add("Link public key does not match known block.");
+            }
+            if(dbBlock.getLinkSequenceNumber() != block.getLinkSequenceNumber()) {
+                result.setInvalid();
+                errors.add("Link sequence number does not match known block.");
+            }
+            if(!dbBlock.getPreviousHash().equals(block.getPreviousHash())) {
+                result.setInvalid();
+                errors.add("Previous hash does not match known block.");
+            }
+            if(!dbBlock.getSignature().equals(block.getSignature())) {
+                result.setInvalid();
+                errors.add("Signature does not match known block");
+            }
+            // If the known block is not equal to block in db, and the signatures are valid, we have
+            // a double signed PK/seqNum. Fraud!
+            if(!hash(dbBlock).equals(hash(block)) && !errors.contains("Invalid signature") &&
+                    !errors.contains("Public key not valid")) {
+                result.setInvalid();
+                errors.add("Double sign fraud");
+            }
+        }
+
+        // ** Step 5: Does the database have the linked block? **
+        // If so, do the values match up? If the values do not match up someone committed fraud, but
+        // it is impossible to know who. So we just invalidate the block that is the latter to get
+        // validated. We can also detect double counter sign fraud at this point.
+        if(linkBlock != null) {
+            // Sanity check to see if the database returned the expected block, we want to make sure
+            // we have the right block before making a fraud claim.
+            if(!linkBlock.getPublicKey().equals(block.getPublicKey()) ||
+                    (linkBlock.getLinkSequenceNumber() != block.getSequenceNumber() &&
+                    linkBlock.getSequenceNumber() != block.getLinkSequenceNumber())) {
+                throw new Exception("Database returned unexpected block");
+            }
+            if(!block.getPublicKey().equals(linkBlock.getPublicKey())) {
+                result.setInvalid();
+                errors.add("Public key mismatch on linked block");
+            } else if(block.getLinkSequenceNumber() != UNKNOWN_SEQ) {
+                // Self counter signs another block (link). If linkBlock has a linked block that is not
+                // equal to block, then block is fraudulent, since it tries to countersign a block
+                // that is already countersigned.
+                BlockProto.TrustChainBlock linkLinkBlock = getBlock(db,
+                        linkBlock.getLinkPublicKey().toByteArray(), linkBlock.getLinkSequenceNumber());
+                if(linkLinkBlock != null && !Arrays.equals(hash(linkLinkBlock), hash(block))) {
+                    result.setInvalid();
+                    errors.add("Double countersign fraud");
+                }
+            }
+        }
+
+        // ** Step 6: Did we get blocks from the database before or after block? **
+        // They should be checked for violations too.
+        if(prevBlock != null) {
+            // Sanity check of the previous block the database gave us
+            if(!prevBlock.getPublicKey().equals(block.getPublicKey()) ||
+                    prevBlock.getSequenceNumber() >= block.getSequenceNumber()) {
+                throw new Exception("Database returned unexpected block");
+            }
+            // If there is no gap, the previous hash should be equal to the hash of prevBlock
+            if(prevBlock.getSequenceNumber() == block.getSequenceNumber() - 1 &&
+                    !Arrays.equals(block.getPreviousHash().toByteArray(), hash(prevBlock))) {
+                result.setInvalid();
+                errors.add("Previous hash is not equal to the hash id of the previous block");
+                // Is this fraud? It is certainly an error, but fixing it would require a different
+                // signature on the same sequence number, which would be fraud.
+            }
+        }
+        if(nextBlock != null) {
+            // Sanity check of the previous block the database gave us
+            if(!nextBlock.getPublicKey().equals(block.getPublicKey()) ||
+                    nextBlock.getSequenceNumber() <= block.getSequenceNumber()) {
+                throw new Exception("Database returned unexpected block");
+            }
+            // If there is no gap, the previous hash of nextBlock should be equal to the hash of block
+            if(nextBlock.getSequenceNumber() == block.getSequenceNumber() + 1 &&
+                    !Arrays.equals(nextBlock.getPreviousHash().toByteArray(), hash(block))) {
+                result.setInvalid();
+                errors.add("Next hash is not equal to the hash id of the block");
+                // Again, this might not be fraud, but fixing it can only result in fraud.
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Retrieves the block associated with the given public key and sequence number from the database
      * @param dbReadable - Database to search in
      * @param pubkey - Public key of which the latest block should be found
+     * @param seqNumber - Int value of the sequence number of the block to be retrieved
      * @return The latest block in the database or null if something went wrong
      */
-    public static BlockProto.TrustChainBlock getLatestBlock(SQLiteDatabase dbReadable, byte[] pubkey) {
+    public static BlockProto.TrustChainBlock getBlock(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber) {
         BlockProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
         String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
-                Integer.toString(getMaxSeqNum(dbReadable,pubkey))};
+                Integer.toString(seqNumber)};
 
         Cursor cursor = dbReadable.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
@@ -173,6 +384,111 @@ public class TrustChainBlock {
         cursor.close();
         return res;
     }
+
+    /**
+     * Returns the block with the highest sequence number smaller than the given sequence number and
+     * the same public key: the previous block in the chain. Sequence number is allowed to be another
+     * value than seqNumber - 1.
+     * @param dbReadable - Database from which to read
+     * @param pubkey - Public key of the block of which to find the previous block in the chain
+     * @param seqNumber - Sequence number of block of which to find the previous block in the chain
+     * @return The previous TrustChainBlock in the chain
+     */
+    public static BlockProto.TrustChainBlock getBlockBefore(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
+        BlockProto.TrustChainBlock res = null;
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " < ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+                Integer.toString(seqNumber)};
+        String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " DESC";
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                null,                                           // The columns to return, in this case all columns
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                orderBy                                            // How the rows should be ordered
+        );
+        if(cursor.getCount() >= 1) {
+            cursor.moveToFirst();
+            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
+
+            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
+                    .build();
+        }
+        cursor.close();
+        return res;
+    }
+
+    /**
+     * Returns the block with the lowest sequence number greater than the given sequence number and
+     * the same public key: The next block in the chain. Sequence number is allowed to be another
+     * value than seqNumber + 1.
+     * @param dbReadable - Database from which to read
+     * @param pubkey - Public key of the block of which to find the previous block in the chain
+     * @param seqNumber - Sequence number of block of which to find the previous block in the chain
+     * @return The next TrustChainBlock in the chain
+     */
+    public static BlockProto.TrustChainBlock getBlockAfter(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
+        BlockProto.TrustChainBlock res = null;
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " > ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+                Integer.toString(seqNumber)};
+        String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " ASC";
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                null,                                           // The columns to return, in this case all columns
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                orderBy                                            // How the rows should be ordered
+        );
+        if(cursor.getCount() >= 1) {
+            cursor.moveToFirst();
+            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
+
+            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
+                    .build();
+        }
+        cursor.close();
+        return res;
+    }
+
 
     /**
      * Get the maximum sequence number in the database associated with the given public key

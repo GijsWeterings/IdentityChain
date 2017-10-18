@@ -1,11 +1,14 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
+import java.util.List;
+
 /**
  * Created by wkmeijer on 18-10-17.
  */
 
 public class ValidationResult {
     int status;
+    List<String> errors;
 
     final static int VALID = 0;
     final static int PARTIAL = 1;
@@ -67,6 +70,18 @@ public class ValidationResult {
     public ValidationResult setInvalid(){
         this.status = INVALID;
         return this;
+    }
+
+    public int getStatus(){
+        return status;
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
     }
 
     /**
