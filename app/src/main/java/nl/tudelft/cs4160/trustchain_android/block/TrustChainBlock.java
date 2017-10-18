@@ -7,6 +7,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
@@ -45,7 +46,7 @@ public class TrustChainBlock {
         BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
                 .setTransaction(ByteString.EMPTY)
                 .setPublicKey(EMPTY_PK)
-                .setSequenceNumber(2)
+                .setSequenceNumber(9)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
@@ -61,7 +62,7 @@ public class TrustChainBlock {
      * @param db - database in which the previous blocks of this peer can be found
      * @param mypubk - the public key of this peer
      * @param linkedBlock - The halfblock that is linked to this to be created half block, can be null
-     * @param linkedpubk - The public key of the linked peer
+     * @param linkpubk - The public key of the linked peer
      * @return a new half block
      */
     public static BlockProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
@@ -127,40 +128,32 @@ public class TrustChainBlock {
 
     /**
      * Gets the latest block associated with the given public key from the database
-     * @param db - Database to search in
+     * @param dbReadable - Database to search in
      * @param pubkey - Public key of which the latest block should be found
-     *
-     *               TODO: add select max SEQ_NUM to query
+     * @return The latest block in the database or null if something went wrong
      */
     public static BlockProto.TrustChainBlock getLatestBlock(SQLiteDatabase dbReadable, byte[] pubkey) {
-        String[] projection = {
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_TX,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME
-        };
-
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8()};
+        BlockProto.TrustChainBlock res = null;
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+                Integer.toString(getMaxSeqNum(dbReadable,pubkey))};
 
         Cursor cursor = dbReadable.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                projection,                                     // The columns to return
-                whereClause,                                           // Filter for which rows to return
-                whereArgs,                                           // Filter arguments
+                null,                                           // The columns to return, in this case all columns
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
                 null,                                           // Declares how to group rows
                 null,                                           // Declares which row groups to include
-                null                                           // How the rows should be ordered
+                null                                            // How the rows should be ordered
         );
         if(cursor.getCount() == 1) {
+            cursor.moveToFirst();
             int nanos = java.sql.Timestamp.valueOf(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
-            return BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
                     .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
@@ -177,7 +170,43 @@ public class TrustChainBlock {
                     .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
                     .build();
         }
-        return null;
+        cursor.close();
+        return res;
+    }
+
+    /**
+     * Get the maximum sequence number in the database associated with the given public key
+     * @param dbReadable - database in which to search
+     * @param pubkey - public key for which to search for blocks
+     * @return the maximum sequence number found
+     */
+    public static int getMaxSeqNum(SQLiteDatabase dbReadable, byte[] pubkey) {
+        int res = -1;
+        String[] projection = new String[] {"max(" +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"};
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8()};
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,
+                projection,
+                whereClause,
+                whereArgs,
+                null,
+                null,
+                null
+        );
+        System.out.println("CURSOR SIZE IN GETMAXSEQNUM " + cursor.getCount());
+        if(cursor.getCount() == 1) {
+            cursor.moveToFirst();
+            System.out.println(Arrays.toString(cursor.getColumnNames()));
+            System.out.println("CURSOR COLUM MAX VALUE: " + cursor.getInt(cursor.getColumnIndex(
+                    "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")")));
+            res = cursor.getInt(cursor.getColumnIndex(
+                    "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"));
+        }
+        cursor.close();
+        return res;
     }
 
 }
