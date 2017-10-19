@@ -3,16 +3,19 @@ package nl.tudelft.cs4160.trustchain_android.block;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * Created by meijer on 20-9-17.
  */
 
 public class TrustChainBlock {
-    static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
-    static final int GENESIS_SEQ = 1;
-    static final int UNKNOWN_SEQ = 0;
-    static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
-    static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
+    public static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
+    public static final int GENESIS_SEQ = 1;
+    public static final int UNKNOWN_SEQ = 0;
+    public static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
+    public static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
 
     /**
      * Creates a TrustChain genesis block using protocol buffers.
@@ -23,6 +26,21 @@ public class TrustChainBlock {
                 .setTransaction(ByteString.EMPTY)
                 .setPublicKey(EMPTY_PK)
                 .setSequenceNumber(GENESIS_SEQ)
+                .setLinkPublicKey(EMPTY_PK)
+                .setLinkSequenceNumber(UNKNOWN_SEQ)
+                .setPreviousHash(GENESIS_HASH)
+                .setSignature(EMPTY_SIG)
+                .setInsertTime(Timestamp.getDefaultInstance())
+                .build();
+        return block;
+    }
+
+    // TODO: REMOVE
+    public static BlockProto.TrustChainBlock createTestBlock() {
+        BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
+                .setTransaction(ByteString.EMPTY)
+                .setPublicKey(EMPTY_PK)
+                .setSequenceNumber(2)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
@@ -72,4 +90,20 @@ public class TrustChainBlock {
     public static boolean isGenesisBlock(BlockProto.TrustChainBlock block) {
         return (block.getSequenceNumber() == GENESIS_SEQ) || (block.getPreviousHash() == GENESIS_HASH);
     }
+
+    /**
+     * Returns a sha256 hash of the block.
+     * @param block - a proto Trustchain block
+     * @return the sha256 hash of the byte array of the block
+     */
+    public static byte[] hash(BlockProto.TrustChainBlock block) {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return md.digest(block.toByteArray());
+    }
+
 }

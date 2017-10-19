@@ -1,5 +1,8 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
@@ -13,17 +16,25 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.List;
 
+import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
 
 public class MainActivity extends AppCompatActivity {
     BlockProto.TrustChainBlock message;
+    TrustChainDBHelper dbHelper;
+    SQLiteDatabase db;
 
     TextView externalIPText;
     TextView localIPText;
     TextView statusText;
     Button connectionButton;
+    Button chainExplorerButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
 
@@ -42,6 +53,16 @@ public class MainActivity extends AppCompatActivity {
                     message,
                     thisActivity);
             task.execute();
+            //TODO: for testing purposes, block insertion in DB must be done in another place
+            dbHelper.insertInDB(createTestBlock(), db);
+        }
+    };
+
+    View.OnClickListener chainExplorerButtonListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(thisActivity, ChainExplorerActivity.class);
+            startActivity(intent);
         }
     };
 
@@ -63,19 +84,24 @@ public class MainActivity extends AppCompatActivity {
         editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
         editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
         connectionButton = (Button) findViewById(R.id.connection_button);
+        chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
     }
 
     private void init() {
-        // TODO: database creation and key generation
-        // TODO: save genesis block in database instead of sending over the network
+        // TODO: key generation
+        dbHelper = new TrustChainDBHelper(thisActivity);
+        db = dbHelper.getWritableDatabase();
+
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
+            dbHelper.insertInDB(message, db);
         }
 
         updateIP();
         updateLocalIPField(getLocalIPAddress());
 
         connectionButton.setOnClickListener(connectionButtonListener);
+        chainExplorerButton.setOnClickListener(chainExplorerButtonListener);
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
@@ -86,9 +112,30 @@ public class MainActivity extends AppCompatActivity {
      * @return state - false if the app has been initialized before, true if first time app started
      */
     public boolean isStartedFirstTime() {
-        // TODO: check if a genesis block is present in database
-        // TODO: check if a keypair is already created
+        // check if a genesis block is present in database
+        SQLiteDatabase dbReadable = dbHelper.getReadableDatabase();
+        String[] projection = {
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
+        };
+
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
+        String[] whereArgs = new String[] {Integer.toString(TrustChainBlock.GENESIS_SEQ)};
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                projection,                                     // The columns to return
+                whereClause,                                           // Filter for which rows to return
+                whereArgs,                                           // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                null                                           // How the rows should be ordered
+        );
+        if(cursor.getCount() == 1) {
+            return false;
+        }
         return true;
+
+        // TODO: check if a keypair is already created
     }
 
     /**

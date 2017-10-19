@@ -50,11 +50,21 @@
             android:layout_height="wrap_content"
             android:text="@string/default_port" />
 
-        <Button
-            android:id="@+id/connection_button"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/connect" />
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/connection_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/connect" />
+            <Button
+                android:id="@+id/chain_explorer_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chain_explorer"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/status"
