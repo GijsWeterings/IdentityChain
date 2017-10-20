@@ -1,29 +1,51 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.Activity;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 
+import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
+import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.shouldSign;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
  */
 class Server {
-    Activity callingActivity;
+    private static final String TAG = "Server";
+    MainActivity callingActivity;
     ServerSocket serverSocket;
     TextView statusText;
 
     String messageLog = "";
     String responseLog = "";
 
-    public Server(Activity callingActivity) {
+    public Server(MainActivity callingActivity) {
         this.callingActivity = callingActivity;
     }
 
@@ -60,6 +82,11 @@ class Server {
                 while (true) {
                     messageLog = "";
                     Socket socket = serverSocket.accept();
+
+                    // We have received a message, this could be either a crawl request or a halfblock
+                    // TODO: detect which it is and handle the crawlrequest
+
+                    // In case we received a halfblock
                     BlockProto.TrustChainBlock message = BlockProto.TrustChainBlock.parseFrom(socket.getInputStream());
 
                     count++;
@@ -77,6 +104,10 @@ class Server {
                     SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                             socket, count);
                     socketServerReplyThread.run();
+
+                    receivedHalfBlock(socket.getInetAddress(), socket.getPort(), message);
+
+
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -121,6 +152,65 @@ class Server {
                     }
                 });
             }
+        }
+
+    }
+
+    /**
+     * A half block was send to us and received by us. Someone wants this peer to create the other half
+     * and send it back. This method handles that 'request'.
+     *  - Checks if the block is valid and puts it in the database if not invalid.
+     *  - Checks if the block is addressed to me.
+     *  - Determines if we should sign the block
+     *  - Check if block matches with its previous block, send crawl request if more information is needed
+     */
+    public void receivedHalfBlock(InetAddress address, int port, BlockProto.TrustChainBlock block) {
+        TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
+        Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), port);
+        Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
+            " and public key: " + bytesToHex(peer.getPublicKey()));
+
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Log.i(TAG,"Received block validation result " + validation.toString() + "(" + block.toString() + ")");
+
+        if(validation.getStatus() == ValidationResult.INVALID) {
+            return;
+        } else {
+            insertInDB(block,dbHelper.getWritableDatabase());
+        }
+
+        // check if addressed to me and if we did not sign it already, if so: do nothing.
+        if(block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
+                !Arrays.equals(block.getLinkPublicKey().toByteArray(), getMyPublicKey()) ||
+                null != getBlock(dbHelper.getReadableDatabase(),
+                            block.getLinkPublicKey().toByteArray(),
+                            block.getLinkSequenceNumber())) {
+            return;
+        }
+
+        // determine if we should sign the block, if not: do nothing
+        if(!shouldSign(block)) {
+            return;
+        }
+
+
+        // check if block matches up with its previous block
+        // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
+        // the gap and delay the method until the gap is filled.
+        if(validation.getStatus() == PARTIAL_PREVIOUS || validation.getStatus() == PARTIAL ||
+                validation.getStatus() == NO_INFO) {
+            Log.i(TAG, "Request block could not be validated sufficiently, requested crawler. " +
+                    validation.toString());
+            // TODO: send crawl request
+        } else {
+            callingActivity.signBlock(peer, block);
         }
 
     }
