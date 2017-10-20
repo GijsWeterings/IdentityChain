@@ -105,7 +105,7 @@ class Server {
                             socket, count);
                     socketServerReplyThread.run();
 
-                    receivedHalfBlock(socket.getInetAddress(), socket.getPort(), message);
+                    synchronizedReceivedHalfBlock(socket.getInetAddress(), socket.getPort(), message);
 
 
                 }
@@ -164,7 +164,7 @@ class Server {
      *  - Determines if we should sign the block
      *  - Check if block matches with its previous block, send crawl request if more information is needed
      */
-    public void receivedHalfBlock(InetAddress address, int port, BlockProto.TrustChainBlock block) {
+    public void synchronizedReceivedHalfBlock(InetAddress address, int port, BlockProto.TrustChainBlock block) {
         TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
         Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), port);
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
@@ -199,7 +199,6 @@ class Server {
         if(!shouldSign(block)) {
             return;
         }
-
 
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
