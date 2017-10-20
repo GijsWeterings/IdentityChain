@@ -24,6 +24,9 @@ public class TrustChainBlock {
     public static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
     public static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
 
+    // TODO: remove
+    public static final ByteString TEMP_PEER_PK = ByteString.copyFrom(new byte[] {0x01});
+
     /**
      * Creates a TrustChain genesis block using protocol buffers.
      * @return block - A BlockProto.TrustChainBlock
@@ -188,7 +191,13 @@ public class TrustChainBlock {
         // block in code or getting a block from the database. The wire format is such that it is
         // impossible to hit many of these for blocks that went over the network.
 
-        // TODO: implement method to validate transaction
+        ValidationResult txValidation = validateTransaction(block, db);
+        if(txValidation.getStatus() != ValidationResult.VALID) {
+            result.setStatus(txValidation.getStatus());
+            for (String error : txValidation.getErrors()) {
+                errors.add(error);
+            }
+        }
 
         if(block.getSequenceNumber() < GENESIS_SEQ) {
             result.setInvalid();
@@ -315,7 +324,7 @@ public class TrustChainBlock {
             }
         }
 
-        return result;
+        return result.setErrors(errors);
     }
 
     /**
@@ -443,7 +452,7 @@ public class TrustChainBlock {
                 whereArgs,                                      // Filter arguments
                 null,                                           // Declares how to group rows
                 null,                                           // Declares which row groups to include
-                orderBy                                            // How the rows should be ordered
+                orderBy                                         // How the rows should be ordered
         );
         if(cursor.getCount() >= 1) {
             cursor.moveToFirst();
@@ -470,7 +479,6 @@ public class TrustChainBlock {
         cursor.close();
         return res;
     }
-
 
     /**
      * Get the maximum sequence number in the database associated with the given public key
@@ -501,6 +509,17 @@ public class TrustChainBlock {
         }
         cursor.close();
         return res;
+    }
+
+    /**
+     * Validates the transaction of a block, for now a transaction can be anything so no validation
+     * method is implemented.
+     * @param block - The block containing the to-be-checked transaction.
+     * @param db - Database to validate against
+     * @return
+     */
+    public static ValidationResult validateTransaction(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
+        return new ValidationResult();
     }
 
 }

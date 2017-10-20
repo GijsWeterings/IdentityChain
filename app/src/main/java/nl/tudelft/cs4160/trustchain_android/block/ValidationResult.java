@@ -72,6 +72,20 @@ public class ValidationResult {
         return this;
     }
 
+    /**
+     * General method for setting the status.
+     * @param newStatus - Integer representing the new status
+     * @return
+     */
+    public ValidationResult setStatus(int newStatus){
+        if(0 <= newStatus && status < 6) {
+            this.status = newStatus;
+            return this;
+        } else {
+            return null;
+        }
+    }
+
     public int getStatus(){
         return status;
     }
@@ -80,8 +94,9 @@ public class ValidationResult {
         return errors;
     }
 
-    public void setErrors(List<String> errors) {
+    public ValidationResult setErrors(List<String> errors) {
         this.errors = errors;
+        return this;
     }
 
     /**

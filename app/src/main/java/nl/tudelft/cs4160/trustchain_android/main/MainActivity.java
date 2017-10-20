@@ -15,6 +15,8 @@ import android.widget.TextView;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,6 +31,7 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
@@ -57,14 +60,18 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Listener for the connection button.
-     * On click a message is sent to the connected device.
-     * This message should already be in the database.
+     * On click a block is created and send to a peer.
+     * TODO: For now a halfblock is created and send, this should be changed to first sending a crawl
+     * TODO: request to either get some information on the peer, like its pubKey which is needed for
+     * TODO: building a block. Or to check whether the information we have associated with this IP
+     * TODO: is still correct. (although we can never get a valid full block anyway when we send it
+     * TODO: to the wrong person)
      */
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
             Peer peer = new Peer(
-                    EMPTY_PK.toByteArray(),
+                    TEMP_PEER_PK.toByteArray(),
                     editTextDestinationIP.getText().toString(),
                     Integer.parseInt(editTextDestinationPort.getText().toString()));
             try {
@@ -279,10 +286,9 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Builds a half block with the transaction.
      * Reads from database and inserts new halfblock in database.
-     * @param transaction
+     * @param transaction - a transaction which should be embedded in the block
      */
     public void signBlock(byte[] transaction, Peer peer) {
-        // transaction should be a dictionary TODO: check if this is really needed
         BlockProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,peer.getPublicKey());
@@ -300,8 +306,10 @@ public class MainActivity extends AppCompatActivity {
                 ", validation result: " + validation.toString());
 
         // only send block if validated correctly
+        // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
         if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
-            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString());
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
+                + validation.getErrors().toString());
         } else {
             insertInDB(block,db);
             sendBlock(peer,block);
