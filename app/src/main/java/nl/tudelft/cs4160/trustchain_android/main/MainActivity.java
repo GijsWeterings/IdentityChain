@@ -275,8 +275,10 @@ public class MainActivity extends AppCompatActivity {
                 ", validation result: " + validation.toString());
 
         // only send block if validated correctly
+        // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
         if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
-            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString());
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
+                    + validation.getErrors().toString());
         } else {
             insertInDB(block,db);
             sendBlock(peer,block);
@@ -316,10 +318,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     // Placeholder TODO: change all places where this method gets called to correct method
     public static byte[] getMyPublicKey() {
         return EMPTY_PK.toByteArray();
+    }
+
+
+    /**
+     * Retrieves the dbhelper from mainactivity.
+     * @return
+     */
+    public TrustChainDBHelper getDbHelper() {
+        return dbHelper;
+    }
+
+    /**
+     * Checks if we should sign the block. For now there is no reason to not sign a block.
+     * @param block - The block for which we might want to sign.
+     * @return
+     */
+    public static boolean shouldSign(BlockProto.TrustChainBlock block) {
+        return true;
     }
 
 }
