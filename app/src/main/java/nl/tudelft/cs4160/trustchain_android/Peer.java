@@ -15,6 +15,22 @@ public class Peer {
         this.port = port;
     }
 
+    public byte[] getPublicKey() {
+        return publicKey;
+    }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String toString() {
+        String res = "<Peer: [";
+        res += publicKey + ":" + port + ",PubKey: " + publicKey.toString() + "]>";
+        return res;
+    }
 
 }

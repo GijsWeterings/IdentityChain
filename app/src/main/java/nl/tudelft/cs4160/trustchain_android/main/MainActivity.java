@@ -65,8 +65,12 @@ public class MainActivity extends AppCompatActivity {
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
+            Peer peer = new Peer(
+                    EMPTY_PK.toByteArray(),
+                    editTextDestinationIP.getText().toString(),
+                    Integer.parseInt(editTextDestinationPort.getText().toString()));
             try {
-                signBlock(TRANSACTION.getBytes("UTF-8"),EMPTY_PK.toByteArray());
+                signBlock(TRANSACTION.getBytes("UTF-8"),peer);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -235,10 +239,10 @@ public class MainActivity extends AppCompatActivity {
      * Sends a block to the connected peer.
      * @param block - The block to be send
      */
-    public void sendBlock(BlockProto.TrustChainBlock block) {
+    public void sendBlock(Peer peer, BlockProto.TrustChainBlock block) {
         ClientTask task = new ClientTask(
-                editTextDestinationIP.getText().toString(),
-                Integer.parseInt(editTextDestinationPort.getText().toString()),
+                peer.getIpAddress(),
+                peer.getPort(),
                 block,
                 thisActivity);
         task.execute();
@@ -282,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
             // TODO: log error "Signed block did not validate. Result: " + validation.toString()
         } else {
             insertInDB(block,db);
-            sendBlock(block);
+            sendBlock(peer,block);
         }
     }
 
@@ -291,11 +295,11 @@ public class MainActivity extends AppCompatActivity {
      * Reads from database and inserts new halfblock in database.
      * @param transaction
      */
-    public void signBlock(byte[] transaction, byte[] linkPubKey) {
+    public void signBlock(byte[] transaction, Peer peer) {
         // transaction should be a dictionary TODO: check if this is really needed
         BlockProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
-                        getMyPublicKey(),null,linkPubKey);
+                        getMyPublicKey(),null,peer.getPublicKey());
         sign(block,getMyPublicKey());
 
         ValidationResult validation;
@@ -312,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
             // TODO: log error "Signed block did not validate. Result: " + validation.toString()
         } else {
             insertInDB(block,db);
-            sendBlock(block);
+            sendBlock(peer,block);
         }
     }
 
