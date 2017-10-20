@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 public class ChainExplorerActivity extends AppCompatActivity {

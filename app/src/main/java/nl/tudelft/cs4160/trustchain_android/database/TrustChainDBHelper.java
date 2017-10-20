@@ -69,9 +69,6 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      *          returns -1 as an error indicator.
      */
     public static long insertInDB(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
-//        if(db == null) {
-//            return -1;
-//        }
         ContentValues values = new ContentValues();
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toStringUtf8());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toStringUtf8());
