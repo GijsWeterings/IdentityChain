@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
+import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
@@ -29,7 +30,7 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
@@ -219,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
     //TODO: remove
     public void signBlock() {
         System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbReadable,EMPTY_PK.toByteArray()));
-        System.out.println("LATEST BLOCK IN DB:\n" + getLatestBlock(dbReadable,EMPTY_PK.toByteArray()));
+        System.out.println("LATEST BLOCK IN DB:\n" + getBlock(dbReadable,EMPTY_PK.toByteArray(),getMaxSeqNum(db,EMPTY_PK.toByteArray())));
         ClientTask task = new ClientTask(
                 editTextDestinationIP.getText().toString(),
                 Integer.parseInt(editTextDestinationPort.getText().toString()),
@@ -252,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
      *
      * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
      */
-    public void signBlock(PublicKey linkedPubKey,BlockProto.TrustChainBlock linkedBlock) {
+    public void signBlock(Peer peer, BlockProto.TrustChainBlock linkedBlock) {
         // do nothing if linked block is not addressed to me
         if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
             return;
