@@ -1,20 +1,14 @@
 package nl.tudelft.cs4160.trustchain_android;
 
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
-import com.google.protobuf.ByteString;
-
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 public class ChainExplorerActivity extends AppCompatActivity {
