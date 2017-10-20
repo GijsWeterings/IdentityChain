@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,7 +15,6 @@ import android.widget.TextView;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.security.PublicKey;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,11 +27,9 @@ import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
@@ -40,12 +38,12 @@ import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.i
 
 public class MainActivity extends AppCompatActivity {
     final static String TRANSACTION = "Hello world!";
+    private static final String TAG = "MainActivity";
 
     BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
     SQLiteDatabase dbReadable;
-
 
     TextView externalIPText;
     TextView localIPText;
@@ -162,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void updateExternalIPField(String ipAddress) {
         externalIPText.setText(ipAddress);
-        System.out.println("IP ADDRESS: " + ipAddress);
+        Log.i(TAG, "Updated external IP Address: " + ipAddress);
     }
 
     /**
@@ -170,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void updateLocalIPField(String ipAddress) {
         localIPText.setText(ipAddress);
-        System.out.println("IP ADDRESS: " + ipAddress);
+        Log.i(TAG, "Updated local IP Address:" + ipAddress);
     }
 
     /**
@@ -221,20 +219,6 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    //TODO: remove
-    public void signBlock() {
-        System.out.println("MAX SEQ NUM IN DB " + getMaxSeqNum(dbReadable,EMPTY_PK.toByteArray()));
-        System.out.println("LATEST BLOCK IN DB:\n" + getBlock(dbReadable,EMPTY_PK.toByteArray(),getMaxSeqNum(db,EMPTY_PK.toByteArray())));
-        ClientTask task = new ClientTask(
-                editTextDestinationIP.getText().toString(),
-                Integer.parseInt(editTextDestinationPort.getText().toString()),
-                createTestBlock(),
-                thisActivity);
-        task.execute();
-        //TODO: for testing purposes, block insertion in DB must be done in another place
-        insertInDB(createTestBlock(), db);
-    }
-
     /**
      * Sends a block to the connected peer.
      * @param block - The block to be send
@@ -279,11 +263,13 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             return;
         }
-        // TODO: log?
 
-        // only if validated correctly
+        Log.i(TAG,"Signed block to " + bytesToHex(block.getLinkPublicKey().toByteArray()) +
+                ", validation result: " + validation.toString());
+
+        // only send block if validated correctly
         if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
-            // TODO: log error "Signed block did not validate. Result: " + validation.toString()
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString());
         } else {
             insertInDB(block,db);
             sendBlock(peer,block);
@@ -309,11 +295,13 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             return;
         }
-        // TODO: log?
 
-        // only if validated correctly
+        Log.i(TAG,"Signed block to " + bytesToHex(block.getLinkPublicKey().toByteArray()) +
+                ", validation result: " + validation.toString());
+
+        // only send block if validated correctly
         if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
-            // TODO: log error "Signed block did not validate. Result: " + validation.toString()
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString());
         } else {
             insertInDB(block,db);
             sendBlock(peer,block);

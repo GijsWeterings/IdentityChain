@@ -6,15 +6,12 @@ import android.database.sqlite.SQLiteDatabase;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
-
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
 
 /**
  * Created by meijer on 20-9-17.
@@ -36,21 +33,6 @@ public class TrustChainBlock {
                 .setTransaction(ByteString.EMPTY)
                 .setPublicKey(EMPTY_PK)
                 .setSequenceNumber(GENESIS_SEQ)
-                .setLinkPublicKey(EMPTY_PK)
-                .setLinkSequenceNumber(UNKNOWN_SEQ)
-                .setPreviousHash(GENESIS_HASH)
-                .setSignature(EMPTY_SIG)
-                .setInsertTime(Timestamp.getDefaultInstance())
-                .build();
-        return block;
-    }
-
-    // TODO: REMOVE
-    public static BlockProto.TrustChainBlock createTestBlock() {
-        BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
-                .setTransaction(ByteString.EMPTY)
-                .setPublicKey(EMPTY_PK)
-                .setSequenceNumber(9)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
@@ -135,7 +117,7 @@ public class TrustChainBlock {
      * Returns the validation result and errors. Any error will result in a false validation.
      * @param block - block that needs to be validated
      * @param dbHelper - dbHelper which contains the db to check against
-     * @return a tuple of a boolean validation result and a list of string errors TODO: tuples don't exist in java, maybe first entry of list as boolean value
+     * @return a validation result, containing the actual validation result and a list of errors
      */
     public static ValidationResult validate(BlockProto.TrustChainBlock block, TrustChainDBHelper dbHelper) throws Exception {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
