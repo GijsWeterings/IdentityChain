@@ -42,7 +42,7 @@ public class ChainExplorerActivity extends AppCompatActivity {
         String blocksString = "";
         Iterator<BlockProto.TrustChainBlock> iterator = blockList.iterator();
         while(iterator.hasNext()) {
-            blocksString += iterator.next().toString() + "\n\n";
+            blocksString += TrustChainBlock.toString(iterator.next()) + "\n\n";
         }
         databaseContentText.setText(blocksString);
     }
