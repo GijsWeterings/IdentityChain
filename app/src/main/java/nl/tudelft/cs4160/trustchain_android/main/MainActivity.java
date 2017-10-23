@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -13,12 +14,14 @@ import android.widget.TextView;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.security.KeyPair;
 import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.KeyActivity;
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
@@ -27,6 +30,9 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
 
 public class MainActivity extends AppCompatActivity {
+
+    private final static String TAG = MainActivity.class.toString();
+
     BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
@@ -41,6 +47,11 @@ public class MainActivity extends AppCompatActivity {
     EditText editTextDestinationPort;
 
     MainActivity thisActivity;
+
+    /**
+     * Key pair of user
+     */
+    KeyPair kp;
 
     /**
      * Listener for the connection button.
@@ -99,9 +110,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
-        // TODO: key generation
         dbHelper = new TrustChainDBHelper(thisActivity);
         db = dbHelper.getWritableDatabase();
+
+        //create or load keys
+        initKeys();
 
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
@@ -116,6 +129,16 @@ public class MainActivity extends AppCompatActivity {
         keyOptionsButton.setOnClickListener(keyOptionsListener);
         Server socketServer = new Server(thisActivity);
         socketServer.start();
+    }
+
+    private void initKeys() {
+        kp = Key.loadKeys(getApplicationContext());
+        if(kp == null) {
+            kp = Key.createNewKeyPair();
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+            Log.i(TAG, "New keys created");
+        }
     }
 
     /**
@@ -147,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
 
-        // TODO: check if a keypair is already created
+        // TODO: check if a keypair is already created - rico: I don't think this is the right place to check thsi
     }
 
     /**
