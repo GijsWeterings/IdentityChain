@@ -22,9 +22,6 @@ public class KeyActivity extends AppCompatActivity {
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);}
 
-    public final static String DEFAULT_PUB_KEY_FILE = "pub.key";
-    public final static String DEFAULT_PRIV_KEY_FILE = "priv.key";
-
     private Button buttonNewKey;
     private Button signData;
     private TextView textPrivateKey;
@@ -49,11 +46,11 @@ public class KeyActivity extends AppCompatActivity {
 
 
 
-        KeyPair kp = loadKeys();
+        KeyPair kp = Key.loadKeys(getApplicationContext());
         if(kp == null) {
             kp = Key.createNewKeyPair();
-            Key.saveKey(getApplicationContext(), DEFAULT_PUB_KEY_FILE, kp.getPublic());
-            Key.saveKey(getApplicationContext(), DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
         }
         textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
@@ -61,7 +58,7 @@ public class KeyActivity extends AppCompatActivity {
         verifySignature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                KeyPair kp = loadKeys();
+                KeyPair kp = Key.loadKeys(getApplicationContext());
                 byte[] sig = Base64.decode(signedData.getText().toString(), Base64.DEFAULT);
                 byte[] data = new byte[] {0x30, 0x30, 0x30, 0x30,0x30, 0x30, 0x30, 0x30};
                 if(Key.verify(kp.getPublic(), data, sig)) {
@@ -78,8 +75,8 @@ public class KeyActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 KeyPair kp = Key.createNewKeyPair();
-                Key.saveKey(getApplicationContext(), DEFAULT_PUB_KEY_FILE, kp.getPublic());
-                Key.saveKey(getApplicationContext(), DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+                Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
+                Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
                 textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
             }
@@ -88,7 +85,7 @@ public class KeyActivity extends AppCompatActivity {
         signData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                KeyPair kp = loadKeys();
+                KeyPair kp = Key.loadKeys(getApplicationContext());
                 byte[] sig = Key.sign( kp.getPrivate(), new byte[] {0x30, 0x30, 0x30, 0x30,0x30, 0x30, 0x30, 0x30});
                 if(sig == null) {
                     System.out.println("No sig received");
@@ -98,24 +95,6 @@ public class KeyActivity extends AppCompatActivity {
             }
         });
 
-    }
-
-
-    private KeyPair loadKeys() {
-        KeyFactory kf;
-        try {
-            kf = KeyFactory.getInstance("ECDSA");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-        PublicKey pubKey = Key.loadPublicKey(getApplicationContext(), DEFAULT_PUB_KEY_FILE, kf);
-        PrivateKey privateKey = Key.loadPrivateKey(getApplicationContext(), DEFAULT_PRIV_KEY_FILE, kf);
-        if(pubKey == null || privateKey == null) {
-            return null;
-        }
-        KeyPair kp = new KeyPair(pubKey, privateKey);
-        return kp;
     }
 
 

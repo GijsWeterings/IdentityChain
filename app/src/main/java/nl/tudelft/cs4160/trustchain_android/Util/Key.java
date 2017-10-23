@@ -38,6 +38,9 @@ public class Key {
     public final static String PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
     private final static String TAG = "KEY";
 
+    public final static String DEFAULT_PUB_KEY_FILE = "pub.key";
+    public final static String DEFAULT_PRIV_KEY_FILE = "priv.key";
+
 
 
 
@@ -143,6 +146,23 @@ public class Key {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static KeyPair loadKeys(Context context) {
+        KeyFactory kf;
+        try {
+            kf = KeyFactory.getInstance("ECDSA");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
+        }
+        PublicKey pubKey = Key.loadPublicKey(context, Key.DEFAULT_PUB_KEY_FILE, kf);
+        PrivateKey privateKey = Key.loadPrivateKey(context, Key.DEFAULT_PRIV_KEY_FILE, kf);
+        if(pubKey == null || privateKey == null) {
+            return null;
+        }
+        KeyPair kp = new KeyPair(pubKey, privateKey);
+        return kp;
     }
 
     public static boolean saveKey(Context context, String file, java.security.Key key) {
