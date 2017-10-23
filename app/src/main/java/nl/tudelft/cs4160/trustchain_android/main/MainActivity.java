@@ -6,29 +6,47 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
+import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createTestBlock;
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
+import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 
 public class MainActivity extends AppCompatActivity {
+    final static String TRANSACTION = "Hello world!";
+    private static final String TAG = "MainActivity";
+
     BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
+    SQLiteDatabase dbReadable;
 
     TextView externalIPText;
     TextView localIPText;
@@ -42,19 +60,25 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Listener for the connection button.
-     * On click a message is sent to the connected device.
+     * On click a block is created and send to a peer.
+     * TODO: For now a halfblock is created and send, this should be changed to first sending a crawl
+     * TODO: request to either get some information on the peer, like its pubKey which is needed for
+     * TODO: building a block. Or to check whether the information we have associated with this IP
+     * TODO: is still correct. (although we can never get a valid full block anyway when we send it
+     * TODO: to the wrong person)
      */
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-            ClientTask task = new ClientTask(
+            Peer peer = new Peer(
+                    TEMP_PEER_PK.toByteArray(),
                     editTextDestinationIP.getText().toString(),
-                    Integer.parseInt(editTextDestinationPort.getText().toString()),
-                    message,
-                    thisActivity);
-            task.execute();
-            //TODO: for testing purposes, block insertion in DB must be done in another place
-            dbHelper.insertInDB(createTestBlock(), db);
+                    Integer.parseInt(editTextDestinationPort.getText().toString()));
+            try {
+                signBlock(TRANSACTION.getBytes("UTF-8"),peer);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -91,10 +115,11 @@ public class MainActivity extends AppCompatActivity {
         // TODO: key generation
         dbHelper = new TrustChainDBHelper(thisActivity);
         db = dbHelper.getWritableDatabase();
+        dbReadable = dbHelper.getReadableDatabase();
 
         if(isStartedFirstTime()) {
             message = TrustChainBlock.createGenesisBlock();
-            dbHelper.insertInDB(message, db);
+            insertInDB(message, db);
         }
 
         updateIP();
@@ -113,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
      */
     public boolean isStartedFirstTime() {
         // check if a genesis block is present in database
-        SQLiteDatabase dbReadable = dbHelper.getReadableDatabase();
         String[] projection = {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
         };
@@ -143,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void updateExternalIPField(String ipAddress) {
         externalIPText.setText(ipAddress);
-        System.out.println("IP ADDRESS: " + ipAddress);
+        Log.i(TAG, "Updated external IP Address: " + ipAddress);
     }
 
     /**
@@ -151,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void updateLocalIPField(String ipAddress) {
         localIPText.setText(ipAddress);
-        System.out.println("IP ADDRESS: " + ipAddress);
+        Log.i(TAG, "Updated local IP Address:" + ipAddress);
     }
 
     /**
@@ -200,6 +224,121 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Sends a block to the connected peer.
+     * @param block - The block to be send
+     */
+    public void sendBlock(Peer peer, BlockProto.TrustChainBlock block) {
+        ClientTask task = new ClientTask(
+                peer.getIpAddress(),
+                peer.getPort(),
+                block,
+                thisActivity);
+        task.execute();
+    }
+
+
+    /**
+     * Sign a half block and send block.
+     * Reads from database and inserts a new block in the database.
+     *
+     * Either a linked half block is given to the function or a transaction that needs to be send
+     *
+     * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
+     */
+    public void signBlock(Peer peer, BlockProto.TrustChainBlock linkedBlock) {
+        // do nothing if linked block is not addressed to me
+        if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
+            return;
+        }
+        // do nothing if block is not a request
+        if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
+            return;
+        }
+        BlockProto.TrustChainBlock block = createBlock(null,dbReadable,
+                getMyPublicKey(),
+                linkedBlock,null);
+
+        sign(block, getMyPublicKey());
+
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Log.i(TAG,"Signed block to " + bytesToHex(block.getLinkPublicKey().toByteArray()) +
+                ", validation result: " + validation.toString());
+
+        // only send block if validated correctly
+        // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
+                    + validation.getErrors().toString());
+        } else {
+            insertInDB(block,db);
+            sendBlock(peer,block);
+        }
+    }
+
+    /**
+     * Builds a half block with the transaction.
+     * Reads from database and inserts new halfblock in database.
+     * @param transaction - a transaction which should be embedded in the block
+     */
+    public void signBlock(byte[] transaction, Peer peer) {
+        BlockProto.TrustChainBlock block =
+                createBlock(transaction,dbReadable,
+                        getMyPublicKey(),null,peer.getPublicKey());
+        sign(block,getMyPublicKey());
+
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Log.i(TAG,"Signed block to " + bytesToHex(block.getLinkPublicKey().toByteArray()) +
+                ", validation result: " + validation.toString());
+
+        // only send block if validated correctly
+        // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+            Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
+                + validation.getErrors().toString());
+        } else {
+            insertInDB(block,db);
+            sendBlock(peer,block);
+        }
+    }
+
+    // Placeholder TODO: change all places where this method gets called to correct method
+    public static byte[] getMyPublicKey() {
+        return EMPTY_PK.toByteArray();
+    }
+
+
+    /**
+     * Retrieves the dbhelper from mainactivity.
+     * @return
+     */
+    public TrustChainDBHelper getDbHelper() {
+        return dbHelper;
+    }
+
+    /**
+     * Checks if we should sign the block. For now there is no reason to not sign a block.
+     * @param block - The block for which we might want to sign.
+     * @return
+     */
+    public static boolean shouldSign(BlockProto.TrustChainBlock block) {
+        return true;
     }
 
 }
