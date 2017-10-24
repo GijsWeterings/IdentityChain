@@ -2,6 +2,8 @@ package nl.tudelft.cs4160.trustchain_android.block;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Base64;
+import android.util.Log;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
@@ -218,29 +220,30 @@ public class TrustChainBlock {
 
         if(block.getSequenceNumber() < GENESIS_SEQ) {
             result.setInvalid();
-            errors.add("Sequence number is prior to genesis");
+            errors.add("Sequence number is prior to genesis. Number is now" + block.getSequenceNumber() + ", genesis: " + GENESIS_SEQ);
         }
         if(block.getLinkSequenceNumber() < GENESIS_SEQ && block.getLinkSequenceNumber() != UNKNOWN_SEQ) {
             result.setInvalid();
             errors.add("Link sequence number not empty and is prior to genesis");
         }
 
-        PublicKey publicKey = Key.loadPublicKey(block.getPublicKey().toString());
+        //TODO: resolve stupid conversions byte[] => Base64 => byte[]
+        String key = Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT);
+        PublicKey publicKey = Key.loadPublicKey(key);
         if(publicKey == null) {
             result.setInvalid();
             errors.add("Public key is not valid");
+            Log.e("BLOCK", "Public key invalid");
         } else {
             // If public key is valid, check validity of signature
             byte[] hash = hash(block);
             byte[] signature = block.getSignature().toByteArray();
-            if(!Key.verify(publicKey, hash, signature)) {
+            if (!Key.verify(publicKey, hash, signature)) {
                 result.setInvalid();
                 errors.add("Invalid signature.");
+                Log.e("BLOCK", "Invalid signature!!!");
             }
         }
-
-
-
 
         // If a block is linked with a block of the same owner it does not serve any purpose and is invalid.
         if(block.getPublicKey().equals(block.getLinkPublicKey())) {
