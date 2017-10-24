@@ -6,10 +6,13 @@ import android.database.sqlite.SQLiteDatabase;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
@@ -111,16 +114,22 @@ public class TrustChainBlock {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        return md.digest(block.toByteArray());
+        //remove the signature (if there is any)
+        BlockProto.TrustChainBlock rawBlock = block.toBuilder().setSignature(EMPTY_SIG).build();
+        return md.digest(rawBlock.toByteArray());
     }
 
 
     /**
      * Signs this block with a given public key.
-     * TODO: implement this method
      */
-    public static void sign(BlockProto.TrustChainBlock block, byte[] myPubKey) {
+    public static BlockProto.TrustChainBlock sign(BlockProto.TrustChainBlock block, PrivateKey privateKey) {
+        //sign the hash
+        byte[] hash = TrustChainBlock.hash(block);
+        byte[] signature = Key.sign(privateKey, hash);
 
+        //create the block
+        return block.toBuilder().setSignature(ByteString.copyFrom(signature)).build();
     }
 
     /**
@@ -215,11 +224,23 @@ public class TrustChainBlock {
             result.setInvalid();
             errors.add("Link sequence number not empty and is prior to genesis");
         }
-        // TODO: check for validity of public key; if not: err("Public key is not valid")
 
-        // If public key is valid, check validity of signature
+        PublicKey publicKey = Key.loadPublicKey(block.getPublicKey().toString());
+        if(publicKey == null) {
+            result.setInvalid();
+            errors.add("Public key is not valid");
+        } else {
+            // If public key is valid, check validity of signature
+            byte[] hash = hash(block);
+            byte[] signature = block.getSignature().toByteArray();
+            if(!Key.verify(publicKey, hash, signature)) {
+                result.setInvalid();
+                errors.add("Invalid signature.");
+            }
+        }
 
-        // TODO: implement signature checking
+
+
 
         // If a block is linked with a block of the same owner it does not serve any purpose and is invalid.
         if(block.getPublicKey().equals(block.getLinkPublicKey())) {

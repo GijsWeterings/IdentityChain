@@ -16,6 +16,7 @@ import java.util.Arrays;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
@@ -30,7 +31,6 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIA
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.shouldSign;
 
 /**
@@ -186,9 +186,10 @@ class Server {
             insertInDB(block,dbHelper.getWritableDatabase());
         }
 
+        byte[] pk = Key.loadKeys(callingActivity.getApplicationContext()).getPublic().getEncoded();
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if(block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
-                !Arrays.equals(block.getLinkPublicKey().toByteArray(), getMyPublicKey()) ||
+                !Arrays.equals(block.getLinkPublicKey().toByteArray(), pk) ||
                 null != getBlock(dbHelper.getReadableDatabase(),
                             block.getLinkPublicKey().toByteArray(),
                             block.getLinkSequenceNumber())) {
