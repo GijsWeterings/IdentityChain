@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -165,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
             kp = Key.createNewKeyPair();
             Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
             Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
-            Log.i(TAG, "New keys created");
+            Log.i(TAG, "New keys created" );
         }
     }
 
@@ -268,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
         MessageProto.Message message = newBuilder().setHalfBlock(block).build();
+        Log.e("SENDING", "Send: \n" + Base64.encodeToString(message.getHalfBlock().getPublicKey().toByteArray(), Base64.DEFAULT) );
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
@@ -395,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
             sq = Math.max(GENESIS_SEQ, sq);
         }
 
-        Log.i(TAG,"Requesting crawl of node " + bytesToHex(publicKey) + ":" + sq);
+        Log.i(TAG,"Requesting crawl of node " + Base64.encodeToString(publicKey, Base64.DEFAULT) + ":" + sq);
 
         MessageProto.CrawlRequest crawlRequest =
                 MessageProto.CrawlRequest.newBuilder()
@@ -426,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
         int sq = crawlRequest.getRequestedSequenceNumber();
 
         Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
-                " and public key: " + bytesToHex(peer.getPublicKey()) + " for sequence number " + sq);
+                " and public key: \n" + Base64.encodeToString(peer.getPublicKey(), Base64.DEFAULT) + "\n for sequence number " + sq);
 
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
@@ -443,6 +445,8 @@ public class MainActivity extends AppCompatActivity {
         List<MessageProto.TrustChainBlock> blockList = dbHelper.crawl(getMyPublicKey(),sq);
 
         for(MessageProto.TrustChainBlock block : blockList) {
+            block = block.toBuilder().setPublicKey(ByteString.copyFrom(getMyPublicKey())).build();
+            block = sign(block, kp.getPrivate());
             sendBlock(peer,block);
         }
 

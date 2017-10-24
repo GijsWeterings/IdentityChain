@@ -230,7 +230,7 @@ public class TrustChainBlock {
         if(publicKey == null) {
             result.setInvalid();
             errors.add("Public key is not valid");
-            Log.e("BLOCK", "Public key invalid");
+            Log.e("BLOCK", "Public key invalid\n" + key);
         } else {
             // If public key is valid, check validity of signature
             byte[] hash = hash(block);
