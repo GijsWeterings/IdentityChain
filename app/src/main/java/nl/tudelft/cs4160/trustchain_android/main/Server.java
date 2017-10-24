@@ -1,5 +1,6 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
+import android.util.Base64;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -187,7 +188,7 @@ class Server {
         TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
         Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
-            " and public key: " + bytesToHex(peer.getPublicKey()));
+            " and public key: " + bytesToHex(peer.getPublicKey()) + "\n" + Base64.encodeToString(peer.getPublicKey(), Base64.DEFAULT));
 
         ValidationResult validation;
         try {

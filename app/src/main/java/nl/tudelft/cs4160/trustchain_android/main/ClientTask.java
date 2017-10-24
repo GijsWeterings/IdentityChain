@@ -41,44 +41,55 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
      */
     @Override
     protected Void doInBackground(Void... arg0) {
-        Socket socket = null;
-        try {
-            socket = new Socket(destinationIP, DEFAULT_PORT);
-            message.writeTo(socket.getOutputStream());
-            socket.shutdownOutput();
+        boolean loop = true;
+        while(loop) {
+            Socket socket = null;
+            try {
+                Log.i(TAG, "Opening socket to " + destinationIP + ":" + DEFAULT_PORT);
+                socket = new Socket(destinationIP, DEFAULT_PORT);
+                message.writeTo(socket.getOutputStream());
+                socket.shutdownOutput();
 
-            Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
+                Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
 
-            // Get the response from the server
-            ByteArrayOutputStream byteArrayOutputStream =
-                    new ByteArrayOutputStream(1024);
-            byte[] buffer = new byte[1024];
+                // Get the response from the server
+                ByteArrayOutputStream byteArrayOutputStream =
+                        new ByteArrayOutputStream(1024);
+                byte[] buffer = new byte[1024];
 
-            int bytesRead;
-            InputStream inputStream = socket.getInputStream();
+                int bytesRead;
+                InputStream inputStream = socket.getInputStream();
 
-            // notice: inputStream.read() will block if no data return
-            while ((bytesRead = inputStream.read(buffer)) != -1){
-                byteArrayOutputStream.write(buffer, 0, bytesRead);
-                response += byteArrayOutputStream.toString("UTF-8");
-            }
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            response = "UnknownHostException: " + e.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            response = "IOException: " + e.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            response = "Exception: " + e.toString();
-        } finally{
-            if(socket != null){
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                // notice: inputStream.read() will block if no data return
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    byteArrayOutputStream.write(buffer, 0, bytesRead);
+                    response += byteArrayOutputStream.toString("UTF-8");
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+                response = "UnknownHostException: " + e.toString();
+            } catch (IOException e) {
+                e.printStackTrace();
+                response = "IOException: " + e.toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+                response = "Exception: " + e.toString();
+            } finally {
+                if (socket != null) {
+                    try {
+                        loop = false;
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         return null;
     }
