@@ -12,6 +12,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.protobuf.ByteString;
+
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -25,27 +27,32 @@ import nl.tudelft.cs4160.trustchain_android.KeyActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
-import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
+import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 public class MainActivity extends AppCompatActivity {
 
     final static String TRANSACTION = "Hello world!";
     private final static String TAG = MainActivity.class.toString();
+    final static int DEFAULT_PORT = 8080;
 
-    BlockProto.TrustChainBlock message;
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
     SQLiteDatabase dbReadable;
@@ -84,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                     Integer.parseInt(editTextDestinationPort.getText().toString()));
             try {
                 signBlock(TRANSACTION.getBytes("UTF-8"),peer);
+                sendCrawlRequest(peer,getMyPublicKey(),2);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -137,8 +145,8 @@ public class MainActivity extends AppCompatActivity {
         initKeys();
 
         if(isStartedFirstTime()) {
-            message = TrustChainBlock.createGenesisBlock(kp);
-            insertInDB(message, db);
+            MessageProto.TrustChainBlock block = TrustChainBlock.createGenesisBlock(kp);
+            insertInDB(block, db);
         }
 
         updateIP();
@@ -258,11 +266,12 @@ public class MainActivity extends AppCompatActivity {
      * Sends a block to the connected peer.
      * @param block - The block to be send
      */
-    public void sendBlock(Peer peer, BlockProto.TrustChainBlock block) {
+    public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
+        MessageProto.Message message = newBuilder().setHalfBlock(block).build();
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
-                block,
+                message,
                 thisActivity);
         task.execute();
     }
@@ -276,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
      *
      * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
      */
-    public void signBlock(Peer peer, BlockProto.TrustChainBlock linkedBlock) {
+    public void signBlock(Peer peer, MessageProto.TrustChainBlock linkedBlock) {
         // do nothing if linked block is not addressed to me
         if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
             return;
@@ -285,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
             return;
         }
-        BlockProto.TrustChainBlock block = createBlock(null,dbReadable,
+        MessageProto.TrustChainBlock block = createBlock(null,dbReadable,
                 getMyPublicKey(),
                 linkedBlock,null);
 
@@ -304,13 +313,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
-        } else {
+//        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-        }
+//        }
     }
 
     /**
@@ -319,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
      * @param transaction - a transaction which should be embedded in the block
      */
     public void signBlock(byte[] transaction, Peer peer) {
-        BlockProto.TrustChainBlock block =
+        MessageProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,peer.getPublicKey());
         block = sign(block, kp.getPrivate());
@@ -337,13 +346,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                 + validation.getErrors().toString());
-        } else {
+//        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-        }
+//        }
     }
 
     public byte[] getMyPublicKey() {
@@ -364,8 +373,79 @@ public class MainActivity extends AppCompatActivity {
      * @param block - The block for which we might want to sign.
      * @return
      */
-    public static boolean shouldSign(BlockProto.TrustChainBlock block) {
+    public static boolean shouldSign(MessageProto.TrustChainBlock block) {
         return true;
     }
 
+
+    public void sendCrawlRequest(Peer peer, byte[] publicKey, int seqNum) {
+        int sq = seqNum;
+        if(seqNum == 0) {
+            MessageProto.TrustChainBlock block = TrustChainBlock.getBlock(dbReadable,publicKey,
+                    TrustChainBlock.getMaxSeqNum(dbReadable,publicKey));
+            if(block != null) {
+                sq = block.getSequenceNumber();
+            } else {
+                sq = GENESIS_SEQ;
+            }
+        }
+
+        // TODO: check this: This piece of code is in python, but I'm not sure what it adds.
+        if(sq >= 0) {
+            sq = Math.max(GENESIS_SEQ, sq);
+        }
+
+        Log.i(TAG,"Requesting crawl of node " + bytesToHex(publicKey) + ":" + sq);
+
+        MessageProto.CrawlRequest crawlRequest =
+                MessageProto.CrawlRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(getMyPublicKey()))
+                        .setRequestedSequenceNumber(sq)
+                        .setLimit(100).build();
+
+        // send the crawl request
+        MessageProto.Message message = newBuilder().setCrawlRequest(crawlRequest).build();
+        ClientTask task = new ClientTask(
+                peer.getIpAddress(),
+                peer.getPort(),
+                message,
+                thisActivity);
+        task.execute();
+    }
+
+    /**
+     * We have received a crawl request, this function handles what to do next.
+     *
+     * @param address - ip address of the sending peer
+     * @param port - port of the sending peer
+     * @param crawlRequest - received crawl request
+     */
+    public void receivedCrawlRequest(InetAddress address, int port, MessageProto.CrawlRequest crawlRequest) {
+        byte[] peerPubKey = crawlRequest.getPublicKey().toByteArray();
+        Peer peer = new Peer(peerPubKey, address.getHostAddress(), port);
+        int sq = crawlRequest.getRequestedSequenceNumber();
+
+        Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
+                " and public key: " + bytesToHex(peer.getPublicKey()) + " for sequence number " + sq);
+
+        // a negative sequence number indicates that the requesting peer wants an offset of blocks
+        // starting with the last block
+        if(sq<0) {
+            MessageProto.TrustChainBlock lastBlock = getLatestBlock(dbReadable, getMyPublicKey());
+
+            if(lastBlock != null){
+                sq = Math.max(GENESIS_SEQ, lastBlock.getSequenceNumber() + sq + 1);
+            } else {
+                sq = GENESIS_SEQ;
+            }
+        }
+
+        List<MessageProto.TrustChainBlock> blockList = dbHelper.crawl(getMyPublicKey(),sq);
+
+        for(MessageProto.TrustChainBlock block : blockList) {
+            sendBlock(peer,block);
+        }
+
+        Log.i(TAG,"Sent " + blockList.size() + " blocks");
+    }
 }
