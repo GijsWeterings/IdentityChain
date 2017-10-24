@@ -239,6 +239,8 @@ public class TrustChainBlock {
                 result.setInvalid();
                 errors.add("Invalid signature.");
                 Log.e("BLOCK", "Invalid signature!!!");
+            } else {
+                Log.e("BLCK", "Valid signature");
             }
         }
 
@@ -249,11 +251,11 @@ public class TrustChainBlock {
         }
         // If it is implied that block is a genesis block, check if it correctly set up
         if(isGenesisBlock(block)){
-            if(block.getSequenceNumber() == GENESIS_SEQ && block.getPreviousHash() != GENESIS_HASH) {
+            if(block.getSequenceNumber() == GENESIS_SEQ && !block.getPreviousHash().equals(GENESIS_HASH)) {
                 result.setInvalid();
                 errors.add("Sequence number implies previous hash should be Genesis Hash");
             }
-            if(block.getSequenceNumber() != GENESIS_SEQ && block.getPreviousHash() == GENESIS_HASH) {
+            if(block.getSequenceNumber() != GENESIS_SEQ && block.getPreviousHash().equals(GENESIS_HASH)) {
                 result.setInvalid();
                 errors.add("Sequence number implies previous hash should not be Genesis Hash");
             }
@@ -279,6 +281,7 @@ public class TrustChainBlock {
             if(!dbBlock.getPreviousHash().equals(block.getPreviousHash())) {
                 result.setInvalid();
                 errors.add("Previous hash does not match known block.");
+
             }
             if(!dbBlock.getSignature().equals(block.getSignature())) {
                 result.setInvalid();

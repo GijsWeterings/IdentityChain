@@ -201,6 +201,9 @@ class Server {
         Log.i(TAG,"Received block validation result " + validation.toString() + "(" + block.toString() + ")");
 
         if(validation.getStatus() == ValidationResult.INVALID) {
+            for(String error: validation.getErrors()) {
+                Log.e(TAG, error);
+            }
             return;
         } else {
             insertInDB(block,dbHelper.getWritableDatabase());
