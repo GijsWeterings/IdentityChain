@@ -4,17 +4,16 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Timestamp;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 /**
  * Created by meijer on 20-9-17.
@@ -32,10 +31,10 @@ public class TrustChainBlock {
 
     /**
      * Creates a TrustChain genesis block using protocol buffers.
-     * @return block - A BlockProto.TrustChainBlock
+     * @return block - A MessageProto.TrustChainBlock
      */
-    public static BlockProto.TrustChainBlock createGenesisBlock() {
-        BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
+    public static MessageProto.TrustChainBlock createGenesisBlock() {
+        MessageProto.TrustChainBlock block = MessageProto.TrustChainBlock.newBuilder()
                 .setTransaction(ByteString.EMPTY)
                 .setPublicKey(EMPTY_PK)
                 .setSequenceNumber(GENESIS_SEQ)
@@ -43,7 +42,6 @@ public class TrustChainBlock {
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
                 .setSignature(EMPTY_SIG)
-                .setInsertTime(Timestamp.getDefaultInstance())
                 .build();
         return block;
     }
@@ -57,16 +55,12 @@ public class TrustChainBlock {
      * @param linkpubk - The public key of the linked peer
      * @return a new half block
      */
-    public static BlockProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
-                                                         byte[] mypubk, BlockProto.TrustChainBlock linkedBlock,
+    public static MessageProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
+                                                         byte[] mypubk, MessageProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
-        BlockProto.TrustChainBlock latestBlock = getBlock(db,mypubk,getMaxSeqNum(db,mypubk));
+        MessageProto.TrustChainBlock latestBlock = getBlock(db,mypubk,getMaxSeqNum(db,mypubk));
 
-        long millis = System.currentTimeMillis();
-        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
-                .setNanos((int) ((millis % 1000) * 1000000)).build();
-
-        BlockProto.TrustChainBlock.Builder builder = BlockProto.TrustChainBlock.newBuilder();
+        MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
         if(linkedBlock != null) {
             builder.setTransaction(linkedBlock.getTransaction())
                     .setLinkPublicKey(linkedBlock.getPublicKey())
@@ -95,7 +89,7 @@ public class TrustChainBlock {
      * @param block - TrustChainBlock that we want to check
      * @return boolean - true if the block is a genesis block, false otherwise
      */
-    public static boolean isGenesisBlock(BlockProto.TrustChainBlock block) {
+    public static boolean isGenesisBlock(MessageProto.TrustChainBlock block) {
         return (block.getSequenceNumber() == GENESIS_SEQ) || (block.getPreviousHash() == GENESIS_HASH);
     }
 
@@ -104,7 +98,7 @@ public class TrustChainBlock {
      * @param block - a proto Trustchain block
      * @return the sha256 hash of the byte array of the block
      */
-    public static byte[] hash(BlockProto.TrustChainBlock block) {
+    public static byte[] hash(MessageProto.TrustChainBlock block) {
         MessageDigest md = null;
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -119,7 +113,7 @@ public class TrustChainBlock {
      * Signs this block with a given public key.
      * TODO: implement this method
      */
-    public static void sign(BlockProto.TrustChainBlock block, byte[] myPubKey) {
+    public static void sign(MessageProto.TrustChainBlock block, byte[] myPubKey) {
 
     }
 
@@ -130,7 +124,7 @@ public class TrustChainBlock {
      * @param dbHelper - dbHelper which contains the db to check against
      * @return a validation result, containing the actual validation result and a list of errors
      */
-    public static ValidationResult validate(BlockProto.TrustChainBlock block, TrustChainDBHelper dbHelper) throws Exception {
+    public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainDBHelper dbHelper) throws Exception {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         ValidationResult result = new ValidationResult();
         List<String> errors = new ArrayList<>();
@@ -141,10 +135,10 @@ public class TrustChainBlock {
         // inserted into the database. Thus we can assume that all retrieved blocks are all valid
         // themselves. Blocks can get inserted into the database in any order, so we need to find
         // successors, predecessors as well as the block itself and its linked block.
-        BlockProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
-        BlockProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
-        BlockProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()-1);
-        BlockProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()+1);
+        MessageProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
+        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()-1);
+        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()+1);
 
         // ** Step 2: Determine the maximum validation level **
         // Depending on the blocks we get from the database, we can decide to reduce the validation
@@ -291,7 +285,7 @@ public class TrustChainBlock {
                 // Self counter signs another block (link). If linkBlock has a linked block that is not
                 // equal to block, then block is fraudulent, since it tries to countersign a block
                 // that is already countersigned.
-                BlockProto.TrustChainBlock linkLinkBlock = getBlock(db,
+                MessageProto.TrustChainBlock linkLinkBlock = getBlock(db,
                         linkBlock.getLinkPublicKey().toByteArray(), linkBlock.getLinkSequenceNumber());
                 if(linkLinkBlock != null && !Arrays.equals(hash(linkLinkBlock), hash(block))) {
                     result.setInvalid();
@@ -342,8 +336,8 @@ public class TrustChainBlock {
      * @param seqNumber - Int value of the sequence number of the block to be retrieved
      * @return The latest block in the database or null if something went wrong
      */
-    public static BlockProto.TrustChainBlock getBlock(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber) {
-        BlockProto.TrustChainBlock res = null;
+    public static MessageProto.TrustChainBlock getBlock(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber) {
+        MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
         String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
@@ -360,10 +354,8 @@ public class TrustChainBlock {
         );
         if(cursor.getCount() == 1) {
             cursor.moveToFirst();
-            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
-            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
                     .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
@@ -377,7 +369,6 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
                     .setSignature(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
-                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
                     .build();
         }
         cursor.close();
@@ -393,8 +384,8 @@ public class TrustChainBlock {
      * @param seqNumber - Sequence number of block of which to find the previous block in the chain
      * @return The previous TrustChainBlock in the chain
      */
-    public static BlockProto.TrustChainBlock getBlockBefore(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
-        BlockProto.TrustChainBlock res = null;
+    public static MessageProto.TrustChainBlock getBlockBefore(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
+        MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " < ?";
         String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
@@ -412,10 +403,8 @@ public class TrustChainBlock {
         );
         if(cursor.getCount() >= 1) {
             cursor.moveToFirst();
-            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
-            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
                     .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
@@ -429,7 +418,6 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
                     .setSignature(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
-                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
                     .build();
         }
         cursor.close();
@@ -445,8 +433,8 @@ public class TrustChainBlock {
      * @param seqNumber - Sequence number of block of which to find the previous block in the chain
      * @return The next TrustChainBlock in the chain
      */
-    public static BlockProto.TrustChainBlock getBlockAfter(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
-        BlockProto.TrustChainBlock res = null;
+    public static MessageProto.TrustChainBlock getBlockAfter(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
+        MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " > ?";
         String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
@@ -464,10 +452,8 @@ public class TrustChainBlock {
         );
         if(cursor.getCount() >= 1) {
             cursor.moveToFirst();
-            int nanos = java.sql.Timestamp.valueOf(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
-            res = BlockProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
                     .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
@@ -481,7 +467,6 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
                     .setSignature(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
-                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos))
                     .build();
         }
         cursor.close();
@@ -526,7 +511,7 @@ public class TrustChainBlock {
      * @param db - Database to validate against
      * @return
      */
-    public static ValidationResult validateTransaction(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
+    public static ValidationResult validateTransaction(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
         return new ValidationResult();
     }
 

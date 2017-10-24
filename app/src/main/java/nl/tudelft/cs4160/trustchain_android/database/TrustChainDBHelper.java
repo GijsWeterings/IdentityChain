@@ -8,12 +8,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.google.protobuf.ByteString;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 public class TrustChainDBHelper extends SQLiteOpenHelper {
     public static final int DATABASE_VERSION = 1;
@@ -68,7 +67,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @return A long depicting the primary key value of the newly inserted row of the database.
      *          returns -1 as an error indicator.
      */
-    public static long insertInDB(BlockProto.TrustChainBlock block, SQLiteDatabase db) {
+    public static long insertInDB(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
         ContentValues values = new ContentValues();
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toStringUtf8());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toStringUtf8());
@@ -86,7 +85,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * Retrieves all the blocks inserted in the database.
      * @return a List of all blocks
      */
-    public List<BlockProto.TrustChainBlock> getAllBlocks() {
+    public List<MessageProto.TrustChainBlock> getAllBlocks() {
         SQLiteDatabase db = getReadableDatabase();
         String[] projection = {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_TX,
@@ -112,12 +111,10 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                 sortOrder                                       // How the rows should be ordered
         );
 
-        List<BlockProto.TrustChainBlock> res = new ArrayList<>();
-        BlockProto.TrustChainBlock.Builder builder = BlockProto.TrustChainBlock.newBuilder();
+        List<MessageProto.TrustChainBlock> res = new ArrayList<>();
+        MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
 
         while(cursor.moveToNext()) {
-            int nanos = Timestamp.valueOf(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME))).getNanos();
 
             builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
@@ -132,8 +129,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                     .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
                     .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
-                    .setInsertTime(com.google.protobuf.Timestamp.newBuilder().setNanos(nanos));
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))));
 
             res.add(builder.build());
         }
