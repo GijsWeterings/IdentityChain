@@ -14,6 +14,7 @@ import java.util.Arrays;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
+import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
@@ -85,11 +86,10 @@ class Server {
                     MessageProto.TrustChainBlock block = message.getHalfBlock();
                     MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
 
-                    // TODO: detect which it is and handle the crawlreques
-
+                    // TODO: detect which it is and handle the crawlrequests
 
                     // In case we received a halfblock
-                    if(block != null) {
+                    if(block != null & crawlRequest == null) {
                         count++;
                         messageLog += "#" + count + " from " + socket.getInetAddress()
                                 + ":" + socket.getPort() + "\n"
@@ -107,6 +107,27 @@ class Server {
                         socketServerReplyThread.run();
 
                         synchronizedReceivedHalfBlock(socket.getInetAddress(), socket.getPort(), block);
+                    }
+
+                    // In case we received a crawlrequest
+                    if(block == null && crawlRequest != null) {
+                        count++;
+                        messageLog += "#" + count + " from " + socket.getInetAddress()
+                                + ":" + socket.getPort() + "\n"
+                                + "crawlrequest received: " + block.toString();
+                        callingActivity.runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                statusText.append("\n  Server: " + messageLog);
+                            }
+                        });
+                        SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
+                                socket, count);
+                        socketServerReplyThread.run();
+
+                        callingActivity.receivedCrawlRequest(socket.getInetAddress(),
+                                socket.getPort(), crawlRequest);
                     }
 
                 }
@@ -214,4 +235,7 @@ class Server {
             callingActivity.signBlock(peer, block);
         }
     }
+
+
+
 }

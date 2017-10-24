@@ -87,23 +87,13 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      */
     public List<MessageProto.TrustChainBlock> getAllBlocks() {
         SQLiteDatabase db = getReadableDatabase();
-        String[] projection = {
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_TX,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE,
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME
-        };
 
         String sortOrder =
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " ASC";
 
         Cursor cursor = db.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                projection,                                     // The columns to return
+                null,                                           // The columns to return
                 null,                                           // Filter for which rows to return
                 null,                                           // Filter arguments
                 null,                                           // Declares how to group rows
@@ -134,6 +124,118 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
             res.add(builder.build());
         }
 
+        cursor.close();
+        return res;
+    }
+
+    /**
+     * Searches the database for the blocks from the given sequence number to some limit and returns
+     * a list of these blocks.
+     * When no limit is given the default limit of 100 is used.
+     * Limit may not be higher than 100 to prevent sending huge amounts of blocks, potentially
+     * slowing down the network.
+     * @param pubKey - public key of the chain to from which blocks need to be fetched
+     * @param seqNum - sequence number of block, the blocks inserted after this block should be returned
+     * @param limit - the limit of the amount of blocks to return
+     * @return
+     */
+    public List<MessageProto.TrustChainBlock> crawl(byte[] pubKey, int seqNum, int limit) throws Exception {
+        if(limit > 100) {
+            throw new Exception("Limit is too high, don't fetch too much.");
+        }
+        SQLiteDatabase dbReadable = getReadableDatabase();
+
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + " >= ?" +
+                " AND (" + TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?" +
+                " OR " + TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + " = ?)";
+        String[] whereArgs = new String[] {Long.toString(getMaxInsertTime(pubKey,seqNum)),
+                ByteString.copyFrom(pubKey).toStringUtf8(),
+                ByteString.copyFrom(pubKey).toStringUtf8()};
+        String sortOrder =
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + " ASC";
+        String rowsLimit = Integer.toString(limit);
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                null,                                           // The columns to return
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                sortOrder,                                      // How the rows should be ordered
+                rowsLimit                                       // Sets the maximum rows to be returned
+        );
+
+        List<MessageProto.TrustChainBlock> res = new ArrayList<>();
+        MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
+
+        while(cursor.moveToNext()) {
+
+            builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))));
+
+            res.add(builder.build());
+        }
+
+        cursor.close();
+        return res;
+    }
+
+    // uses the default limit of 100
+    public List<MessageProto.TrustChainBlock> crawl(byte[] pubKey, int seqNum) {
+        List<MessageProto.TrustChainBlock> blockList = new ArrayList<>();
+        try {
+            blockList = crawl(pubKey,seqNum,100);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return blockList;
+    }
+
+    /**
+     * Get the maximum insert time of a block in the database given a public key and a maximum
+     * sequence number.
+     * @param pubKey - the public key for which to find associated blocks
+     * @param seqNum - the maximum sequence number of the blocks
+     * @return long - a maximum insert time
+     */
+    public long getMaxInsertTime(byte[] pubKey, int seqNum) {
+        SQLiteDatabase dbReadable = getReadableDatabase();
+
+        long res = 0;
+        String[] projection = new String[] {"max(" +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + ")"};
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?" +
+                " AND " + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " <= ?";
+        String[] whereArgs = new String[] {ByteString.copyFrom(pubKey).toStringUtf8(),
+                Integer.toString(seqNum)};
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                projection,                                           // The columns to return
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                null                                       // How the rows should be ordered
+        );
+        if(cursor.getCount() == 1) {
+            cursor.moveToFirst();
+            res = cursor.getInt(cursor.getColumnIndex(
+                    "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + ")"));
+        }
         cursor.close();
         return res;
     }
