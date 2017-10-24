@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         initKeys();
 
         if(isStartedFirstTime()) {
-            message = TrustChainBlock.createGenesisBlock();
+            message = TrustChainBlock.createGenesisBlock(kp);
             insertInDB(message, db);
         }
 
