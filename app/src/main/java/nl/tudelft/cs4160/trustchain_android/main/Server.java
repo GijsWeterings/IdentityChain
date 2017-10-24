@@ -27,6 +27,7 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INF
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.shouldSign;
 
@@ -185,7 +186,7 @@ class Server {
      */
     public void synchronizedReceivedHalfBlock(InetAddress address, int port, MessageProto.TrustChainBlock block) {
         TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
-        Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), port);
+        Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
             " and public key: " + bytesToHex(peer.getPublicKey()));
 

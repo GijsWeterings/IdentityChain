@@ -14,6 +14,8 @@ import java.net.UnknownHostException;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
+
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
  */
@@ -41,7 +43,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     protected Void doInBackground(Void... arg0) {
         Socket socket = null;
         try {
-            socket = new Socket(destinationIP, destinationPort);
+            socket = new Socket(destinationIP, DEFAULT_PORT);
             message.writeTo(socket.getOutputStream());
             socket.shutdownOutput();
 
