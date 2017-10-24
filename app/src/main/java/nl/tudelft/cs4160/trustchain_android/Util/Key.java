@@ -29,8 +29,8 @@ import java.security.spec.X509EncodedKeySpec;
 
 /**
  * Created by rico on 14-9-17.
+ * Manages key operations.
  */
-
 public class Key {
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);}
@@ -42,12 +42,22 @@ public class Key {
     public final static String DEFAULT_PRIV_KEY_FILE = "priv.key";
 
 
-
-
+    /**
+     * Creates a new curve25519 KeyPair.
+     * @return KeyPair.
+     */
     public static KeyPair createNewKeyPair() {
         return createNewKeyPair("curve25519", "ECDSA", PROVIDER, true);
     }
 
+    /**
+     * Creates a new (elliptic curve) KeyPair according to the given arguments.
+     * @param curveName The given curnename
+     * @param algorithm The used algorithm
+     * @param provider The security provider
+     * @param custom If this is a custom curve (see BouncyCastle for what custom curves are).
+     * @return The generated keypair.
+     */
     public static KeyPair createNewKeyPair(String curveName, String algorithm, String provider, boolean custom) {
         ECParameterSpec ecSpec = getParameterSpec(curveName, custom);
         KeyPair keyPair = null;
@@ -65,6 +75,12 @@ public class Key {
         return keyPair;
     }
 
+    /**
+     * Retrieves the parameters of the given elliptic curve.
+     * @param curveName The curve name
+     * @param custom Custom or not?
+     * @return The elliptic curve parameters.
+     */
     private static ECParameterSpec getParameterSpec(String curveName, boolean custom) {
         if(custom) {
             X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
@@ -76,7 +92,12 @@ public class Key {
     }
 
 
-
+    /**
+     * Sign a message using the given private key.
+     * @param privateKey The private key
+     * @param data The message
+     * @return The signature
+     */
     public static byte[] sign(PrivateKey privateKey, byte[] data) {
         try {
             Signature sig = Signature.getInstance("SHA256withECDSA", PROVIDER);
@@ -95,8 +116,13 @@ public class Key {
         return null;
     }
 
-
-
+    /**
+     * Verify a signature
+     * @param publicKey  The public key of the signer.
+     * @param msg The message that was signed.
+     * @param rawSig The signature.
+     * @return True if this a correct signature, false if not.
+     */
     public static boolean verify(PublicKey publicKey, byte[] msg, byte[] rawSig) {
         try {
             Signature sig = Signature.getInstance("SHA256withECDSA", PROVIDER);
@@ -124,6 +150,12 @@ public class Key {
         }
     }
 
+    /**
+     * Load a public key from the given file.
+     * @param context The context (needed so we can read the file)
+     * @param file The file to read.
+     * @return The public key.
+     */
     public static PublicKey loadPublicKey(Context context, String file) {
         String key = Util.readFile(context, file);
         if(key == null) {
@@ -134,6 +166,11 @@ public class Key {
     }
 
 
+    /**
+     * Load a raw base64 encoded key.
+     * @param key The base64 encoded key.
+     * @return Public key
+     */
     public static PublicKey loadPublicKey(String key) {
         KeyFactory kf = getKeyFactory();
         if(kf == null) {
@@ -151,6 +188,12 @@ public class Key {
 
     }
 
+    /**
+     * Load a private key from the given file
+     * @param context The context (needed to read the file)
+     * @param file The file
+     * @return The private key
+     */
     public static PrivateKey loadPrivateKey(Context context, String file) {
         String key = Util.readFile(context, file);
         if(key == null) {
@@ -160,6 +203,11 @@ public class Key {
         return loadPrivateKey(key);
     }
 
+    /**
+     * Load a private key from a base64 encoded string
+     * @param key The base64 encoded key
+     * @return The private key
+     */
     public static PrivateKey loadPrivateKey(String key) {
         KeyFactory kf = getKeyFactory();
         if(kf == null) {
@@ -176,6 +224,11 @@ public class Key {
         return null;
     }
 
+    /**
+     * Load public and private keys from the standard files.
+     * @param context The context (needed to read the files)
+     * @return A KeyPair with the private and public key.
+     */
     public static KeyPair loadKeys(Context context) {
         PublicKey pubKey = Key.loadPublicKey(context, Key.DEFAULT_PUB_KEY_FILE);
         PrivateKey privateKey = Key.loadPrivateKey(context, Key.DEFAULT_PRIV_KEY_FILE);
@@ -185,6 +238,13 @@ public class Key {
         return new KeyPair(pubKey, privateKey);
     }
 
+    /**
+     * Write a key to storage
+     * @param context Context (needed to write to the file)
+     * @param file  The file to write to
+     * @param key The key to be written
+     * @return True if successful, false if not
+     */
     public static boolean saveKey(Context context, String file, java.security.Key key) {
         return Util.writeToFile(context, file, Base64.encodeToString(key.getEncoded(), Base64.DEFAULT));
     }
