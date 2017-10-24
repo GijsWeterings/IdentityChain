@@ -87,12 +87,11 @@ class Server {
                     MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
 
                     // TODO: detect which it is and handle the crawlrequests
-
+                    messageLog += "#" + count + " from " + socket.getInetAddress();
                     // In case we received a halfblock
                     if(block != null & crawlRequest == null) {
                         count++;
-                        messageLog += "#" + count + " from " + socket.getInetAddress()
-                                + ":" + socket.getPort() + "\n"
+                        messageLog += ":" + socket.getPort() + "\n"
                                 + "block received: " + block.toString();
                         callingActivity.runOnUiThread(new Runnable() {
 
@@ -112,8 +111,7 @@ class Server {
                     // In case we received a crawlrequest
                     if(block == null && crawlRequest != null) {
                         count++;
-                        messageLog += "#" + count + " from " + socket.getInetAddress()
-                                + ":" + socket.getPort() + "\n"
+                        messageLog += ":" + socket.getPort() + "\n"
                                 + "crawlrequest received: " + block.toString();
                         callingActivity.runOnUiThread(new Runnable() {
 

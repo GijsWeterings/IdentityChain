@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.Activity;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.TextView;
 
 import java.io.ByteArrayOutputStream;
@@ -22,6 +23,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     int destinationPort;
     MessageProto.Message message;
 
+    final static String TAG = "ClientTask";
     String response = "";
 
     ClientTask(String ipAddress, int port, MessageProto.Message message, Activity callingActivity){
@@ -38,11 +40,12 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... arg0) {
         Socket socket = null;
-        // ugly code cause of statically typed java
         try {
             socket = new Socket(destinationIP, destinationPort);
             message.writeTo(socket.getOutputStream());
             socket.shutdownOutput();
+
+            Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
 
             // Get the response from the server
             ByteArrayOutputStream byteArrayOutputStream =

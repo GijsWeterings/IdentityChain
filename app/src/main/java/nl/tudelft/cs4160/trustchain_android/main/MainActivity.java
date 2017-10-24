@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
                     Integer.parseInt(editTextDestinationPort.getText().toString()));
             try {
                 signBlock(TRANSACTION.getBytes("UTF-8"),peer);
+                sendCrawlRequest(peer,getMyPublicKey(),2);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -281,13 +282,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
-        } else {
+//        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-        }
+//        }
     }
 
     /**
