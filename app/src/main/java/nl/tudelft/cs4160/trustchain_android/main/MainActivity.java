@@ -12,6 +12,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.protobuf.ByteString;
+
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -32,6 +34,9 @@ import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_P
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
@@ -309,13 +314,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                 + validation.getErrors().toString());
-        } else {
+//        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-        }
+//        }
     }
 
     // Placeholder TODO: change all places where this method gets called to correct method
@@ -361,13 +366,11 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i(TAG,"Requesting crawl of node " + bytesToHex(publicKey) + ":" + sq);
 
-        Long time = System.currentTimeMillis();
-
         MessageProto.CrawlRequest crawlRequest =
                 MessageProto.CrawlRequest.newBuilder()
-                        .setPublicKey(EMPTY_PK)
+                        .setPublicKey(ByteString.copyFrom(getMyPublicKey()))
                         .setRequestedSequenceNumber(sq)
-                        .setLimit(10).build();
+                        .setLimit(100).build();
 
         // send the crawl request
         MessageProto.Message message = newBuilder().setCrawlRequest(crawlRequest).build();
@@ -379,4 +382,39 @@ public class MainActivity extends AppCompatActivity {
         task.execute();
     }
 
+    /**
+     * We have received a crawl request, this function handles what to do next.
+     *
+     * @param address - ip address of the sending peer
+     * @param port - port of the sending peer
+     * @param crawlRequest - received crawl request
+     */
+    public void receivedCrawlRequest(InetAddress address, int port, MessageProto.CrawlRequest crawlRequest) {
+        byte[] peerPubKey = crawlRequest.getPublicKey().toByteArray();
+        Peer peer = new Peer(peerPubKey, address.getHostAddress(), port);
+        int sq = crawlRequest.getRequestedSequenceNumber();
+
+        Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
+                " and public key: " + bytesToHex(peer.getPublicKey()) + " for sequence number " + sq);
+
+        // a negative sequence number indicates that the requesting peer wants an offset of blocks
+        // starting with the last block
+        if(sq<0) {
+            MessageProto.TrustChainBlock lastBlock = getLatestBlock(dbReadable, getMyPublicKey());
+
+            if(lastBlock != null){
+                sq = Math.max(GENESIS_SEQ, lastBlock.getSequenceNumber() + sq + 1);
+            } else {
+                sq = GENESIS_SEQ;
+            }
+        }
+
+        List<MessageProto.TrustChainBlock> blockList = dbHelper.crawl(getMyPublicKey(),sq);
+
+        for(MessageProto.TrustChainBlock block : blockList) {
+            sendBlock(peer,block);
+        }
+
+        Log.i(TAG,"Sent " + blockList.size() + " blocks");
+    }
 }

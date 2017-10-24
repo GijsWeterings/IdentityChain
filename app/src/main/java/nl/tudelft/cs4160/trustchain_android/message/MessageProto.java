@@ -1638,9 +1638,9 @@ public final class MessageProto {
     com.google.protobuf.ByteString getPublicKey();
 
     /**
-     * <code>int64 requested_sequence_number = 2;</code>
+     * <code>int32 requested_sequence_number = 2;</code>
      */
-    long getRequestedSequenceNumber();
+    int getRequestedSequenceNumber();
 
     /**
      * <code>int32 limit = 3;</code>
@@ -1661,7 +1661,7 @@ public final class MessageProto {
     }
     private CrawlRequest() {
       publicKey_ = com.google.protobuf.ByteString.EMPTY;
-      requestedSequenceNumber_ = 0L;
+      requestedSequenceNumber_ = 0;
       limit_ = 0;
     }
 
@@ -1700,7 +1700,7 @@ public final class MessageProto {
             }
             case 16: {
 
-              requestedSequenceNumber_ = input.readInt64();
+              requestedSequenceNumber_ = input.readInt32();
               break;
             }
             case 24: {
@@ -1742,11 +1742,11 @@ public final class MessageProto {
     }
 
     public static final int REQUESTED_SEQUENCE_NUMBER_FIELD_NUMBER = 2;
-    private long requestedSequenceNumber_;
+    private int requestedSequenceNumber_;
     /**
-     * <code>int64 requested_sequence_number = 2;</code>
+     * <code>int32 requested_sequence_number = 2;</code>
      */
-    public long getRequestedSequenceNumber() {
+    public int getRequestedSequenceNumber() {
       return requestedSequenceNumber_;
     }
 
@@ -1774,8 +1774,8 @@ public final class MessageProto {
       if (!publicKey_.isEmpty()) {
         output.writeBytes(1, publicKey_);
       }
-      if (requestedSequenceNumber_ != 0L) {
-        output.writeInt64(2, requestedSequenceNumber_);
+      if (requestedSequenceNumber_ != 0) {
+        output.writeInt32(2, requestedSequenceNumber_);
       }
       if (limit_ != 0) {
         output.writeInt32(3, limit_);
@@ -1792,9 +1792,9 @@ public final class MessageProto {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(1, publicKey_);
       }
-      if (requestedSequenceNumber_ != 0L) {
+      if (requestedSequenceNumber_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(2, requestedSequenceNumber_);
+          .computeInt32Size(2, requestedSequenceNumber_);
       }
       if (limit_ != 0) {
         size += com.google.protobuf.CodedOutputStream
@@ -1836,8 +1836,7 @@ public final class MessageProto {
       hash = (37 * hash) + PUBLIC_KEY_FIELD_NUMBER;
       hash = (53 * hash) + getPublicKey().hashCode();
       hash = (37 * hash) + REQUESTED_SEQUENCE_NUMBER_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getRequestedSequenceNumber());
+      hash = (53 * hash) + getRequestedSequenceNumber();
       hash = (37 * hash) + LIMIT_FIELD_NUMBER;
       hash = (53 * hash) + getLimit();
       hash = (29 * hash) + unknownFields.hashCode();
@@ -1971,7 +1970,7 @@ public final class MessageProto {
         super.clear();
         publicKey_ = com.google.protobuf.ByteString.EMPTY;
 
-        requestedSequenceNumber_ = 0L;
+        requestedSequenceNumber_ = 0;
 
         limit_ = 0;
 
@@ -2044,7 +2043,7 @@ public final class MessageProto {
         if (other.getPublicKey() != com.google.protobuf.ByteString.EMPTY) {
           setPublicKey(other.getPublicKey());
         }
-        if (other.getRequestedSequenceNumber() != 0L) {
+        if (other.getRequestedSequenceNumber() != 0) {
           setRequestedSequenceNumber(other.getRequestedSequenceNumber());
         }
         if (other.getLimit() != 0) {
@@ -2106,28 +2105,28 @@ public final class MessageProto {
         return this;
       }
 
-      private long requestedSequenceNumber_ ;
+      private int requestedSequenceNumber_ ;
       /**
-       * <code>int64 requested_sequence_number = 2;</code>
+       * <code>int32 requested_sequence_number = 2;</code>
        */
-      public long getRequestedSequenceNumber() {
+      public int getRequestedSequenceNumber() {
         return requestedSequenceNumber_;
       }
       /**
-       * <code>int64 requested_sequence_number = 2;</code>
+       * <code>int32 requested_sequence_number = 2;</code>
        */
-      public Builder setRequestedSequenceNumber(long value) {
+      public Builder setRequestedSequenceNumber(int value) {
         
         requestedSequenceNumber_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>int64 requested_sequence_number = 2;</code>
+       * <code>int32 requested_sequence_number = 2;</code>
        */
       public Builder clearRequestedSequenceNumber() {
         
-        requestedSequenceNumber_ = 0L;
+        requestedSequenceNumber_ = 0;
         onChanged();
         return this;
       }
@@ -2240,7 +2239,7 @@ public final class MessageProto {
       "(\005\022\025\n\rprevious_hash\030\005 \001(\014\022\021\n\tsignature\030\006" +
       " \001(\014\022\023\n\013transaction\030\007 \001(\014\"T\n\014CrawlReques" +
       "t\022\022\n\npublic_key\030\001 \001(\014\022!\n\031requested_seque",
-      "nce_number\030\002 \001(\003\022\r\n\005limit\030\003 \001(\005B<\n,nl.tu" +
+      "nce_number\030\002 \001(\005\022\r\n\005limit\030\003 \001(\005B<\n,nl.tu" +
       "delft.cs4160.trustchain_android.messageB" +
       "\014MessageProtob\006proto3"
     };

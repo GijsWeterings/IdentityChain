@@ -474,6 +474,16 @@ public class TrustChainBlock {
     }
 
     /**
+     * Returns the latest block in the database associated with the given public key.
+     * @param dbReadable - database in which to search
+     * @param pubkey - public key for which to search for blocks
+     * @return
+     */
+    public static MessageProto.TrustChainBlock getLatestBlock(SQLiteDatabase dbReadable, byte[] pubkey) {
+        return getBlock(dbReadable,pubkey,getMaxSeqNum(dbReadable,pubkey));
+    }
+
+    /**
      * Get the maximum sequence number in the database associated with the given public key
      * @param dbReadable - database in which to search
      * @param pubkey - public key for which to search for blocks
