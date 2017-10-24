@@ -11,7 +11,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import nl.tudelft.cs4160.trustchain_android.R;
-import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
+import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
@@ -20,11 +20,11 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     Activity callingActivity;
     String destinationIP;
     int destinationPort;
-    BlockProto.TrustChainBlock message;
+    MessageProto.Message message;
 
     String response = "";
 
-    ClientTask(String ipAddress, int port, BlockProto.TrustChainBlock message, Activity callingActivity){
+    ClientTask(String ipAddress, int port, MessageProto.Message message, Activity callingActivity){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
         this.message = message;
@@ -32,16 +32,15 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     }
 
     /**
-     * Sends the TempBlock as a message to the specified server (another phone)
+     * Sends the block or crawlrequest as a message to the specified server (another phone)
      * and listens for a response from the server.
      */
     @Override
     protected Void doInBackground(Void... arg0) {
         Socket socket = null;
+        // ugly code cause of statically typed java
         try {
             socket = new Socket(destinationIP, destinationPort);
-
-            // send the block as a message to the server
             message.writeTo(socket.getOutputStream());
             socket.shutdownOutput();
 
