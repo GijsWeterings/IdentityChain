@@ -4,7 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Timestamp
+import com.google.protobuf.Timestamp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
