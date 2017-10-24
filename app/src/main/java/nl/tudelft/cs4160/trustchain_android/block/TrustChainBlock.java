@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -39,10 +40,10 @@ public class TrustChainBlock {
      * Creates a TrustChain genesis block using protocol buffers.
      * @return block - A BlockProto.TrustChainBlock
      */
-    public static BlockProto.TrustChainBlock createGenesisBlock() {
+    public static BlockProto.TrustChainBlock createGenesisBlock(KeyPair kp) {
         BlockProto.TrustChainBlock block = BlockProto.TrustChainBlock.newBuilder()
                 .setTransaction(ByteString.EMPTY)
-                .setPublicKey(EMPTY_PK)
+                .setPublicKey(ByteString.copyFrom(kp.getPublic().getEncoded()))
                 .setSequenceNumber(GENESIS_SEQ)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
@@ -50,6 +51,7 @@ public class TrustChainBlock {
                 .setSignature(EMPTY_SIG)
                 .setInsertTime(Timestamp.getDefaultInstance())
                 .build();
+        block = sign(block, kp.getPrivate());
         return block;
     }
 
