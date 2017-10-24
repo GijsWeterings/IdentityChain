@@ -15,6 +15,12 @@ import java.io.InputStreamReader;
 
 public class Util {
 
+    /**
+     * Read a file from storage
+     * @param context The context.
+     * @param fileName The file to be read.
+     * @return The content of the file
+     */
     public static String readFile(Context context, String fileName) {
         try {
             StringBuilder text = new StringBuilder();
@@ -35,6 +41,13 @@ public class Util {
         return null;
     }
 
+    /**
+     * Write to a file
+     * @param context The context
+     * @param fileName File to be written
+     * @param data The data to be written to the file
+     * @return True if successful, false if not
+     */
     public static boolean writeToFile(Context context, String fileName, String data) {
         FileOutputStream outputStream;
         try {
