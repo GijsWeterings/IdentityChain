@@ -46,6 +46,7 @@ import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.
 
 public class MainActivity extends AppCompatActivity {
     final static String TRANSACTION = "Hello world!";
+    final static int DEFAULT_PORT = 8080;
     private static final String TAG = "MainActivity";
 
     TrustChainDBHelper dbHelper;
