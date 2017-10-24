@@ -86,10 +86,9 @@ class Server {
                     MessageProto.TrustChainBlock block = message.getHalfBlock();
                     MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
 
-                    // TODO: detect which it is and handle the crawlrequests
                     messageLog += "#" + count + " from " + socket.getInetAddress();
                     // In case we received a halfblock
-                    if(block != null & crawlRequest == null) {
+                    if(block.getPublicKey().size() > 0 && crawlRequest.getPublicKey().size() == 0) {
                         count++;
                         messageLog += ":" + socket.getPort() + "\n"
                                 + "block received: " + block.toString();
@@ -109,7 +108,7 @@ class Server {
                     }
 
                     // In case we received a crawlrequest
-                    if(block == null && crawlRequest != null) {
+                    if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
                         count++;
                         messageLog += ":" + socket.getPort() + "\n"
                                 + "crawlrequest received: " + block.toString();
