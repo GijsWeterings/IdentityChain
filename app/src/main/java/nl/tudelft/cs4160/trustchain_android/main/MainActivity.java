@@ -32,7 +32,6 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
@@ -189,8 +188,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
-
-        // TODO: check if a keypair is already created - rico: I don't think this is the right place to check thsi
     }
 
     /**
@@ -292,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                 getMyPublicKey(),
                 linkedBlock,null);
 
-        sign(block, getMyPublicKey());
+        block = sign(block, kp.getPrivate());
 
         ValidationResult validation;
         try {
@@ -325,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
         BlockProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,peer.getPublicKey());
-        sign(block,getMyPublicKey());
+        block = sign(block, kp.getPrivate());
 
         ValidationResult validation;
         try {
@@ -349,9 +346,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Placeholder TODO: change all places where this method gets called to correct method
-    public static byte[] getMyPublicKey() {
-        return EMPTY_PK.toByteArray();
+    public byte[] getMyPublicKey() {
+        return kp.getPublic().getEncoded();
     }
 
 

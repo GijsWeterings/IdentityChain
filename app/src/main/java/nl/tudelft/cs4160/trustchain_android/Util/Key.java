@@ -115,13 +115,31 @@ public class Key {
         return false;
     }
 
+    private static KeyFactory getKeyFactory() {
+        try {
+            return KeyFactory.getInstance("ECDSA");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-    public static PublicKey loadPublicKey(Context context, String file, KeyFactory kf) {
+    public static PublicKey loadPublicKey(Context context, String file) {
         String key = Util.readFile(context, file);
         if(key == null) {
             return null;
         }
         Log.d(TAG, "PUBLIC FROM FILE" + key);
+        return loadPublicKey(key);
+    }
+
+
+    public static PublicKey loadPublicKey(String key) {
+        KeyFactory kf = getKeyFactory();
+        if(kf == null) {
+            return null;
+        }
+
         byte[] rawKey = Base64.decode(key, Base64.DEFAULT);
         X509EncodedKeySpec ks = new X509EncodedKeySpec(rawKey);
         try {
@@ -130,14 +148,24 @@ public class Key {
             e.printStackTrace();
         }
         return null;
+
     }
 
-    public static PrivateKey loadPrivateKey(Context context, String file, KeyFactory kf) {
+    public static PrivateKey loadPrivateKey(Context context, String file) {
         String key = Util.readFile(context, file);
         if(key == null) {
             return null;
         }
         Log.d(TAG, "PRIVATE FROM FILE" + key);
+        return loadPrivateKey(key);
+    }
+
+    public static PrivateKey loadPrivateKey(String key) {
+        KeyFactory kf = getKeyFactory();
+        if(kf == null) {
+            return null;
+        }
+
         byte[] rawKey = Base64.decode(key, Base64.DEFAULT);
         PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(rawKey);
         try {
@@ -149,20 +177,12 @@ public class Key {
     }
 
     public static KeyPair loadKeys(Context context) {
-        KeyFactory kf;
-        try {
-            kf = KeyFactory.getInstance("ECDSA");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-        PublicKey pubKey = Key.loadPublicKey(context, Key.DEFAULT_PUB_KEY_FILE, kf);
-        PrivateKey privateKey = Key.loadPrivateKey(context, Key.DEFAULT_PRIV_KEY_FILE, kf);
+        PublicKey pubKey = Key.loadPublicKey(context, Key.DEFAULT_PUB_KEY_FILE);
+        PrivateKey privateKey = Key.loadPrivateKey(context, Key.DEFAULT_PRIV_KEY_FILE);
         if(pubKey == null || privateKey == null) {
             return null;
         }
-        KeyPair kp = new KeyPair(pubKey, privateKey);
-        return kp;
+        return new KeyPair(pubKey, privateKey);
     }
 
     public static boolean saveKey(Context context, String file, java.security.Key key) {
