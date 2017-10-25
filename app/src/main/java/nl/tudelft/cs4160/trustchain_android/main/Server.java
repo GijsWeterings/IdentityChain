@@ -190,6 +190,8 @@ class Server {
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
             " and public key: " + bytesToHex(peer.getPublicKey()) + "\n" + Base64.encodeToString(peer.getPublicKey(), Base64.DEFAULT));
 
+        callingActivity.peers.put(peer.getIpAddress(),peer.getPublicKey());
+
         ValidationResult validation;
         try {
             validation = validate(block,dbHelper);

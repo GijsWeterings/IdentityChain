@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.protobuf.ByteString;
 
@@ -21,7 +22,9 @@ import java.net.NetworkInterface;
 
 import java.security.KeyPair;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.KeyActivity;
@@ -35,6 +38,7 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
@@ -49,7 +53,6 @@ import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.i
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 public class MainActivity extends AppCompatActivity {
-
     final static String TRANSACTION = "Hello world!";
     private final static String TAG = MainActivity.class.toString();
     final static int DEFAULT_PORT = 8080;
@@ -57,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
     SQLiteDatabase dbReadable;
+
+    public Map<String,byte[]> peers;
 
     TextView externalIPText;
     TextView localIPText;
@@ -86,15 +91,25 @@ public class MainActivity extends AppCompatActivity {
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-            Peer peer = new Peer(
-                    TEMP_PEER_PK.toByteArray(),
-                    editTextDestinationIP.getText().toString(),
-                    Integer.parseInt(editTextDestinationPort.getText().toString()));
-            try {
-                signBlock(TRANSACTION.getBytes("UTF-8"),peer);
-                sendCrawlRequest(peer,getMyPublicKey(),2);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            String ipAddress = editTextDestinationIP.getText().toString();
+            if (peers.containsKey(ipAddress)) {
+                Peer peer = new Peer(
+                        peers.get(ipAddress),
+                        editTextDestinationIP.getText().toString(),
+                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                try {
+                    signBlock(TRANSACTION.getBytes("UTF-8"), peer);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                Toast.makeText(getApplicationContext(),"Unknown peer, sending peer request, when received press connect again",Toast.LENGTH_LONG).show();
+                Peer peer = new Peer(
+                        EMPTY_PK.toByteArray(),
+                        editTextDestinationIP.getText().toString(),
+                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                sendCrawlRequest(peer,getMyPublicKey(),-5);
             }
         }
     };
@@ -141,6 +156,8 @@ public class MainActivity extends AppCompatActivity {
         dbHelper = new TrustChainDBHelper(thisActivity);
         db = dbHelper.getWritableDatabase();
         dbReadable = dbHelper.getReadableDatabase();
+
+        peers = new HashMap<>();
 
         //create or load keys
         initKeys();
@@ -269,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
         MessageProto.Message message = newBuilder().setHalfBlock(block).build();
-        Log.e("SENDING", "Send: \n" + Base64.encodeToString(message.getHalfBlock().getPublicKey().toByteArray(), Base64.DEFAULT) );
+        Log.i("SENDING", "Send: \n" + Base64.encodeToString(message.getHalfBlock().getPublicKey().toByteArray(), Base64.DEFAULT) );
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
@@ -315,13 +332,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
-//        } else {
+        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-//        }
+        }
     }
 
     /**
@@ -348,13 +365,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                 + validation.getErrors().toString());
-//        } else {
+        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-//        }
+        }
     }
 
     public byte[] getMyPublicKey() {
@@ -445,8 +462,6 @@ public class MainActivity extends AppCompatActivity {
         List<MessageProto.TrustChainBlock> blockList = dbHelper.crawl(getMyPublicKey(),sq);
 
         for(MessageProto.TrustChainBlock block : blockList) {
-            block = block.toBuilder().setPublicKey(ByteString.copyFrom(getMyPublicKey())).build();
-            block = sign(block, kp.getPrivate());
             sendBlock(peer,block);
         }
 
