@@ -66,7 +66,7 @@ public class TrustChainBlock {
     public static MessageProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
                                                          byte[] mypubk, MessageProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
-        MessageProto.TrustChainBlock latestBlock = getBlock(db,mypubk,getMaxSeqNum(db,mypubk));
+        MessageProto.TrustChainBlock latestBlock = getLatestBlock(db,mypubk);
 
         MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
         if(linkedBlock != null) {
@@ -151,8 +151,8 @@ public class TrustChainBlock {
         // successors, predecessors as well as the block itself and its linked block.
         MessageProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
         MessageProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
-        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()-1);
-        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()+1);
+        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
 
         // ** Step 2: Determine the maximum validation level **
         // Depending on the blocks we get from the database, we can decide to reduce the validation
