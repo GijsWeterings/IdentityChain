@@ -5,6 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Base64;
+import android.util.Log;
 
 import com.google.protobuf.ByteString;
 
@@ -70,12 +72,12 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
     public static long insertInDB(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
         ContentValues values = new ContentValues();
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toStringUtf8());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, block.getPublicKey().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER, block.getSequenceNumber());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, block.getLinkPublicKey().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER, block.getLinkSequenceNumber());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, block.getPreviousHash().toStringUtf8());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, block.getSignature().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, Base64.encodeToString(block.getSignature().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, new String(TrustChainBlock.hash(block)));
 
         return db.insert(TrustChainDBContract.BlockEntry.TABLE_NAME, null, values);
@@ -108,18 +110,19 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
 
             builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
                     .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
-                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))));
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)));
+
 
             res.add(builder.build());
         }
@@ -149,8 +152,8 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                 " AND (" + TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?" +
                 " OR " + TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + " = ?)";
         String[] whereArgs = new String[] {Long.toString(getMaxInsertTime(pubKey,seqNum)),
-                ByteString.copyFrom(pubKey).toStringUtf8(),
-                ByteString.copyFrom(pubKey).toStringUtf8()};
+                Base64.encodeToString(pubKey, Base64.DEFAULT),
+                Base64.encodeToString(pubKey, Base64.DEFAULT)};
         String sortOrder =
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + " ASC";
         String rowsLimit = Integer.toString(limit);
@@ -170,21 +173,20 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
         MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
 
         while(cursor.moveToNext()) {
-
             builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
                     .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
-                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))));
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)));
 
             res.add(builder.build());
         }
@@ -219,7 +221,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + ")"};
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?" +
                 " AND " + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " <= ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubKey).toStringUtf8(),
+        String[] whereArgs = new String[] { Base64.encodeToString(pubKey, Base64.DEFAULT),
                 Integer.toString(seqNum)};
 
         Cursor cursor = dbReadable.query(

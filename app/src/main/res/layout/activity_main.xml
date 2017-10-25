@@ -64,6 +64,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/chain_explorer"/>
+            <Button
+                android:id="@+id/getBlockInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Get block info"/>
         </LinearLayout>
 
         <Button
