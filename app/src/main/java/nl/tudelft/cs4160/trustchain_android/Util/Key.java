@@ -7,7 +7,10 @@ import android.util.Log;
 import org.spongycastle.asn1.x9.X9ECParameters;
 import org.spongycastle.crypto.ec.CustomNamedCurves;
 import org.spongycastle.jce.ECNamedCurveTable;
+import org.spongycastle.jce.ECPointUtil;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.spongycastle.jce.spec.ECNamedCurveSpec;
 import org.spongycastle.jce.spec.ECParameterSpec;
 
 import java.security.InvalidAlgorithmParameterException;
@@ -23,6 +26,9 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -178,14 +184,15 @@ public class Key {
         }
 
         byte[] rawKey = Base64.decode(key, Base64.DEFAULT);
-        X509EncodedKeySpec ks = new X509EncodedKeySpec(rawKey);
+        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(rawKey);
+
+        Log.i("TEMP", Base64.encodeToString(rawKey, Base64.DEFAULT));
         try {
-            return kf.generatePublic(ks);
+            return kf.generatePublic(pubKeySpec);
         } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
         return null;
-
     }
 
     /**

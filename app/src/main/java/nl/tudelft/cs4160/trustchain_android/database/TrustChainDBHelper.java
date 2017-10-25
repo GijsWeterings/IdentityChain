@@ -29,7 +29,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
             TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE + " TEXT NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_INSERT_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH + " TEXT NOT NULL," +
-            "PRIMARY KEY (" + TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + "," +
+            "PRIMARY KEY (" + TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + "," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")" +
             ");" +
 
