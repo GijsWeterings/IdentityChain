@@ -231,6 +231,8 @@ class Server {
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
         // the gap and delay the method until the gap is filled.
+        // Note that this code does not cover the scenario where we obtain this block indirectly,
+        // because the code does nothing with this block after the crawlRequest was received.
         if(validation.getStatus() == PARTIAL_PREVIOUS || validation.getStatus() == PARTIAL ||
                 validation.getStatus() == NO_INFO) {
             Log.i(TAG, "Request block could not be validated sufficiently, requested crawler. " +
