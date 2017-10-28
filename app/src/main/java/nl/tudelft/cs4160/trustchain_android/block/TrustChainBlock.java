@@ -304,12 +304,12 @@ public class TrustChainBlock {
         if(linkBlock != null) {
             // Sanity check to see if the database returned the expected block, we want to make sure
             // we have the right block before making a fraud claim.
-            if(!linkBlock.getPublicKey().equals(block.getPublicKey()) ||
+            if(!linkBlock.getPublicKey().equals(block.getLinkPublicKey()) ||
                     (linkBlock.getLinkSequenceNumber() != block.getSequenceNumber() &&
                     linkBlock.getSequenceNumber() != block.getLinkSequenceNumber())) {
                 throw new Exception("Database returned unexpected block");
             }
-            if(!block.getPublicKey().equals(linkBlock.getPublicKey())) {
+            if(!block.getPublicKey().equals(linkBlock.getLinkPublicKey())) {
                 result.setInvalid();
                 errors.add("Public key mismatch on linked block");
             } else if(block.getLinkSequenceNumber() != UNKNOWN_SEQ) {

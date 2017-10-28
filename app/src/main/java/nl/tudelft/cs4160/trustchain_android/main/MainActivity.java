@@ -20,6 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 
+import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,11 +84,16 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Listener for the connection button.
      * On click a block is created and send to a peer.
-     * TODO: For now a halfblock is created and send, this should be changed to first sending a crawl
-     * TODO: request to either get some information on the peer, like its pubKey which is needed for
-     * TODO: building a block. Or to check whether the information we have associated with this IP
-     * TODO: is still correct. (although we can never get a valid full block anyway when we send it
-     * TODO: to the wrong person)
+     * When we encounter an unknown peer, send a crawl request to that peer in order to get its
+     * public key.
+     * Also send our last 5 blocks to the peer so it gets to know us.
+     *
+     * This is code to simulate dispersy, note that this does not work properly with a busy network,
+     * because the time delay between sending information to the peer and sending the actual
+     * to-be-signed block could cause gaps.
+     *
+     * Also note that whatever goes wrong we will never get a valid full block, so the integrity of
+     * the network is not compromised due to not using dispersy.
      */
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
@@ -105,12 +111,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             else {
-                Toast.makeText(getApplicationContext(),"Unknown peer, sending peer request, when received press connect again",Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
                 Peer peer = new Peer(
                         EMPTY_PK.toByteArray(),
                         editTextDestinationIP.getText().toString(),
                         Integer.parseInt(editTextDestinationPort.getText().toString()));
                 sendCrawlRequest(peer,getMyPublicKey(),-5);
+                sendLatestBlocksToPeer(peer);
             }
         }
     };
@@ -492,5 +499,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Log.i(TAG,"Sent " + blockList.size() + " blocks");
+    }
+
+    /**
+     * Act like we received a crawl request to send information about us to the peer.
+     */
+    public void sendLatestBlocksToPeer(Peer peer) {
+        MessageProto.CrawlRequest crawlRequest =
+                MessageProto.CrawlRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(peer.getPublicKey()))
+                        .setRequestedSequenceNumber(-5)
+                        .setLimit(100).build();
+        InetAddress address = null;
+        try {
+            address = InetAddress.getByName(peer.getIpAddress());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        receivedCrawlRequest(address,peer.getPort(),crawlRequest);
     }
 }
