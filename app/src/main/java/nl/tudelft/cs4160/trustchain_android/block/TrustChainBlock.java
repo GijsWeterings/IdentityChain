@@ -351,9 +351,6 @@ public class TrustChainBlock {
             // If there is no gap, the previous hash of nextBlock should be equal to the hash of block
             if(nextBlock.getSequenceNumber() == block.getSequenceNumber() + 1 &&
                     !Arrays.equals(nextBlock.getPreviousHash().toByteArray(), hash(block))) {
-                Log.e(TAG,"Nextblock prev hash: \n" + bytesToHex(nextBlock.getPreviousHash().toByteArray()));
-                Log.e(TAG,"Hash of this block: \n" + bytesToHex(hash(block)));
-
                 result.setInvalid();
                 errors.add("Prev hash of next block is not equal to the hash id of this block");
                 // Again, this might not be fraud, but fixing it can only result in fraud.
@@ -399,8 +396,8 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
                     .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();
@@ -448,8 +445,8 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
                     .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();
@@ -497,8 +494,8 @@ public class TrustChainBlock {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
                     .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();

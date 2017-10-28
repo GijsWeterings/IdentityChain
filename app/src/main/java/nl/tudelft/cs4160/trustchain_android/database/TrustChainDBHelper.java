@@ -76,9 +76,9 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER, block.getSequenceNumber());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER, block.getLinkSequenceNumber());
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, block.getPreviousHash().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH, Base64.encodeToString(block.getPreviousHash().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE, Base64.encodeToString(block.getSignature().toByteArray(), Base64.DEFAULT));
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, new String(TrustChainBlock.hash(block)));
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_BLOCK_HASH, Base64.encodeToString(TrustChainBlock.hash(block), Base64.DEFAULT));
 
         return db.insert(TrustChainDBContract.BlockEntry.TABLE_NAME, null, values);
     }
@@ -118,8 +118,8 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
                     .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)));
 
@@ -183,8 +183,8 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
                     .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)));
 
