@@ -204,7 +204,7 @@ class Server {
 
         if(validation.getStatus() == ValidationResult.INVALID) {
             for(String error: validation.getErrors()) {
-                Log.e(TAG, error);
+                Log.e(TAG, "Validation error: " + error);
             }
             return;
         } else {
@@ -218,11 +218,13 @@ class Server {
                 null != getBlock(dbHelper.getReadableDatabase(),
                             block.getLinkPublicKey().toByteArray(),
                             block.getLinkSequenceNumber())) {
+            Log.e(TAG,"Received block not addressed to me or already signed by me.");
             return;
         }
 
         // determine if we should sign the block, if not: do nothing
         if(!shouldSign(block)) {
+            Log.e(TAG,"Will not sign received block.");
             return;
         }
 
@@ -239,7 +241,5 @@ class Server {
             callingActivity.signBlock(peer, block);
         }
     }
-
-
 
 }

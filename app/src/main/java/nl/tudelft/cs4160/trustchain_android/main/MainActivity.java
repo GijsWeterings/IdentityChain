@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 
 import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,6 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
@@ -321,17 +321,24 @@ public class MainActivity extends AppCompatActivity {
      * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
      */
     public void signBlock(Peer peer, MessageProto.TrustChainBlock linkedBlock) {
+        // assert that the linked block is not null
+        if(linkedBlock == null){
+            Log.e(TAG,"signBlock: Linked block is null.");
+            return;
+        }
         // do nothing if linked block is not addressed to me
-        if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
+        if(!Arrays.equals(linkedBlock.getLinkPublicKey().toByteArray(),getMyPublicKey())){
+            Log.e(TAG,"signBlock: Linked block not addressed to me.");
             return;
         }
         // do nothing if block is not a request
         if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
+            Log.e(TAG,"signBlock: Block is not a request.");
             return;
         }
         MessageProto.TrustChainBlock block = createBlock(null,dbReadable,
                 getMyPublicKey(),
-                linkedBlock,null);
+                linkedBlock,peer.getPublicKey());
 
         block = sign(block, kp.getPrivate());
 
@@ -363,6 +370,9 @@ public class MainActivity extends AppCompatActivity {
      * @param transaction - a transaction which should be embedded in the block
      */
     public void signBlock(byte[] transaction, Peer peer) {
+        if(transaction == null) {
+            Log.e(TAG,"signBlock: Null transaction given.");
+        }
         MessageProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,peer.getPublicKey());
