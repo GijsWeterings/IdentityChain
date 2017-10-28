@@ -22,6 +22,8 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+
 /**
  * Created by meijer on 20-9-17.
  */
@@ -33,8 +35,7 @@ public class TrustChainBlock {
     public static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
     public static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
 
-    // TODO: remove
-    public static final ByteString TEMP_PEER_PK = ByteString.copyFrom(new byte[] {0x01});
+    final static String TAG = "TrustChainBlock";
 
     /**
      * Creates a TrustChain genesis block using protocol buffers.
@@ -350,8 +351,11 @@ public class TrustChainBlock {
             // If there is no gap, the previous hash of nextBlock should be equal to the hash of block
             if(nextBlock.getSequenceNumber() == block.getSequenceNumber() + 1 &&
                     !Arrays.equals(nextBlock.getPreviousHash().toByteArray(), hash(block))) {
+                Log.e(TAG,"Nextblock prev hash: \n" + bytesToHex(nextBlock.getPreviousHash().toByteArray()));
+                Log.e(TAG,"Hash of this block: \n" + bytesToHex(hash(block)));
+
                 result.setInvalid();
-                errors.add("Next hash is not equal to the hash id of the block");
+                errors.add("Prev hash of next block is not equal to the hash id of this block");
                 // Again, this might not be fraud, but fixing it can only result in fraud.
             }
         }
