@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "nl.tudelft.cs4160.trustchain_android"
         minSdkVersion 17
@@ -27,5 +27,8 @@ dependencies {
     compile files('libs/protobuf-java-3.4.1.jar')
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.madgag.spongycastle:core:1.58.0.0'
+    compile 'com.madgag.spongycastle:prov:1.58.0.0'
+    compile 'com.android.support:design:25.3.1'
     testCompile 'junit:junit:4.12'
 }

@@ -2,18 +2,25 @@ package nl.tudelft.cs4160.trustchain_android.block;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Base64;
 
 import com.google.protobuf.ByteString;
 
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
+
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
 /**
  * Created by meijer on 20-9-17.
@@ -26,23 +33,23 @@ public class TrustChainBlock {
     public static final ByteString EMPTY_SIG = ByteString.copyFrom(new byte[] {0x00});
     public static final ByteString EMPTY_PK = ByteString.copyFrom(new byte[] {0x00});
 
-    // TODO: remove
-    public static final ByteString TEMP_PEER_PK = ByteString.copyFrom(new byte[] {0x01});
+    final static String TAG = "TrustChainBlock";
 
     /**
      * Creates a TrustChain genesis block using protocol buffers.
      * @return block - A MessageProto.TrustChainBlock
      */
-    public static MessageProto.TrustChainBlock createGenesisBlock() {
+    public static MessageProto.TrustChainBlock createGenesisBlock(KeyPair kp) {
         MessageProto.TrustChainBlock block = MessageProto.TrustChainBlock.newBuilder()
                 .setTransaction(ByteString.EMPTY)
-                .setPublicKey(EMPTY_PK)
+                .setPublicKey(ByteString.copyFrom(kp.getPublic().getEncoded()))
                 .setSequenceNumber(GENESIS_SEQ)
                 .setLinkPublicKey(EMPTY_PK)
                 .setLinkSequenceNumber(UNKNOWN_SEQ)
                 .setPreviousHash(GENESIS_HASH)
                 .setSignature(EMPTY_SIG)
                 .build();
+        block = sign(block, kp.getPrivate());
         return block;
     }
 
@@ -58,7 +65,7 @@ public class TrustChainBlock {
     public static MessageProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
                                                          byte[] mypubk, MessageProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
-        MessageProto.TrustChainBlock latestBlock = getBlock(db,mypubk,getMaxSeqNum(db,mypubk));
+        MessageProto.TrustChainBlock latestBlock = getLatestBlock(db,mypubk);
 
         MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
         if(linkedBlock != null) {
@@ -105,16 +112,22 @@ public class TrustChainBlock {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        return md.digest(block.toByteArray());
+        //remove the signature (if there is any)
+        MessageProto.TrustChainBlock rawBlock = block.toBuilder().setSignature(EMPTY_SIG).build();
+        return md.digest(rawBlock.toByteArray());
     }
 
 
     /**
      * Signs this block with a given public key.
-     * TODO: implement this method
      */
-    public static void sign(MessageProto.TrustChainBlock block, byte[] myPubKey) {
+    public static MessageProto.TrustChainBlock sign(MessageProto.TrustChainBlock block, PrivateKey privateKey) {
+        //sign the hash
+        byte[] hash = TrustChainBlock.hash(block);
+        byte[] signature = Key.sign(privateKey, hash);
 
+        //create the block
+        return block.toBuilder().setSignature(ByteString.copyFrom(signature)).build();
     }
 
     /**
@@ -137,8 +150,8 @@ public class TrustChainBlock {
         // successors, predecessors as well as the block itself and its linked block.
         MessageProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
         MessageProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
-        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()-1);
-        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber()+1);
+        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
 
         // ** Step 2: Determine the maximum validation level **
         // Depending on the blocks we get from the database, we can decide to reduce the validation
@@ -203,17 +216,28 @@ public class TrustChainBlock {
 
         if(block.getSequenceNumber() < GENESIS_SEQ) {
             result.setInvalid();
-            errors.add("Sequence number is prior to genesis");
+            errors.add("Sequence number is prior to genesis. Number is now" + block.getSequenceNumber() + ", genesis: " + GENESIS_SEQ);
         }
         if(block.getLinkSequenceNumber() < GENESIS_SEQ && block.getLinkSequenceNumber() != UNKNOWN_SEQ) {
             result.setInvalid();
             errors.add("Link sequence number not empty and is prior to genesis");
         }
-        // TODO: check for validity of public key; if not: err("Public key is not valid")
 
-        // If public key is valid, check validity of signature
-
-        // TODO: implement signature checking
+        //TODO: resolve stupid conversions byte[] => Base64 => byte[]
+        String key = Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT);
+        PublicKey publicKey = Key.loadPublicKey(key);
+        if(publicKey == null) {
+            result.setInvalid();
+            errors.add("Public key is not valid");
+        } else {
+            // If public key is valid, check validity of signature
+            byte[] hash = hash(block);
+            byte[] signature = block.getSignature().toByteArray();
+            if (!Key.verify(publicKey, hash, signature)) {
+                result.setInvalid();
+                errors.add("Invalid signature.");
+            }
+        }
 
         // If a block is linked with a block of the same owner it does not serve any purpose and is invalid.
         if(block.getPublicKey().equals(block.getLinkPublicKey())) {
@@ -222,11 +246,11 @@ public class TrustChainBlock {
         }
         // If it is implied that block is a genesis block, check if it correctly set up
         if(isGenesisBlock(block)){
-            if(block.getSequenceNumber() == GENESIS_SEQ && block.getPreviousHash() != GENESIS_HASH) {
+            if(block.getSequenceNumber() == GENESIS_SEQ && !block.getPreviousHash().equals(GENESIS_HASH)) {
                 result.setInvalid();
                 errors.add("Sequence number implies previous hash should be Genesis Hash");
             }
-            if(block.getSequenceNumber() != GENESIS_SEQ && block.getPreviousHash() == GENESIS_HASH) {
+            if(block.getSequenceNumber() != GENESIS_SEQ && block.getPreviousHash().equals(GENESIS_HASH)) {
                 result.setInvalid();
                 errors.add("Sequence number implies previous hash should not be Genesis Hash");
             }
@@ -252,6 +276,7 @@ public class TrustChainBlock {
             if(!dbBlock.getPreviousHash().equals(block.getPreviousHash())) {
                 result.setInvalid();
                 errors.add("Previous hash does not match known block.");
+
             }
             if(!dbBlock.getSignature().equals(block.getSignature())) {
                 result.setInvalid();
@@ -273,12 +298,12 @@ public class TrustChainBlock {
         if(linkBlock != null) {
             // Sanity check to see if the database returned the expected block, we want to make sure
             // we have the right block before making a fraud claim.
-            if(!linkBlock.getPublicKey().equals(block.getPublicKey()) ||
+            if(!linkBlock.getPublicKey().equals(block.getLinkPublicKey()) ||
                     (linkBlock.getLinkSequenceNumber() != block.getSequenceNumber() &&
                     linkBlock.getSequenceNumber() != block.getLinkSequenceNumber())) {
                 throw new Exception("Database returned unexpected block");
             }
-            if(!block.getPublicKey().equals(linkBlock.getPublicKey())) {
+            if(!block.getPublicKey().equals(linkBlock.getLinkPublicKey())) {
                 result.setInvalid();
                 errors.add("Public key mismatch on linked block");
             } else if(block.getLinkSequenceNumber() != UNKNOWN_SEQ) {
@@ -321,7 +346,7 @@ public class TrustChainBlock {
             if(nextBlock.getSequenceNumber() == block.getSequenceNumber() + 1 &&
                     !Arrays.equals(nextBlock.getPreviousHash().toByteArray(), hash(block))) {
                 result.setInvalid();
-                errors.add("Next hash is not equal to the hash id of the block");
+                errors.add("Prev hash of next block is not equal to the hash id of this block");
                 // Again, this might not be fraud, but fixing it can only result in fraud.
             }
         }
@@ -340,7 +365,7 @@ public class TrustChainBlock {
         MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+        String[] whereArgs = new String[] { Base64.encodeToString(pubkey, Base64.DEFAULT),
                 Integer.toString(seqNumber)};
 
         Cursor cursor = dbReadable.query(
@@ -357,18 +382,18 @@ public class TrustChainBlock {
 
             res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
-                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();
         }
         cursor.close();
@@ -388,7 +413,7 @@ public class TrustChainBlock {
         MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " < ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+        String[] whereArgs = new String[] {Base64.encodeToString(pubkey, Base64.DEFAULT),
                 Integer.toString(seqNumber)};
         String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " DESC";
 
@@ -406,18 +431,18 @@ public class TrustChainBlock {
 
             res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
-                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();
         }
         cursor.close();
@@ -437,7 +462,7 @@ public class TrustChainBlock {
         MessageProto.TrustChainBlock res = null;
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " > ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8(),
+        String[] whereArgs = new String[] { Base64.encodeToString(pubkey, Base64.DEFAULT),
                 Integer.toString(seqNumber)};
         String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " ASC";
 
@@ -455,18 +480,18 @@ public class TrustChainBlock {
 
             res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY))))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
                     .setLinkSequenceNumber(cursor.getInt(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH))))
-                    .setSignature(ByteString.copyFromUtf8(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE))))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
                     .build();
         }
         cursor.close();
@@ -494,7 +519,7 @@ public class TrustChainBlock {
         String[] projection = new String[] {"max(" +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"};
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?";
-        String[] whereArgs = new String[] {ByteString.copyFrom(pubkey).toStringUtf8()};
+        String[] whereArgs = new String[] {Base64.encodeToString(pubkey, Base64.DEFAULT)};
 
         Cursor cursor = dbReadable.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,
@@ -523,6 +548,59 @@ public class TrustChainBlock {
      */
     public static ValidationResult validateTransaction(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
         return new ValidationResult();
+    }
+
+    /**
+     * Creates a string representation of a trustchain block.
+     * @param block - The block which needs to be represented as a string
+     * @return a string representing block
+     */
+    public static String toString(MessageProto.TrustChainBlock block){
+        String res = "Trustchainblock: {\n";
+        res += "Public key: " + bytesToHex(block.getPublicKey().toByteArray()) + "\n";
+        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
+        res += "Link Public Key: " + bytesToHex(block.getLinkPublicKey().toByteArray()) + "\n";
+        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "Previous Hash: " + bytesToHex(block.getPreviousHash().toByteArray()) + "\n";
+        res += "Signature: " + bytesToHex(block.getSignature().toByteArray()) + "\n";
+        res += "Transaction: \n" + block.getTransaction().toStringUtf8() + "\n";
+        res += "}";
+        return res;
+    }
+
+    /**
+     * Creates a short string representation of a trustchain block.
+     * Provides just enough information to distinguish blocks from each other.
+     * @param block - The block which needs to be represented as a string
+     * @return a string representing block
+     */
+    public static String toShortString(MessageProto.TrustChainBlock block){
+        String res = "Trustchainblock: {\n";
+        res += "Public key: " + pubKeyToString(block.getPublicKey().toByteArray()) + "\n";
+        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
+        res += "Link Public Key: " + pubKeyToString(block.getLinkPublicKey().toByteArray()) + "\n";
+        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "}";
+        return res;
+    }
+
+    /**
+     * Helper method for toString method of TrustChainBlock. Creates a representation of a public key
+     * representing a maximum of 64 bytes.
+     * @param pubKey
+     * @return
+     */
+    private static String pubKeyToString(byte[] pubKey){
+        String res;
+        int length = pubKey.length;
+        if(length > 64) {
+            res = bytesToHex(Arrays.copyOfRange(pubKey,0,32)) + "(...)"
+                    + bytesToHex(Arrays.copyOfRange(pubKey,length-33,length-1));
+        } else {
+            res = bytesToHex(pubKey);
+        }
+        res += " (size: " + length + ")";
+        return res;
     }
 
 }
