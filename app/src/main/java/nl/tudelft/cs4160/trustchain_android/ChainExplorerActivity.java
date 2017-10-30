@@ -8,6 +8,7 @@ import android.widget.TextView;
 import java.util.Iterator;
 import java.util.List;
 
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
@@ -40,7 +41,7 @@ public class ChainExplorerActivity extends AppCompatActivity {
         String blocksString = "";
         Iterator<MessageProto.TrustChainBlock> iterator = blockList.iterator();
         while(iterator.hasNext()) {
-            blocksString += iterator.next().toString() + "\n\n";
+            blocksString += TrustChainBlock.toString(iterator.next()) + "\n\n";
         }
         databaseContentText.setText(blocksString);
     }

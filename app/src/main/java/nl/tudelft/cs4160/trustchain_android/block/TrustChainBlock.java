@@ -20,6 +20,8 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
+
 /**
  * Created by meijer on 20-9-17.
  */
@@ -546,6 +548,59 @@ public class TrustChainBlock {
      */
     public static ValidationResult validateTransaction(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
         return new ValidationResult();
+    }
+
+    /**
+     * Creates a string representation of a trustchain block.
+     * @param block - The block which needs to be represented as a string
+     * @return a string representing block
+     */
+    public static String toString(MessageProto.TrustChainBlock block){
+        String res = "Trustchainblock: {\n";
+        res += "Public key: " + bytesToHex(block.getPublicKey().toByteArray()) + "\n";
+        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
+        res += "Link Public Key: " + bytesToHex(block.getLinkPublicKey().toByteArray()) + "\n";
+        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "Previous Hash: " + bytesToHex(block.getPreviousHash().toByteArray()) + "\n";
+        res += "Signature: " + bytesToHex(block.getSignature().toByteArray()) + "\n";
+        res += "Transaction: \n" + block.getTransaction().toStringUtf8() + "\n";
+        res += "}";
+        return res;
+    }
+
+    /**
+     * Creates a short string representation of a trustchain block.
+     * Provides just enough information to distinguish blocks from each other.
+     * @param block - The block which needs to be represented as a string
+     * @return a string representing block
+     */
+    public static String toShortString(MessageProto.TrustChainBlock block){
+        String res = "Trustchainblock: {\n";
+        res += "Public key: " + pubKeyToString(block.getPublicKey().toByteArray()) + "\n";
+        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
+        res += "Link Public Key: " + pubKeyToString(block.getLinkPublicKey().toByteArray()) + "\n";
+        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "}";
+        return res;
+    }
+
+    /**
+     * Helper method for toString method of TrustChainBlock. Creates a representation of a public key
+     * representing a maximum of 64 bytes.
+     * @param pubKey
+     * @return
+     */
+    private static String pubKeyToString(byte[] pubKey){
+        String res;
+        int length = pubKey.length;
+        if(length > 64) {
+            res = bytesToHex(Arrays.copyOfRange(pubKey,0,32)) + "(...)"
+                    + bytesToHex(Arrays.copyOfRange(pubKey,length-33,length-1));
+        } else {
+            res = bytesToHex(pubKey);
+        }
+        res += " (size: " + length + ")";
+        return res;
     }
 
 }

@@ -14,6 +14,7 @@ import java.util.Arrays;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
@@ -86,12 +87,12 @@ class Server {
                     MessageProto.TrustChainBlock block = message.getHalfBlock();
                     MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
 
-                    messageLog += "#" + count + " from " + socket.getInetAddress();
                     // In case we received a halfblock
                     if(block.getPublicKey().size() > 0 && crawlRequest.getPublicKey().size() == 0) {
                         count++;
-                        messageLog += ":" + socket.getPort() + "\n"
-                                + "block received: " + block.toString();
+                        messageLog += "block received from: " + socket.getInetAddress() + ":"
+                                + socket.getPort() + "\n"
+                                + TrustChainBlock.toShortString(block);
                         callingActivity.runOnUiThread(new Runnable() {
 
                             @Override
@@ -110,8 +111,9 @@ class Server {
                     // In case we received a crawlrequest
                     if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
                         count++;
-                        messageLog += ":" + socket.getPort() + "\n"
-                                + "crawlrequest received: " + block.toString();
+                        messageLog += "crawlrequest received from: " + socket.getInetAddress() + ":"
+                                + socket.getPort() + "\n"
+                                + crawlRequest.toString();
                         callingActivity.runOnUiThread(new Runnable() {
 
                             @Override
@@ -149,7 +151,7 @@ class Server {
         @Override
         public void run() {
             OutputStream outputStream;
-            String msgReply = "Hello from Android, you are #" + cnt;
+            String msgReply = "message #" + cnt + " received";
             responseLog = "";
 
             try {
@@ -199,7 +201,8 @@ class Server {
             return;
         }
 
-        Log.i(TAG,"Received block validation result " + validation.toString() + "(" + block.toString() + ")");
+        Log.i(TAG,"Received block validation result " + validation.toString() + "("
+                + TrustChainBlock.toString(block) + ")");
 
         if(validation.getStatus() == ValidationResult.INVALID) {
             for(String error: validation.getErrors()) {
