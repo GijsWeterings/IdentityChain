@@ -1,8 +1,10 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     TextView statusText;
     Button connectionButton;
     Button chainExplorerButton;
+    Button resetDatabaseButton;
     Button keyOptionsButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
@@ -134,6 +137,18 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    View.OnClickListener resetDatabaseListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
+                ((ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE))
+                        .clearApplicationUserData();
+            } else {
+                Toast.makeText(getApplicationContext(), "Requires at least API 19 (KitKat)", Toast.LENGTH_LONG).show();
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
         editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
         connectionButton = (Button) findViewById(R.id.connection_button);
         chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
+        resetDatabaseButton = (Button) findViewById(R.id.reset_database_button);
         keyOptionsButton = (Button) findViewById(R.id.key_options_button);
     }
 
@@ -177,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
         connectionButton.setOnClickListener(connectionButtonListener);
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener);
         keyOptionsButton.setOnClickListener(keyOptionsListener);
+        resetDatabaseButton.setOnClickListener(resetDatabaseListener);
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
