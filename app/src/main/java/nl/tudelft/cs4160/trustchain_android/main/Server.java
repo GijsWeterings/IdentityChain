@@ -1,6 +1,5 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
-import android.util.Base64;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -188,7 +187,7 @@ class Server {
         TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
         Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
-            " and public key: " + bytesToHex(peer.getPublicKey()) + "\n" + Base64.encodeToString(peer.getPublicKey(), Base64.DEFAULT));
+            " and public key: " + bytesToHex(peer.getPublicKey()));
 
         callingActivity.peers.put(peer.getIpAddress(),peer.getPublicKey());
 
@@ -235,7 +234,7 @@ class Server {
         // because the code does nothing with this block after the crawlRequest was received.
         if(validation.getStatus() == PARTIAL_PREVIOUS || validation.getStatus() == PARTIAL ||
                 validation.getStatus() == NO_INFO) {
-            Log.i(TAG, "Request block could not be validated sufficiently, requested crawler. " +
+            Log.e(TAG, "Request block could not be validated sufficiently, requested crawler. " +
                     validation.toString());
             // send a crawl request, requesting the last 5 blocks before the received halfblock (if available) of the peer
             callingActivity.sendCrawlRequest(peer,block.getPublicKey().toByteArray(),Math.max(GENESIS_SEQ,block.getSequenceNumber()-5));

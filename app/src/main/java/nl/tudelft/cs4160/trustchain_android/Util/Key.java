@@ -7,10 +7,7 @@ import android.util.Log;
 import org.spongycastle.asn1.x9.X9ECParameters;
 import org.spongycastle.crypto.ec.CustomNamedCurves;
 import org.spongycastle.jce.ECNamedCurveTable;
-import org.spongycastle.jce.ECPointUtil;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.spongycastle.jce.spec.ECNamedCurveSpec;
 import org.spongycastle.jce.spec.ECParameterSpec;
 
 import java.security.InvalidAlgorithmParameterException;
@@ -26,9 +23,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -167,7 +161,7 @@ public class Key {
         if(key == null) {
             return null;
         }
-        Log.d(TAG, "PUBLIC FROM FILE" + key);
+        Log.i(TAG, "PUBLIC FROM FILE: " + key);
         return loadPublicKey(key);
     }
 
@@ -186,7 +180,6 @@ public class Key {
         byte[] rawKey = Base64.decode(key, Base64.DEFAULT);
         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(rawKey);
 
-        Log.i("TEMP", Base64.encodeToString(rawKey, Base64.DEFAULT));
         try {
             return kf.generatePublic(pubKeySpec);
         } catch (InvalidKeySpecException e) {
@@ -206,7 +199,7 @@ public class Key {
         if(key == null) {
             return null;
         }
-        Log.d(TAG, "PRIVATE FROM FILE" + key);
+        Log.i(TAG, "PRIVATE FROM FILE: " + key);
         return loadPrivateKey(key);
     }
 
