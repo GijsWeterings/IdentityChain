@@ -7,6 +7,7 @@
     <string name="default_port">8080</string>
     <string name="connect_to">Connect to IP</string>
     <string name="connect">connect</string>
+    <string name="reset_database_button">Clear Database (closes app)</string>
 
     <string name="title_activity_key">Key management</string>
     <string name="key_options">Key options</string>
