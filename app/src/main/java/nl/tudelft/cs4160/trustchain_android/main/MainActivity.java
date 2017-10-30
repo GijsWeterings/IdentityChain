@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
     Button connectionButton;
     Button chainExplorerButton;
     Button keyOptionsButton;
-    Button blockInfoButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
 
@@ -135,19 +134,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    View.OnClickListener blockInfoListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            MessageProto.TrustChainBlock block = getBlock(dbReadable, getMyPublicKey(), 1);
-            if(block ==  null) {
-                Log.e(TAG, "No block found for: \n" + bytesToHex(getMyPublicKey()) + "\nsize: " + getMyPublicKey().length);
-            } else {
-                Log.i(TAG, "FROM DB: \n" + bytesToHex(block.getPublicKey().toByteArray()));
-            }
-        }
-    };
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -168,7 +154,6 @@ public class MainActivity extends AppCompatActivity {
         connectionButton = (Button) findViewById(R.id.connection_button);
         chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
         keyOptionsButton = (Button) findViewById(R.id.key_options_button);
-        blockInfoButton = (Button) findViewById(R.id.getBlockInfo);
     }
 
     private void init() {
@@ -192,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
         connectionButton.setOnClickListener(connectionButtonListener);
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener);
         keyOptionsButton.setOnClickListener(keyOptionsListener);
-        blockInfoButton.setOnClickListener(blockInfoListener);
         Server socketServer = new Server(thisActivity);
         socketServer.start();
     }
