@@ -6,11 +6,9 @@
     tools:context="nl.tudelft.cs4160.trustchain_android.main.MainActivity">
 
     <LinearLayout
-        android:layout_width="368dp"
-        android:layout_height="495dp"
-        android:orientation="vertical"
-        tools:layout_editor_absoluteY="8dp"
-        tools:layout_editor_absoluteX="8dp">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
@@ -51,7 +49,7 @@
             android:text="@string/default_port" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button
@@ -77,12 +75,19 @@
             android:layout_height="wrap_content"
             android:text="@string/key_options" />
 
-        <TextView
-            android:id="@+id/status"
+        <android.widget.ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="10"
-            android:scrollbars="vertical" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            tools:context="nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </android.widget.ScrollView>
+
+</LinearLayout>
+
 
 </android.support.constraint.ConstraintLayout>

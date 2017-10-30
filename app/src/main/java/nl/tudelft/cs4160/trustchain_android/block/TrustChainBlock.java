@@ -3,16 +3,14 @@ package nl.tudelft.cs4160.trustchain_android.block;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
-import android.util.Log;
 
 import com.google.protobuf.ByteString;
 
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,8 +19,6 @@ import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
-
-import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
 /**
  * Created by meijer on 20-9-17.
@@ -231,7 +227,6 @@ public class TrustChainBlock {
         if(publicKey == null) {
             result.setInvalid();
             errors.add("Public key is not valid");
-            Log.e("BLOCK", "Public key invalid\n" + key);
         } else {
             // If public key is valid, check validity of signature
             byte[] hash = hash(block);
@@ -239,9 +234,6 @@ public class TrustChainBlock {
             if (!Key.verify(publicKey, hash, signature)) {
                 result.setInvalid();
                 errors.add("Invalid signature.");
-                Log.e("BLOCK", "Invalid signature!!!");
-            } else {
-                Log.e("BLCK", "Valid signature");
             }
         }
 

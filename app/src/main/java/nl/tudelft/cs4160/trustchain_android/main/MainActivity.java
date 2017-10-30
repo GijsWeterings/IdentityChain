@@ -6,7 +6,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -19,7 +18,6 @@ import com.google.protobuf.ByteString;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-
 import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.util.Arrays;
@@ -45,7 +43,6 @@ import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
@@ -143,9 +140,9 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             MessageProto.TrustChainBlock block = getBlock(dbReadable, getMyPublicKey(), 1);
             if(block ==  null) {
-                Log.e(TAG, "No block found for: \n" + Base64.encodeToString(getMyPublicKey(), Base64.DEFAULT) + "\nsize: " + getMyPublicKey().length);
+                Log.e(TAG, "No block found for: \n" + bytesToHex(getMyPublicKey()) + "\nsize: " + getMyPublicKey().length);
             } else {
-                Log.e(TAG, "FROM DB: \n" + Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT));
+                Log.i(TAG, "FROM DB: \n" + bytesToHex(block.getPublicKey().toByteArray()));
             }
         }
     };
@@ -309,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
         MessageProto.Message message = newBuilder().setHalfBlock(block).build();
-        Log.i("SENDING", "Send: \n" + Base64.encodeToString(message.getHalfBlock().getPublicKey().toByteArray(), Base64.DEFAULT) );
+        Log.i("SENDING", "Send: \n" + bytesToHex(message.getHalfBlock().getPublicKey().toByteArray()) );
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
@@ -447,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
             sq = Math.max(GENESIS_SEQ, sq);
         }
 
-        Log.i(TAG,"Requesting crawl of node " + Base64.encodeToString(publicKey, Base64.DEFAULT) + ":" + sq);
+        Log.i(TAG,"Requesting crawl of node " + bytesToHex(publicKey) + ":" + sq);
 
         MessageProto.CrawlRequest crawlRequest =
                 MessageProto.CrawlRequest.newBuilder()
@@ -478,7 +475,7 @@ public class MainActivity extends AppCompatActivity {
         int sq = crawlRequest.getRequestedSequenceNumber();
 
         Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
-                " and public key: \n" + Base64.encodeToString(peer.getPublicKey(), Base64.DEFAULT) + "\n for sequence number " + sq);
+                " and public key: \n" + bytesToHex(peer.getPublicKey()) + "\n for sequence number " + sq);
 
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
