@@ -1,7 +1,24 @@
 <resources>
     <string name="app_name">TrustChain Android</string>
-    <string name="myip">My ip is:</string>
-    <string name="connect_hint">127.0.0.1</string>
+    <string name="my_external_ip">My external ip is:</string>
+    <string name="my_local_ip">My local ip is:</string>
+    <string name="connect_ip_hint">127.0.0.1</string>
+    <string name="connect_port_hint">port</string>
+    <string name="default_port">8080</string>
     <string name="connect_to">Connect to IP</string>
     <string name="connect">connect</string>
+    <string name="reset_database_button">Clear Database (closes app)</string>
+
+    <string name="title_activity_key">Key management</string>
+    <string name="key_options">Key options</string>
+    <string name="public_key">Public key</string>
+    <string name="private_key">Private key</string>
+    <string name="create_key">Create new key</string>
+    <string name="show_key">Show key</string>
+    <string name="verify_sig">Verify signature</string>
+    <string name="storage_permission_explanation">Give permission for storage!</string>
+    <string name="sign_data">Sign data!</string>
+    <string name="valid_signature">Valid signature</string>
+    <string name="invalid_signature">Invalid signature</string>
+    <string name="chain_explorer">TrustChain Explorer</string>
 </resources>
