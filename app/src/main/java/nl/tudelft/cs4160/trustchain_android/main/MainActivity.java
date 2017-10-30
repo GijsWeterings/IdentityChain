@@ -1,8 +1,10 @@
 package nl.tudelft.cs4160.trustchain_android.main;
 
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
@@ -11,18 +13,26 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.protobuf.ByteString;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.UnknownHostException;
+import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
+import nl.tudelft.cs4160.trustchain_android.KeyActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
@@ -32,11 +42,9 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.TEMP_PEER_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getMaxSeqNum;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
@@ -46,44 +54,69 @@ import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.
 
 public class MainActivity extends AppCompatActivity {
     final static String TRANSACTION = "Hello world!";
+    private final static String TAG = MainActivity.class.toString();
     final static int DEFAULT_PORT = 8080;
-    private static final String TAG = "MainActivity";
 
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;
     SQLiteDatabase dbReadable;
+
+    public Map<String,byte[]> peers;
 
     TextView externalIPText;
     TextView localIPText;
     TextView statusText;
     Button connectionButton;
     Button chainExplorerButton;
+    Button resetDatabaseButton;
+    Button keyOptionsButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
 
     MainActivity thisActivity;
 
     /**
+     * Key pair of user
+     */
+    KeyPair kp;
+
+    /**
      * Listener for the connection button.
      * On click a block is created and send to a peer.
-     * TODO: For now a halfblock is created and send, this should be changed to first sending a crawl
-     * TODO: request to either get some information on the peer, like its pubKey which is needed for
-     * TODO: building a block. Or to check whether the information we have associated with this IP
-     * TODO: is still correct. (although we can never get a valid full block anyway when we send it
-     * TODO: to the wrong person)
+     * When we encounter an unknown peer, send a crawl request to that peer in order to get its
+     * public key.
+     * Also send our last 5 blocks to the peer so it gets to know us.
+     *
+     * This is code to simulate dispersy, note that this does not work properly with a busy network,
+     * because the time delay between sending information to the peer and sending the actual
+     * to-be-signed block could cause gaps.
+     *
+     * Also note that whatever goes wrong we will never get a valid full block, so the integrity of
+     * the network is not compromised due to not using dispersy.
      */
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-            Peer peer = new Peer(
-                    TEMP_PEER_PK.toByteArray(),
-                    editTextDestinationIP.getText().toString(),
-                    Integer.parseInt(editTextDestinationPort.getText().toString()));
-            try {
-                signBlock(TRANSACTION.getBytes("UTF-8"),peer);
-                sendCrawlRequest(peer,getMyPublicKey(),2);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            String ipAddress = editTextDestinationIP.getText().toString();
+            if (peers.containsKey(ipAddress)) {
+                Peer peer = new Peer(
+                        peers.get(ipAddress),
+                        editTextDestinationIP.getText().toString(),
+                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                try {
+                    signBlock(TRANSACTION.getBytes("UTF-8"), peer);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
+                Peer peer = new Peer(
+                        EMPTY_PK.toByteArray(),
+                        editTextDestinationIP.getText().toString(),
+                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                sendCrawlRequest(peer,getMyPublicKey(),-5);
+                sendLatestBlocksToPeer(peer);
             }
         }
     };
@@ -93,6 +126,26 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             Intent intent = new Intent(thisActivity, ChainExplorerActivity.class);
             startActivity(intent);
+        }
+    };
+
+    View.OnClickListener keyOptionsListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(thisActivity, KeyActivity.class);
+            startActivity(intent);
+        }
+    };
+
+    View.OnClickListener resetDatabaseListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
+                ((ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE))
+                        .clearApplicationUserData();
+            } else {
+                Toast.makeText(getApplicationContext(), "Requires at least API 19 (KitKat)", Toast.LENGTH_LONG).show();
+            }
         }
     };
 
@@ -115,16 +168,22 @@ public class MainActivity extends AppCompatActivity {
         editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
         connectionButton = (Button) findViewById(R.id.connection_button);
         chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
+        resetDatabaseButton = (Button) findViewById(R.id.reset_database_button);
+        keyOptionsButton = (Button) findViewById(R.id.key_options_button);
     }
 
     private void init() {
-        // TODO: key generation
         dbHelper = new TrustChainDBHelper(thisActivity);
         db = dbHelper.getWritableDatabase();
         dbReadable = dbHelper.getReadableDatabase();
 
+        peers = new HashMap<>();
+
+        //create or load keys
+        initKeys();
+
         if(isStartedFirstTime()) {
-            MessageProto.TrustChainBlock block = TrustChainBlock.createGenesisBlock();
+            MessageProto.TrustChainBlock block = TrustChainBlock.createGenesisBlock(kp);
             insertInDB(block, db);
         }
 
@@ -133,8 +192,20 @@ public class MainActivity extends AppCompatActivity {
 
         connectionButton.setOnClickListener(connectionButtonListener);
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener);
+        keyOptionsButton.setOnClickListener(keyOptionsListener);
+        resetDatabaseButton.setOnClickListener(resetDatabaseListener);
         Server socketServer = new Server(thisActivity);
         socketServer.start();
+    }
+
+    private void initKeys() {
+        kp = Key.loadKeys(getApplicationContext());
+        if(kp == null) {
+            kp = Key.createNewKeyPair();
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
+            Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+            Log.i(TAG, "New keys created" );
+        }
     }
 
     /**
@@ -164,8 +235,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
-
-        // TODO: check if a keypair is already created
     }
 
     /**
@@ -238,6 +307,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
         MessageProto.Message message = newBuilder().setHalfBlock(block).build();
+        Log.i("SENDING", "Send: \n" + bytesToHex(message.getHalfBlock().getPublicKey().toByteArray()) );
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
@@ -256,19 +326,26 @@ public class MainActivity extends AppCompatActivity {
      * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
      */
     public void signBlock(Peer peer, MessageProto.TrustChainBlock linkedBlock) {
+        // assert that the linked block is not null
+        if(linkedBlock == null){
+            Log.e(TAG,"signBlock: Linked block is null.");
+            return;
+        }
         // do nothing if linked block is not addressed to me
-        if(!linkedBlock.getLinkPublicKey().equals(getMyPublicKey())){
+        if(!Arrays.equals(linkedBlock.getLinkPublicKey().toByteArray(),getMyPublicKey())){
+            Log.e(TAG,"signBlock: Linked block not addressed to me.");
             return;
         }
         // do nothing if block is not a request
         if(linkedBlock.getLinkSequenceNumber() != TrustChainBlock.UNKNOWN_SEQ){
+            Log.e(TAG,"signBlock: Block is not a request.");
             return;
         }
         MessageProto.TrustChainBlock block = createBlock(null,dbReadable,
                 getMyPublicKey(),
-                linkedBlock,null);
+                linkedBlock,peer.getPublicKey());
 
-        sign(block, getMyPublicKey());
+        block = sign(block, kp.getPrivate());
 
         ValidationResult validation;
         try {
@@ -283,13 +360,13 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
-//        } else {
+        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-//        }
+        }
     }
 
     /**
@@ -298,10 +375,13 @@ public class MainActivity extends AppCompatActivity {
      * @param transaction - a transaction which should be embedded in the block
      */
     public void signBlock(byte[] transaction, Peer peer) {
+        if(transaction == null) {
+            Log.e(TAG,"signBlock: Null transaction given.");
+        }
         MessageProto.TrustChainBlock block =
                 createBlock(transaction,dbReadable,
                         getMyPublicKey(),null,peer.getPublicKey());
-        sign(block,getMyPublicKey());
+        block = sign(block, kp.getPrivate());
 
         ValidationResult validation;
         try {
@@ -316,18 +396,17 @@ public class MainActivity extends AppCompatActivity {
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-//        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
+        if(validation != null && validation.getStatus() != PARTIAL_NEXT && validation.getStatus() != VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                 + validation.getErrors().toString());
-//        } else {
+        } else {
             insertInDB(block,db);
             sendBlock(peer,block);
-//        }
+        }
     }
 
-    // Placeholder TODO: change all places where this method gets called to correct method
-    public static byte[] getMyPublicKey() {
-        return EMPTY_PK.toByteArray();
+    public byte[] getMyPublicKey() {
+        return kp.getPublic().getEncoded();
     }
 
 
@@ -397,7 +476,7 @@ public class MainActivity extends AppCompatActivity {
         int sq = crawlRequest.getRequestedSequenceNumber();
 
         Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
-                " and public key: " + bytesToHex(peer.getPublicKey()) + " for sequence number " + sq);
+                " and public key: \n" + bytesToHex(peer.getPublicKey()) + "\n for sequence number " + sq);
 
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
@@ -418,5 +497,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Log.i(TAG,"Sent " + blockList.size() + " blocks");
+    }
+
+    /**
+     * Act like we received a crawl request to send information about us to the peer.
+     */
+    public void sendLatestBlocksToPeer(Peer peer) {
+        MessageProto.CrawlRequest crawlRequest =
+                MessageProto.CrawlRequest.newBuilder()
+                        .setPublicKey(ByteString.copyFrom(peer.getPublicKey()))
+                        .setRequestedSequenceNumber(-5)
+                        .setLimit(100).build();
+        InetAddress address = null;
+        try {
+            address = InetAddress.getByName(peer.getIpAddress());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        receivedCrawlRequest(address,peer.getPort(),crawlRequest);
     }
 }
