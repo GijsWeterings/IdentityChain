@@ -103,7 +103,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
 
             @Override
             public void run() {
-                ((TextView) callingActivity.findViewById(R.id.status)).append("\n  Client: " + response);
+                ((TextView) callingActivity.findViewById(R.id.status)).append("\n  Client got response: " + response);
             }
         });
         super.onPostExecute(result);
