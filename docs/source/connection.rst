@@ -17,6 +17,11 @@ WiFi
 ====
 The simplest way for connecting via IP, which does not have to deal with possible NAT puncturing or port forwarding is connecting to a local IP on the same WiFi network. A guaranteed method involves setting up a WiFi hotspot on one of the devices and letting the other peer connect to this hotspot. WiFi networks, which make use of IPv6 are not guaranteed to work.
 
+.. figure:: ./images/connection_example.png 
+	:width: 300px
+
+Example of connecting to a peer using on a device using a WiFi hotspot.
+
 
 Other possible ways for connecting
 ==================================
