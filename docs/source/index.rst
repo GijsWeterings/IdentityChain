@@ -15,6 +15,7 @@ TrustChain Android
    connection
    protocolbuffers
    database
+   crypto
    contact
 
 
