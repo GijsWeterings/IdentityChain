@@ -6,6 +6,8 @@ import android.util.Base64;
 
 import com.google.protobuf.ByteString;
 
+import org.spongycastle.jcajce.provider.symmetric.ARC4;
+
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -149,7 +151,7 @@ public class TrustChainBlock {
         // themselves. Blocks can get inserted into the database in any order, so we need to find
         // successors, predecessors as well as the block itself and its linked block.
         MessageProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
-        MessageProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
+        MessageProto.TrustChainBlock linkBlock = getLinkedBlock(db,block);
         MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
         MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
 
@@ -367,6 +369,54 @@ public class TrustChainBlock {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
         String[] whereArgs = new String[] { Base64.encodeToString(pubkey, Base64.DEFAULT),
                 Integer.toString(seqNumber)};
+
+        Cursor cursor = dbReadable.query(
+                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
+                null,                                           // The columns to return, in this case all columns
+                whereClause,                                    // Filter for which rows to return
+                whereArgs,                                      // Filter arguments
+                null,                                           // Declares how to group rows
+                null,                                           // Declares which row groups to include
+                null                                            // How the rows should be ordered
+        );
+        if(cursor.getCount() == 1) {
+            cursor.moveToFirst();
+
+            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
+                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
+                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
+                    .setSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
+                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
+                    .setLinkSequenceNumber(cursor.getInt(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
+                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
+                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
+                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
+                    .build();
+        }
+        cursor.close();
+        return res;
+    }
+
+    /**
+     * Retrieves the block linked with the given block
+     * @param block - The block for which to get the linked block
+     * @return The linked block
+     */
+    public static MessageProto.TrustChainBlock getLinkedBlock(SQLiteDatabase dbReadable, MessageProto.TrustChainBlock block) {
+        MessageProto.TrustChainBlock res = null;
+        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ? OR " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + " = ? AND " +
+                TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER + " = ?";
+        String[] whereArgs = new String[] { Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT),
+                Integer.toString(block.getSequenceNumber()),
+                Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT),
+                Integer.toString(block.getLinkSequenceNumber())};
 
         Cursor cursor = dbReadable.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
