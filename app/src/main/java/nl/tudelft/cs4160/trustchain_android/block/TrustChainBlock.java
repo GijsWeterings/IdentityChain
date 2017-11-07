@@ -6,8 +6,6 @@ import android.util.Base64;
 
 import com.google.protobuf.ByteString;
 
-import org.spongycastle.jcajce.provider.symmetric.ARC4;
-
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,8 +19,6 @@ import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
-
-import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
@@ -643,7 +639,7 @@ public class TrustChainBlock {
      * @param pubKey
      * @return
      */
-    private static String pubKeyToString(byte[] pubKey){
+    public static String pubKeyToString(byte[] pubKey){
         String res;
         int length = pubKey.length;
         if(length > 64) {
