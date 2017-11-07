@@ -85,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
      * On click a block is created and send to a peer.
      * When we encounter an unknown peer, send a crawl request to that peer in order to get its
      * public key.
-     * Also send our last 5 blocks to the peer so it gets to know us.
+     * Also, when we want to send a block always send our last 5 blocks to the peer so the block
+     * request won't be rejected due to NO_INFO error.
      *
      * This is code to simulate dispersy, note that this does not work properly with a busy network,
      * because the time delay between sending information to the peer and sending the actual
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
                         peers.get(ipAddress),
                         editTextDestinationIP.getText().toString(),
                         Integer.parseInt(editTextDestinationPort.getText().toString()));
+                sendLatestBlocksToPeer(peer);
                 try {
                     signBlock(TRANSACTION.getBytes("UTF-8"), peer);
                 } catch (UnsupportedEncodingException e) {
@@ -116,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
                         editTextDestinationIP.getText().toString(),
                         Integer.parseInt(editTextDestinationPort.getText().toString()));
                 sendCrawlRequest(peer,getMyPublicKey(),-5);
-                sendLatestBlocksToPeer(peer);
             }
         }
     };
