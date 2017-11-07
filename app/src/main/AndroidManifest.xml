@@ -24,7 +24,7 @@
             android:label="@string/title_activity_key"
             android:theme="@style/AppTheme.NoActionBar"></activity>
 
-        <activity android:name=".ChainExplorerActivity"></activity>
+        <activity android:name=".chainExplorer.ChainExplorerActivity"></activity>
     </application>
 
 </manifest>
