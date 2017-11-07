@@ -8,10 +8,9 @@ import android.widget.TextView;
 import java.util.Iterator;
 import java.util.List;
 
-import nl.tudelft.cs4160.trustchain_android.block.BlockProto;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 public class ChainExplorerActivity extends AppCompatActivity {
     TrustChainDBHelper dbHelper;
@@ -38,9 +37,9 @@ public class ChainExplorerActivity extends AppCompatActivity {
         displayLocalChain(dbHelper.getAllBlocks());
     }
 
-    public void displayLocalChain(List<BlockProto.TrustChainBlock> blockList) {
+    public void displayLocalChain(List<MessageProto.TrustChainBlock> blockList) {
         String blocksString = "";
-        Iterator<BlockProto.TrustChainBlock> iterator = blockList.iterator();
+        Iterator<MessageProto.TrustChainBlock> iterator = blockList.iterator();
         while(iterator.hasNext()) {
             blocksString += TrustChainBlock.toString(iterator.next()) + "\n\n";
         }
