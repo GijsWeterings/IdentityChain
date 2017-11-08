@@ -14,10 +14,6 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
-/**
- * Created by meijer on 7-11-17.
- */
-
 public class ChainExplorerAdapter extends BaseAdapter{
     Context context;
     List<MessageProto.TrustChainBlock> blocksList;
@@ -57,6 +53,7 @@ public class ChainExplorerAdapter extends BaseAdapter{
             convertView = LayoutInflater.from(context).inflate(R.layout.item_trustchainblock,
                     parent, false);
         }
+        // collapsed view
         TextView peer = (TextView) convertView.findViewById(R.id.peer);
         TextView seqNum = (TextView) convertView.findViewById(R.id.sequence_number);
         TextView linkPeer = (TextView) convertView.findViewById(R.id.link_peer);
@@ -67,8 +64,13 @@ public class ChainExplorerAdapter extends BaseAdapter{
         seqNum.setText(String.valueOf(block.getSequenceNumber()));
         linkPeer.setText(bytesToHex(block.getLinkPublicKey().toByteArray()));
         linkSeqNum.setText(String.valueOf(block.getLinkSequenceNumber()));
-
         transaction.setText(block.getTransaction().toStringUtf8());
+
+        // expanded view
+        TextView pubKey = (TextView) convertView.findViewById(R.id.pub_key);
+
+
+        pubKey.setText(bytesToHex(block.getPublicKey().toByteArray()));
 
         return convertView;
     }

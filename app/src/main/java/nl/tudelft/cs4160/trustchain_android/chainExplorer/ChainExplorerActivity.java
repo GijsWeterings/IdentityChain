@@ -1,12 +1,13 @@
 package nl.tudelft.cs4160.trustchain_android.chainExplorer;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -19,9 +20,10 @@ import static android.view.Gravity.CENTER;
 
 public class ChainExplorerActivity extends AppCompatActivity {
     TrustChainDBHelper dbHelper;
-    SQLiteDatabase db;
     ChainExplorerAdapter adapter;
     ListView blocksList;
+
+    static final String TAG = "ChainExplorerActivity";
 
 
     @Override
@@ -56,8 +58,18 @@ public class ChainExplorerActivity extends AppCompatActivity {
         blocksList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Do something when a list item is clicked
+                LinearLayout expandedItem = (LinearLayout) view.findViewById(R.id.expanded_item);
+                ImageView expandArrow = (ImageView) view.findViewById(R.id.expand_arrow);
 
+                // Expand the item when it is clicked
+                if(expandedItem.getVisibility() == View.GONE) {
+                    expandedItem.setVisibility(View.VISIBLE);
+                    Log.v(TAG, "Item height: " + expandedItem.getHeight());
+                    expandArrow.setImageDrawable(getDrawable(R.drawable.ic_expand_less_black_24dp));
+                } else {
+                    expandedItem.setVisibility(View.GONE);
+                    expandArrow.setImageDrawable(getDrawable(R.drawable.ic_expand_more_black_24dp));
+                }
             }
         });
     }
