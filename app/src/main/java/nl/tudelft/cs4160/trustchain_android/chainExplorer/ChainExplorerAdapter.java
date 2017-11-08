@@ -12,7 +12,7 @@ import java.util.List;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.pubKeyToString;
+import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
 /**
  * Created by meijer on 7-11-17.
@@ -58,10 +58,17 @@ public class ChainExplorerAdapter extends BaseAdapter{
                     parent, false);
         }
         TextView peer = (TextView) convertView.findViewById(R.id.peer);
+        TextView seqNum = (TextView) convertView.findViewById(R.id.sequence_number);
         TextView linkPeer = (TextView) convertView.findViewById(R.id.link_peer);
+        TextView linkSeqNum = (TextView) convertView.findViewById(R.id.link_sequence_number);
+        TextView transaction = (TextView) convertView.findViewById(R.id.transaction);
 
-        peer.setText(pubKeyToString(block.getPublicKey().toByteArray()));
-        linkPeer.setText(pubKeyToString(block.getLinkPublicKey().toByteArray()));
+        peer.setText(bytesToHex(block.getPublicKey().toByteArray()));
+        seqNum.setText(String.valueOf(block.getSequenceNumber()));
+        linkPeer.setText(bytesToHex(block.getLinkPublicKey().toByteArray()));
+        linkSeqNum.setText(String.valueOf(block.getLinkSequenceNumber()));
+
+        transaction.setText(block.getTransaction().toStringUtf8());
 
         return convertView;
     }
