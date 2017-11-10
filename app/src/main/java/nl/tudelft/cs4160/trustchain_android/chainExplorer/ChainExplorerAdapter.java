@@ -7,11 +7,15 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.google.protobuf.ByteString;
+
 import org.w3c.dom.Text;
 
+import java.util.HashMap;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
@@ -19,10 +23,14 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 public class ChainExplorerAdapter extends BaseAdapter{
     Context context;
     List<MessageProto.TrustChainBlock> blocksList;
+    HashMap<ByteString,String> peerList = new HashMap<>();
 
-    public ChainExplorerAdapter(Context context, List<MessageProto.TrustChainBlock> blocksList) {
+    public ChainExplorerAdapter(Context context, List<MessageProto.TrustChainBlock> blocksList, byte[] myPubKey) {
         this.context = context;
         this.blocksList = blocksList;
+        // put my public key in the peerList
+        peerList.put(ByteString.copyFrom(myPubKey),"me");
+        peerList.put(TrustChainBlock.EMPTY_PK,"unknown");
     }
 
 
@@ -55,6 +63,42 @@ public class ChainExplorerAdapter extends BaseAdapter{
             convertView = LayoutInflater.from(context).inflate(R.layout.item_trustchainblock,
                     parent, false);
         }
+
+        // Check if we already know the peer, otherwise add it to the peerList
+        ByteString pubKeyBytes = block.getPublicKey();
+        ByteString linkPubKeyBytes = block.getLinkPublicKey();
+        String peerAlias;
+        String linkPeerAlias;
+
+        if(peerList.containsKey(pubKeyBytes)) {
+            peerAlias = peerList.get(pubKeyBytes);
+        } else {
+            peerAlias = "peer" + peerList.size();
+            peerList.put(pubKeyBytes,peerAlias);
+        }
+
+        if(peerList.containsKey(linkPubKeyBytes)) {
+            linkPeerAlias = peerList.get(linkPubKeyBytes);
+        } else {
+            linkPeerAlias = "peer" + peerList.size();
+            peerList.put(linkPubKeyBytes,linkPeerAlias);
+        }
+
+        // Check if the sequence numbers are 0, which would mean that they are unknown
+        String seqNumStr;
+        String linkSeqNumStr;
+        if(block.getSequenceNumber() == 0) {
+            seqNumStr = "unknown";
+        } else {
+            seqNumStr = String.valueOf(block.getSequenceNumber());
+        }
+
+        if(block.getLinkSequenceNumber() == 0) {
+            linkSeqNumStr = "unknown";
+        } else {
+            linkSeqNumStr = String.valueOf(block.getLinkSequenceNumber());
+        }
+
         // collapsed view
         TextView peer = (TextView) convertView.findViewById(R.id.peer);
         TextView seqNum = (TextView) convertView.findViewById(R.id.sequence_number);
@@ -62,10 +106,11 @@ public class ChainExplorerAdapter extends BaseAdapter{
         TextView linkSeqNum = (TextView) convertView.findViewById(R.id.link_sequence_number);
         TextView transaction = (TextView) convertView.findViewById(R.id.transaction);
 
-        peer.setText(bytesToHex(block.getPublicKey().toByteArray()));
-        seqNum.setText(String.valueOf(block.getSequenceNumber()));
-        linkPeer.setText(bytesToHex(block.getLinkPublicKey().toByteArray()));
-        linkSeqNum.setText(String.valueOf(block.getLinkSequenceNumber()));
+        // For the collapsed view, set the public keys to the aliases we gave them.
+        peer.setText(peerAlias);
+        seqNum.setText(seqNumStr);
+        linkPeer.setText(linkPeerAlias);
+        linkSeqNum.setText(linkSeqNumStr);
         transaction.setText(block.getTransaction().toStringUtf8());
 
         // expanded view
@@ -75,8 +120,8 @@ public class ChainExplorerAdapter extends BaseAdapter{
         TextView signature = (TextView) convertView.findViewById(R.id.signature);
         TextView expTransaction = (TextView) convertView.findViewById(R.id.expanded_transaction);
 
-        pubKey.setText(bytesToHex(block.getPublicKey().toByteArray()));
-        linkPubKey.setText(bytesToHex(block.getLinkPublicKey().toByteArray()));
+        pubKey.setText(bytesToHex(pubKeyBytes.toByteArray()));
+        linkPubKey.setText(bytesToHex(linkPubKeyBytes.toByteArray()));
         prevHash.setText(bytesToHex(block.getPreviousHash().toByteArray()));
         signature.setText(bytesToHex(block.getSignature().toByteArray()));
         expTransaction.setText(block.getTransaction().toStringUtf8());

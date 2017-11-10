@@ -14,8 +14,10 @@ import android.widget.ProgressBar;
 
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.main.MainActivity;
 
 import static android.view.Gravity.CENTER;
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.getMyPublicKey;
 
 
 public class ChainExplorerActivity extends AppCompatActivity {
@@ -49,7 +51,7 @@ public class ChainExplorerActivity extends AppCompatActivity {
     private void init() {
         dbHelper = new TrustChainDBHelper(this);
         try {
-            adapter = new ChainExplorerAdapter(this, dbHelper.getAllBlocks());
+            adapter = new ChainExplorerAdapter(this, dbHelper.getAllBlocks(),getMyPublicKey());
             blocksList.setAdapter(adapter);
         } catch (Exception e) {
             e.printStackTrace();
