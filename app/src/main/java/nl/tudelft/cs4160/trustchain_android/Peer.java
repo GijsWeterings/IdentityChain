@@ -13,6 +13,7 @@ public class Peer {
         this.publicKey = pubKey;
         this.ipAddress = ip;
         this.port = port;
+
     }
 
     public byte[] getPublicKey() {
@@ -26,6 +27,19 @@ public class Peer {
     public int getPort() {
         return port;
     }
+
+    public void setPublicKey(byte[] publicKey) {
+        this.publicKey = publicKey;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
 
     public String toString() {
         String res = "<Peer: [";
