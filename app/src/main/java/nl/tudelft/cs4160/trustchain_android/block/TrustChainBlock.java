@@ -413,10 +413,10 @@ public class TrustChainBlock {
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ? OR " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + " = ? AND " +
                 TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER + " = ?";
-        String[] whereArgs = new String[] { Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT),
-                Integer.toString(block.getSequenceNumber()),
-                Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT),
-                Integer.toString(block.getLinkSequenceNumber())};
+        String[] whereArgs = new String[] { Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT),
+                Integer.toString(block.getLinkSequenceNumber()),
+                Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT),
+                Integer.toString(block.getSequenceNumber())};
 
         Cursor cursor = dbReadable.query(
                 TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
