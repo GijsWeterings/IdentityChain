@@ -150,7 +150,8 @@ public class BluetoothActivity extends AppCompatActivity {
                     try {
                         while(true) {
                             try {
-                                Log.e(TAG, "Starting reading via bluetooth");
+                                Log.e(TAG, "Starting reading via bluetooth from " + socket.getRemoteDevice().getName());
+                                //communication.receivedMessage();
                                 MessageProto.Message message= MessageProto.Message.parseDelimitedFrom(socket.getInputStream());
                                 if(message == null) {
                                     break;

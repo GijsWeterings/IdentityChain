@@ -21,13 +21,19 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
+import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 /**
@@ -87,12 +93,7 @@ public class Communication {
 
         // send the crawl request
         MessageProto.Message message = newBuilder().setCrawlRequest(crawlRequest).build();
-        ClientTask task = new ClientTask(
-                peer.getIpAddress(),
-                peer.getPort(),
-                message,
-                listener);
-        task.execute();
+        sendMessage(peer, message);
     }
 
 
@@ -101,9 +102,17 @@ public class Communication {
      * Sends a block to the connected peer.
      * @param block - The block to be send
      */
-    public void sendBlock(Peer peer, MessageProto.TrustChainBlock block) {
+    public void sendHalfBlock(Peer peer, MessageProto.TrustChainBlock block) {
         MessageProto.Message message = newBuilder().setHalfBlock(block).build();
-        Log.i("SENDING", "Send: \n" + bytesToHex(message.getHalfBlock().getPublicKey().toByteArray()) );
+        sendMessage(peer, message);
+    }
+
+    /**
+     * Send either a crawl request of a block to a peer.
+     * @param peer The peer
+     * @param message The message.
+     */
+    public void sendMessage(Peer peer, MessageProto.Message message) {
         ClientTask task = new ClientTask(
                 peer.getIpAddress(),
                 peer.getPort(),
@@ -161,7 +170,7 @@ public class Communication {
                     + validation.getErrors().toString());
         } else {
             insertInDB(block,db);
-            sendBlock(peer,block);
+            sendHalfBlock(peer,block);
         }
     }
 
@@ -197,7 +206,7 @@ public class Communication {
                     + validation.getErrors().toString());
         } else {
             insertInDB(block,db);
-            sendBlock(peer,block);
+            sendHalfBlock(peer,block);
         }
     }
 
@@ -250,7 +259,7 @@ public class Communication {
         List<MessageProto.TrustChainBlock> blockList = dbHelper.crawl(getMyPublicKey(),sq);
 
         for(MessageProto.TrustChainBlock block : blockList) {
-            sendBlock(peer,block);
+            sendHalfBlock(peer,block);
         }
 
         Log.i(TAG,"Sent " + blockList.size() + " blocks");
@@ -275,6 +284,101 @@ public class Communication {
     }
 
 
+
+    public void receiveMessage(MessageProto.Message message, InetAddress ip, int port) {
+        MessageProto.TrustChainBlock block = message.getHalfBlock();
+        MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
+
+        String messageLog = "";
+        // In case we received a halfblock
+        if(block.getPublicKey().size() > 0 && crawlRequest.getPublicKey().size() == 0) {
+            messageLog += "block received from: " + ip + ":"
+                    + port + "\n"
+                    + TrustChainBlock.toShortString(block);
+
+            listener.updateLog("\n  Server: " + messageLog);
+
+            synchronizedReceivedHalfBlock(ip, port, block);
+        }
+
+        // In case we received a crawlrequest
+        if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
+            messageLog += "crawlrequest received from: " + ip + ":"
+                    + port;
+            listener.updateLog("\n  Server: " + messageLog);
+
+            this.receivedCrawlRequest(ip,
+                    port, crawlRequest);
+        }
+    }
+
+    /**
+     * A half block was send to us and received by us. Someone wants this peer to create the other half
+     * and send it back. This method handles that 'request'.
+     *  - Checks if the block is valid and puts it in the database if not invalid.
+     *  - Checks if the block is addressed to me.
+     *  - Determines if we should sign the block
+     *  - Check if block matches with its previous block, send crawl request if more information is needed
+     */
+    public void synchronizedReceivedHalfBlock(InetAddress address, int port, MessageProto.TrustChainBlock block) {
+        Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
+        Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
+                " and public key: " + bytesToHex(peer.getPublicKey()));
+
+        addNewPublicKey(peer);
+
+        ValidationResult validation;
+        try {
+            validation = validate(block,dbHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Log.i(TAG,"Received block validation result " + validation.toString() + "("
+                + TrustChainBlock.toString(block) + ")");
+
+        if(validation.getStatus() == ValidationResult.INVALID) {
+            for(String error: validation.getErrors()) {
+                Log.e(TAG, "Validation error: " + error);
+            }
+            return;
+        } else {
+            insertInDB(block,dbHelper.getWritableDatabase());
+        }
+
+        byte[] pk = getMyPublicKey();
+        // check if addressed to me and if we did not sign it already, if so: do nothing.
+        if(block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
+                !Arrays.equals(block.getLinkPublicKey().toByteArray(), pk) ||
+                null != getBlock(dbHelper.getReadableDatabase(),
+                        block.getLinkPublicKey().toByteArray(),
+                        block.getLinkSequenceNumber())) {
+            Log.e(TAG,"Received block not addressed to me or already signed by me.");
+            return;
+        }
+
+        // determine if we should sign the block, if not: do nothing
+        if(!Communication.shouldSign(block)) {
+            Log.e(TAG,"Will not sign received block.");
+            return;
+        }
+
+        // check if block matches up with its previous block
+        // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
+        // the gap and delay the method until the gap is filled.
+        // Note that this code does not cover the scenario where we obtain this block indirectly,
+        // because the code does nothing with this block after the crawlRequest was received.
+        if(validation.getStatus() == PARTIAL_PREVIOUS || validation.getStatus() == PARTIAL ||
+                validation.getStatus() == NO_INFO) {
+            Log.e(TAG, "Request block could not be validated sufficiently, requested crawler. " +
+                    validation.toString());
+            // send a crawl request, requesting the last 5 blocks before the received halfblock (if available) of the peer
+            sendCrawlRequest(peer,block.getPublicKey().toByteArray(),Math.max(GENESIS_SEQ,block.getSequenceNumber()-5));
+        } else {
+            signBlock(peer, block);
+        }
+    }
 
     public byte[] getMyPublicKey() {
         return keyPair.getPublic().getEncoded();
