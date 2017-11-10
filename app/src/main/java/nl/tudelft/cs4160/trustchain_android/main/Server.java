@@ -75,7 +75,8 @@ class Server {
 
                     // We have received a message, this could be either a crawl request or a halfblock
                     MessageProto.Message message = MessageProto.Message.parseFrom(socket.getInputStream());
-                    communication.receiveMessage(message, socket.getInetAddress(), socket.getPort());
+                    Peer peer = new Peer(null, socket.getInetAddress().getHostAddress(), socket.getPort());
+                    communication.receivedMessage(message, peer);
 
                 }
             } catch (IOException e) {

@@ -189,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
             insertInDB(block, db);
         }
 
-        communication = new Communication(dbHelper, kp, this);
+        communication = new NetworkCommunication(dbHelper, kp, this);
 
         updateIP();
         updateLocalIPField(getLocalIPAddress());

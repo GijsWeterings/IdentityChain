@@ -40,11 +40,11 @@ import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.
  * Created by rico on 10-11-17.
  */
 
-public class Communication {
+public abstract class Communication {
 
     private static final String TAG = Communication.class.getName();
 
-    public Map<String,byte[]> peers;
+    private Map<String,byte[]> peers;
 
 
     private TrustChainDBHelper dbHelper;
@@ -64,6 +64,10 @@ public class Communication {
         this.listener = listener;
         this.peers = new HashMap<>();
 
+    }
+
+    public CommunicationListener getListener() {
+        return listener;
     }
 
     public void sendCrawlRequest(Peer peer, byte[] publicKey, int seqNum) {
@@ -112,15 +116,7 @@ public class Communication {
      * @param peer The peer
      * @param message The message.
      */
-    public void sendMessage(Peer peer, MessageProto.Message message) {
-        ClientTask task = new ClientTask(
-                peer.getIpAddress(),
-                peer.getPort(),
-                message,
-                listener);
-        task.execute();
-    }
-
+    public abstract void sendMessage(Peer peer, MessageProto.Message message);
 
     /**
      * Sign a half block and send block.
@@ -232,13 +228,10 @@ public class Communication {
     /**
      * We have received a crawl request, this function handles what to do next.
      *
-     * @param address - ip address of the sending peer
-     * @param port - port of the sending peer
+     * @param peer - peer
      * @param crawlRequest - received crawl request
      */
-    public void receivedCrawlRequest(InetAddress address, int port, MessageProto.CrawlRequest crawlRequest) {
-        byte[] peerPubKey = crawlRequest.getPublicKey().toByteArray();
-        Peer peer = new Peer(peerPubKey, address.getHostAddress(), port);
+    public void receivedCrawlRequest(Peer peer, MessageProto.CrawlRequest crawlRequest) {
         int sq = crawlRequest.getRequestedSequenceNumber();
 
         Log.i(TAG, "Received crawl request from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
@@ -274,41 +267,38 @@ public class Communication {
                         .setPublicKey(ByteString.copyFrom(peer.getPublicKey()))
                         .setRequestedSequenceNumber(-5)
                         .setLimit(100).build();
-        InetAddress address = null;
-        try {
-            address = InetAddress.getByName(peer.getIpAddress());
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        receivedCrawlRequest(address,peer.getPort(),crawlRequest);
+        receivedCrawlRequest(peer,crawlRequest);
     }
 
 
 
-    public void receiveMessage(MessageProto.Message message, InetAddress ip, int port) {
+    public void receivedMessage(MessageProto.Message message, Peer peer) {
         MessageProto.TrustChainBlock block = message.getHalfBlock();
         MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
 
         String messageLog = "";
         // In case we received a halfblock
         if(block.getPublicKey().size() > 0 && crawlRequest.getPublicKey().size() == 0) {
-            messageLog += "block received from: " + ip + ":"
-                    + port + "\n"
+            messageLog += "block received from: " + peer.getIpAddress() + ":"
+                    + peer.getPort() + "\n"
                     + TrustChainBlock.toShortString(block);
 
             listener.updateLog("\n  Server: " + messageLog);
+            peer.setPublicKey(block.getPublicKey().toByteArray());
 
-            synchronizedReceivedHalfBlock(ip, port, block);
+            //TODO: this can not happen with bluetooth devices
+            peer.setPort(DEFAULT_PORT);
+            this.synchronizedReceivedHalfBlock(peer, block);
         }
 
         // In case we received a crawlrequest
         if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
-            messageLog += "crawlrequest received from: " + ip + ":"
-                    + port;
+            messageLog += "crawlrequest received from: " + peer.getIpAddress() + ":"
+                    + peer.getPort();
             listener.updateLog("\n  Server: " + messageLog);
 
-            this.receivedCrawlRequest(ip,
-                    port, crawlRequest);
+            peer.setPublicKey(crawlRequest.toByteArray());
+            this.receivedCrawlRequest(peer, crawlRequest);
         }
     }
 
@@ -320,8 +310,7 @@ public class Communication {
      *  - Determines if we should sign the block
      *  - Check if block matches with its previous block, send crawl request if more information is needed
      */
-    public void synchronizedReceivedHalfBlock(InetAddress address, int port, MessageProto.TrustChainBlock block) {
-        Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
+    public void synchronizedReceivedHalfBlock(Peer peer, MessageProto.TrustChainBlock block) {
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
                 " and public key: " + bytesToHex(peer.getPublicKey()));
 

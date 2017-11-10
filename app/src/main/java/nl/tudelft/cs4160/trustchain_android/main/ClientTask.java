@@ -24,10 +24,10 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     int destinationPort;
     MessageProto.Message message;
 
-    final static String TAG = "ClientTask";
-    String response = "";
+    private final static String TAG = ClientTask.class.getName();
+    private String response;
 
-    CommunicationListener listener;
+    private CommunicationListener listener;
 
     ClientTask(String ipAddress, int port, MessageProto.Message message, CommunicationListener listener){
         this.destinationIP = ipAddress;
@@ -54,7 +54,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
                 Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
 
                 // Get the response from the server
-                ByteArrayOutputStream byteArrayOutputStream =
+               /* ByteArrayOutputStream byteArrayOutputStream =
                         new ByteArrayOutputStream(1024);
                 byte[] buffer = new byte[1024];
 
@@ -65,7 +65,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     byteArrayOutputStream.write(buffer, 0, bytesRead);
                     response += byteArrayOutputStream.toString("UTF-8");
-                }
+                }*/
             } catch (UnknownHostException e) {
                 e.printStackTrace();
                 response = "UnknownHostException: " + e.toString();
