@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Key pair of user
      */
-    KeyPair kp;
+    static KeyPair kp;
 
     /**
      * Listener for the connection button.
@@ -405,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public byte[] getMyPublicKey() {
+    public static byte[] getMyPublicKey() {
         return kp.getPublic().getEncoded();
     }
 
