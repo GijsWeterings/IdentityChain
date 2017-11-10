@@ -2,7 +2,6 @@ package nl.tudelft.cs4160.trustchain_android.chainExplorer;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,8 +9,6 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.google.protobuf.ByteString;
-
-import org.w3c.dom.Text;
 
 import java.util.HashMap;
 import java.util.List;
