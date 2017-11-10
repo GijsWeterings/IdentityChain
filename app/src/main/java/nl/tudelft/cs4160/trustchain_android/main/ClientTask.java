@@ -20,7 +20,6 @@ import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_POR
  * Class is package private to prevent another activity from accessing it and breaking everything
  */
 class ClientTask extends AsyncTask<Void, Void, Void> {
-    Activity callingActivity;
     String destinationIP;
     int destinationPort;
     MessageProto.Message message;
@@ -28,11 +27,13 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     final static String TAG = "ClientTask";
     String response = "";
 
-    ClientTask(String ipAddress, int port, MessageProto.Message message, Activity callingActivity){
+    CommunicationListener listener;
+
+    ClientTask(String ipAddress, int port, MessageProto.Message message, CommunicationListener listener){
         this.destinationIP = ipAddress;
         this.destinationPort = port;
         this.message = message;
-        this.callingActivity = callingActivity;
+        this.listener = listener;
     }
 
     /**
@@ -99,13 +100,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
      */
     @Override
     protected void onPostExecute(Void result) {
-        callingActivity.runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                ((TextView) callingActivity.findViewById(R.id.status)).append("\n  Client got response: " + response);
-            }
-        });
+        listener.updateLog("\n  Client got response: " + response);
         super.onPostExecute(result);
     }
 

@@ -29,22 +29,23 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIA
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.shouldSign;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
  */
 class Server {
     private static final String TAG = "Server";
-    MainActivity callingActivity;
     ServerSocket serverSocket;
-    TextView statusText;
 
     String messageLog = "";
     String responseLog = "";
 
-    public Server(MainActivity callingActivity) {
-        this.callingActivity = callingActivity;
+    private Communication communication;
+    private CommunicationListener listener;
+
+    public Server(Communication communication, CommunicationListener listener) {
+        this.communication = communication;
+        this.listener = listener;
     }
 
     /**
@@ -54,7 +55,6 @@ class Server {
         Thread socketServerThread = new Thread(new SocketServerThread());
         socketServerThread.start();
 
-        statusText = (TextView) callingActivity.findViewById(R.id.status);
     }
 
     private class SocketServerThread extends Thread {
@@ -69,13 +69,8 @@ class Server {
         public void run() {
             try {
                 serverSocket = new ServerSocket(SocketServerPORT);
-                callingActivity.runOnUiThread(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        statusText.setText("Server is waiting for messages...");
-                    }
-                });
+                listener.updateLog("Server is waiting for messages...");
 
                 while (true) {
                     messageLog = "";
@@ -93,13 +88,8 @@ class Server {
                         messageLog += "block received from: " + socket.getInetAddress() + ":"
                                 + socket.getPort() + "\n"
                                 + TrustChainBlock.toShortString(block);
-                        callingActivity.runOnUiThread(new Runnable() {
 
-                            @Override
-                            public void run() {
-                                statusText.append("\n  Server: " + messageLog);
-                            }
-                        });
+                        listener.updateLog("\n  Server: " + messageLog);
 
                         SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                                 socket, count);
@@ -112,20 +102,13 @@ class Server {
                     if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
                         count++;
                         messageLog += "crawlrequest received from: " + socket.getInetAddress() + ":"
-                                + socket.getPort() + "\n"
-                                + crawlRequest.toString();
-                        callingActivity.runOnUiThread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                statusText.append("\n  Server: " + messageLog);
-                            }
-                        });
+                                + socket.getPort();
+                        listener.updateLog("\n  Server: " + messageLog);
                         SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                                 socket, count);
                         socketServerReplyThread.run();
 
-                        callingActivity.receivedCrawlRequest(socket.getInetAddress(),
+                        communication.receivedCrawlRequest(socket.getInetAddress(),
                                 socket.getPort(), crawlRequest);
                     }
 
@@ -165,13 +148,7 @@ class Server {
                 e.printStackTrace();
                 responseLog += "Something wrong! " + e.toString() + "\n";
             } finally {
-                callingActivity.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        statusText.append("\n  Server: " + responseLog);
-                    }
-                });
+                listener.updateLog("\n  Server: " + responseLog);
             }
         }
 
@@ -186,12 +163,12 @@ class Server {
      *  - Check if block matches with its previous block, send crawl request if more information is needed
      */
     public void synchronizedReceivedHalfBlock(InetAddress address, int port, MessageProto.TrustChainBlock block) {
-        TrustChainDBHelper dbHelper = callingActivity.getDbHelper();
+        TrustChainDBHelper dbHelper = communication.getDbHelper();
         Peer peer = new Peer(block.getPublicKey().toByteArray(), address.getHostAddress(), DEFAULT_PORT);
         Log.i(TAG, "Received half block from peer with IP: " + peer.getIpAddress() + ":" + peer.getPort() +
             " and public key: " + bytesToHex(peer.getPublicKey()));
 
-        callingActivity.peers.put(peer.getIpAddress(),peer.getPublicKey());
+        communication.addNewPublicKey(peer);
 
         ValidationResult validation;
         try {
@@ -213,7 +190,7 @@ class Server {
             insertInDB(block,dbHelper.getWritableDatabase());
         }
 
-        byte[] pk = Key.loadKeys(callingActivity.getApplicationContext()).getPublic().getEncoded();
+        byte[] pk = communication.getMyPublicKey();
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if(block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
                 !Arrays.equals(block.getLinkPublicKey().toByteArray(), pk) ||
@@ -225,7 +202,7 @@ class Server {
         }
 
         // determine if we should sign the block, if not: do nothing
-        if(!shouldSign(block)) {
+        if(!Communication.shouldSign(block)) {
             Log.e(TAG,"Will not sign received block.");
             return;
         }
@@ -240,9 +217,9 @@ class Server {
             Log.e(TAG, "Request block could not be validated sufficiently, requested crawler. " +
                     validation.toString());
             // send a crawl request, requesting the last 5 blocks before the received halfblock (if available) of the peer
-            callingActivity.sendCrawlRequest(peer,block.getPublicKey().toByteArray(),Math.max(GENESIS_SEQ,block.getSequenceNumber()-5));
+            communication.sendCrawlRequest(peer,block.getPublicKey().toByteArray(),Math.max(GENESIS_SEQ,block.getSequenceNumber()-5));
         } else {
-            callingActivity.signBlock(peer, block);
+            communication.signBlock(peer, block);
         }
     }
 
