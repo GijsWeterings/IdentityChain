@@ -1,6 +1,8 @@
 package nl.tudelft.cs4160.trustchain_android.chainExplorer;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -126,6 +128,9 @@ public class ChainExplorerAdapter extends BaseAdapter{
         signature.setText(bytesToHex(block.getSignature().toByteArray()));
         expTransaction.setText(block.getTransaction().toStringUtf8());
 
+        if(peerAlias.equals("me") || linkPeerAlias.equals("me")) {
+            convertView.findViewById(R.id.own_chain_indicator).setBackgroundColor(Color.GREEN);
+        }
         return convertView;
     }
 }
