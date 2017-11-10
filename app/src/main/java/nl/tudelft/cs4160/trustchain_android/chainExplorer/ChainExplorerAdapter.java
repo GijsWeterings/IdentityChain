@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.R;
@@ -68,9 +70,16 @@ public class ChainExplorerAdapter extends BaseAdapter{
 
         // expanded view
         TextView pubKey = (TextView) convertView.findViewById(R.id.pub_key);
-
+        TextView linkPubKey = (TextView) convertView.findViewById(R.id.link_pub_key);
+        TextView prevHash = (TextView) convertView.findViewById(R.id.prev_hash);
+        TextView signature = (TextView) convertView.findViewById(R.id.signature);
+        TextView expTransaction = (TextView) convertView.findViewById(R.id.expanded_transaction);
 
         pubKey.setText(bytesToHex(block.getPublicKey().toByteArray()));
+        linkPubKey.setText(bytesToHex(block.getLinkPublicKey().toByteArray()));
+        prevHash.setText(bytesToHex(block.getPreviousHash().toByteArray()));
+        signature.setText(bytesToHex(block.getSignature().toByteArray()));
+        expTransaction.setText(block.getTransaction().toStringUtf8());
 
         return convertView;
     }

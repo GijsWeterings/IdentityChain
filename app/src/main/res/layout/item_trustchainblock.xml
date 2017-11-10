@@ -100,24 +100,71 @@
 
     </LinearLayout>
 
-    <LinearLayout
+    <TableLayout
         android:id="@+id/expanded_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:shrinkColumns="1"
         android:visibility="gone"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
         android:paddingTop="4dp">
 
-        <TextView
-            android:id="@+id/pub_key"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:text="Public Key: "/>
+        <TableRow>
+            <TextView
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="@string/item_public_key"/>
 
+            <TextView
+                android:id="@+id/pub_key"
+                android:textSize="13sp"/>
+        </TableRow>
 
-    </LinearLayout>
+        <TableRow>
+            <TextView
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="@string/item_link_public_key"/>
+
+            <TextView
+                android:id="@+id/link_pub_key"
+                android:textSize="13sp"/>
+        </TableRow>
+
+        <TableRow>
+            <TextView
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="@string/item_prev_hash"/>
+
+            <TextView
+                android:id="@+id/prev_hash"
+                android:textSize="13sp"/>
+        </TableRow>
+
+        <TableRow>
+            <TextView
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="@string/item_signature"/>
+
+            <TextView
+                android:id="@+id/signature"
+                android:textSize="13sp"/>
+        </TableRow>
+
+        <TableRow>
+            <TextView
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="@string/item_transaction"/>
+
+            <TextView
+                android:id="@+id/expanded_transaction"
+                android:textSize="13sp"/>
+        </TableRow>
+
+    </TableLayout>
 
 </LinearLayout>
