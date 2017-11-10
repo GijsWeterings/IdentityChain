@@ -1,15 +1,18 @@
 package nl.tudelft.cs4160.trustchain_android.connection;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -30,6 +33,8 @@ public class BluetoothActivity extends AppCompatActivity {
 
     private BluetoothAdapter btAdapter;
     private final UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");;
+
+    private final static int REQUEST_BLUETOOTH = 2;
 
     private ListView listPairedDevices;
 
@@ -59,13 +64,17 @@ public class BluetoothActivity extends AppCompatActivity {
 
     public void init() {
         btAdapter = BluetoothAdapter.getDefaultAdapter();
-        //TODO: show error messages
         if (btAdapter == null) {
             Log.w(TAG, "Bluetooth is not supported");
+            showToast("Device does not support bluetooth");
+            finish();
             return;
         }
         Log.i(TAG, "working bluetooth");
         if (!btAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_BLUETOOTH);
+
             Log.e(TAG, "Bluetooth not enabled");
             return;
         }
@@ -80,12 +89,33 @@ public class BluetoothActivity extends AppCompatActivity {
         acceptThread.start();
     }
 
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_BLUETOOTH) {
+            if(resultCode == Activity.RESULT_OK) {
+                init();
+            } else {
+                showToast("Please enable bluetooth");
+                finish();
+            }
+        }
+    }
+
+    /**
+     * Show a toast
+     * @param msg The message.
+     */
+    private void showToast(String msg) {
+        Toast toast = Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT);
+        toast.show();
+    }
 
     protected void onDestroy() {
         super.onDestroy();
 
         //close the server
-        acceptThread.cancel();
+        if (acceptThread != null) {
+            acceptThread.cancel();
+        }
     }
 
 
@@ -115,28 +145,21 @@ public class BluetoothActivity extends AppCompatActivity {
                     Log.e(TAG, "Socket's accept() method failed", e);
                     break;
                 }
-                Log.e(TAG, "almost");
                 if (socket != null) {
-                    Log.e(TAG, "start reading data");
                     // A connection was accepted. Perform work associated with
-                    //TODO: read something
                     try {
-                        Log.i(TAG, "created a server");
                         while(true) {
                             try {
-                                Log.e(TAG, "starting reading");
+                                Log.e(TAG, "Starting reading via bluetooth");
                                 MessageProto.Message message= MessageProto.Message.parseDelimitedFrom(socket.getInputStream());
                                 if(message == null) {
                                     break;
                                 }
-                                Log.e(TAG, "done reading");
-                                Log.e(TAG, "link sequence: " + message.getHalfBlock().getLinkSequenceNumber());
+                                Log.e(TAG, "Received message ");
                             } catch(InvalidProtocolBufferException e) {
                                 Log.e(TAG, "invalid message received: " + e.getMessage());
                             }
                         }
-
-
                         mmServerSocket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
