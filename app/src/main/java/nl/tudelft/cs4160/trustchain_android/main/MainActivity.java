@@ -99,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             String ipAddress = editTextDestinationIP.getText().toString();
+            String portText = editTextDestinationPort.getText().toString();
+            if(ipAddress.length() == 0 || portText.length() == 0) {
+                return;
+            }
             if (peers.containsKey(ipAddress)) {
                 Peer peer = new Peer(
                         peers.get(ipAddress),
@@ -115,8 +119,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
                 Peer peer = new Peer(
                         EMPTY_PK.toByteArray(),
-                        editTextDestinationIP.getText().toString(),
-                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                        ipAddress,
+                        Integer.parseInt(portText));
                 sendCrawlRequest(peer,getMyPublicKey(),-5);
             }
         }
