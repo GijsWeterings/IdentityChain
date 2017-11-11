@@ -1,4 +1,4 @@
-.. include:: ./docs/source/introduction.rst
+{{md './docs/source/introduction.rst'}}
 
 Documentation
 =============
