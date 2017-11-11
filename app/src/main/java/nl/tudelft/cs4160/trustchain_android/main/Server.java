@@ -22,12 +22,10 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
-import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.shouldSign;
 
@@ -210,15 +208,14 @@ class Server {
             }
             return;
         } else {
-            insertInDB(block,dbHelper.getWritableDatabase());
+            dbHelper.insertInDB(block);
         }
 
         byte[] pk = Key.loadKeys(callingActivity.getApplicationContext()).getPublic().getEncoded();
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if(block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
                 !Arrays.equals(block.getLinkPublicKey().toByteArray(), pk) ||
-                null != getBlock(dbHelper.getReadableDatabase(),
-                            block.getLinkPublicKey().toByteArray(),
+                null != dbHelper.getBlock(block.getLinkPublicKey().toByteArray(),
                             block.getLinkSequenceNumber())) {
             Log.e(TAG,"Received block not addressed to me or already signed by me.");
             return;
