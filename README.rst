@@ -1,2 +1,5 @@
-# CS4160-trustchain-android
-An example android app for using trustchain
+.. include:: ./docs/source/introduction.rst
+
+Documentation
+=============
+The documentation for this project can be found at `ReadTheDocs <trustchain-android.readthedocs.org>`_.
