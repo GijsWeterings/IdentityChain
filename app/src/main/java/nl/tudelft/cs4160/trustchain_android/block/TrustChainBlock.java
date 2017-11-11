@@ -20,10 +20,6 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
-/**
- * Created by meijer on 20-9-17.
- */
-
 public class TrustChainBlock {
     public static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
     public static final int GENESIS_SEQ = 1;
