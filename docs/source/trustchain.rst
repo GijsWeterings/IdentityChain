@@ -11,6 +11,6 @@ Many transaction by many peers thus create a complicated network of entangled ch
 	:width: 600px
 
 Dispersy
---------
-For peer discovery and handling the crawl requests for obtaining knowledge about peers Dispersy is used in the `ipv8 implementation <https://github.com/qstokkink/py-ipv8>`_ of TrustChain. Dispersy is not implemented in this Android project and discussing it is out of scope for this documentation. For more information read the `Dispersy readthedocs page <https://dispersy.readthedocs.io/en/devel/index.html>`_.
+========
+For peer discovery and handling the crawl requests for obtaining knowledge about peers, Dispersy is used in the `ipv8 implementation <https://github.com/qstokkink/py-ipv8>`_ of TrustChain. Dispersy is not implemented in this Android project and discussing it is out of scope for this documentation. For more information read the `Dispersy readthedocs page <https://dispersy.readthedocs.io/en/devel/index.html>`_.
 
