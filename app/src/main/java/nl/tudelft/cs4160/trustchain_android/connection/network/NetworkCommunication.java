@@ -1,8 +1,10 @@
-package nl.tudelft.cs4160.trustchain_android.main;
+package nl.tudelft.cs4160.trustchain_android.connection.network;
 
 import java.security.KeyPair;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
@@ -10,7 +12,9 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
  * Created by rico on 10-11-17.
  */
 
-public class NetworkCommunication extends  Communication {
+public class NetworkCommunication extends Communication {
+
+    public static final int DEFAULT_PORT = 8080;
 
     private Server server;
 

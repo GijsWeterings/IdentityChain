@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.connection;
+package nl.tudelft.cs4160.trustchain_android.connection.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
@@ -8,10 +8,11 @@ import android.util.Log;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
-import nl.tudelft.cs4160.trustchain_android.main.Communication;
-import nl.tudelft.cs4160.trustchain_android.main.CommunicationListener;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static android.provider.Settings.NameValueTable.NAME;
@@ -21,6 +22,9 @@ import static android.provider.Settings.NameValueTable.NAME;
  */
 
 public class AcceptThread extends Thread {
+
+    protected final static UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");;
+
 
     private static final String TAG = AcceptThread.class.getName();
     private BluetoothAdapter btAdapter;
@@ -37,7 +41,7 @@ public class AcceptThread extends Thread {
         BluetoothServerSocket tmp = null;
         try {
             // MY_UUID is the app's UUID string, also used by the client code.
-            tmp = btAdapter.listenUsingRfcommWithServiceRecord(NAME, BluetoothActivity.myUUID);
+            tmp = btAdapter.listenUsingRfcommWithServiceRecord(NAME, AcceptThread.myUUID);
         } catch (IOException e) {
             Log.e(TAG, "Socket's listen() method failed", e);
         }

@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.connection;
+package nl.tudelft.cs4160.trustchain_android.connection.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -35,7 +35,7 @@ public class ConnectThread extends Thread {
             // MY_UUID is the app's UUID string, also used in the server code.
             if(mmSocket == null || mmSocket.getRemoteDevice() == null ||
                     !mmSocket.getRemoteDevice().getAddress().equals(device.getAddress())) {
-                mmSocket = device.createRfcommSocketToServiceRecord(BluetoothActivity.myUUID);
+                mmSocket = device.createRfcommSocketToServiceRecord(AcceptThread.myUUID);
                 alreadyConnected = false;
             } else {
                 alreadyConnected = true;

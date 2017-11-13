@@ -1,14 +1,11 @@
-package nl.tudelft.cs4160.trustchain_android.main;
+package nl.tudelft.cs4160.trustchain_android.connection;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.protobuf.ByteString;
 
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,11 +15,12 @@ import java.util.Map;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
+import nl.tudelft.cs4160.trustchain_android.connection.network.NetworkCommunication;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.main.MainActivity;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
@@ -36,7 +34,6 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIA
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 /**
@@ -303,7 +300,7 @@ public abstract class Communication {
             peer.setPublicKey(block.getPublicKey().toByteArray());
 
             //TODO: this can not happen with bluetooth devices
-            peer.setPort(DEFAULT_PORT);
+            peer.setPort(NetworkCommunication.DEFAULT_PORT);
             this.synchronizedReceivedHalfBlock(peer, block);
         }
 

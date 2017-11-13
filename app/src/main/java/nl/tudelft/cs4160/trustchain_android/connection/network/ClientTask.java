@@ -1,20 +1,15 @@
-package nl.tudelft.cs4160.trustchain_android.main;
+package nl.tudelft.cs4160.trustchain_android.connection.network;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.TextView;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import nl.tudelft.cs4160.trustchain_android.R;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything
@@ -46,8 +41,8 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
         while(loop) {
             Socket socket = null;
             try {
-                Log.i(TAG, "Opening socket to " + destinationIP + ":" + DEFAULT_PORT);
-                socket = new Socket(destinationIP, DEFAULT_PORT);
+                Log.i(TAG, "Opening socket to " + destinationIP + ":" + NetworkCommunication.DEFAULT_PORT);
+                socket = new Socket(destinationIP, NetworkCommunication.DEFAULT_PORT);
                 message.writeTo(socket.getOutputStream());
                 socket.shutdownOutput();
 
