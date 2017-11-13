@@ -35,7 +35,7 @@ Bluetooth
 ==================================
 Bluetooth works similar to WiFi: a server is created which is listening for messages, and a client send messages to server. However, with WiFi the messages are sent through two different ports and thus two different connections. This is not possible with bluetoooth so the client will reuse the socket.
 
-.. figure:: ./images/connection_example_bluetooth.jpg 
+.. figure:: ./images/connection_example_bluetooth.jpeg 
 	:width: 300px
 
 
