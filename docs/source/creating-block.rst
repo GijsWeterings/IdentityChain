@@ -23,7 +23,7 @@ Note that ``link_sequence_number`` will be unknown for the first half block crea
 
 Create block
 ============
-There are two situation that require creating a block. Initiating the creation of a transaction with another peer and completing a block send to you by another peer. This is both done by calling the ``signBlock`` method in `MainActivity.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/main/MainActivity.java>`_. This method calls the ``createBlock`` method in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_, signs the block, and validates the correctness of the block, before it gets added to the chain and send.
+There are two situation that require creating a block. Initiating the creation of a transaction with another peer and completing a block send to you by another peer. This is both done by calling the ``signBlock`` method in `Communication.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_. This method calls the ``createBlock`` method in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_, signs the block, and validates the correctness of the block, before it gets added to the chain and send.
 
 Initiating a transaction
 ------------------------
@@ -64,7 +64,7 @@ Links to code
 =============
 * `Block structure in ProtocolBuffers (Message.proto) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_
 * `All block related methods (TrustChainBlock.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_
-* `Sign block method (MainActivity.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/main/MainActivity.java>`_
+* `Sign block method (Communication.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_
 * `Validation result (ValidationResult.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/ValidationResult.java>`_
 
 Also see the `readme on the ipv8 github <https://github.com/qstokkink/py-ipv8/blob/master/doc/trustchain.md>`_
