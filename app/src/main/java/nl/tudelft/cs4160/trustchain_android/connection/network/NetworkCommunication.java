@@ -8,10 +8,10 @@ import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-/**
- * Created by rico on 10-11-17.
- */
 
+/**
+ * Class that is responsible for WiFi connection.
+ */
 public class NetworkCommunication extends Communication {
 
     public static final int DEFAULT_PORT = 8080;
