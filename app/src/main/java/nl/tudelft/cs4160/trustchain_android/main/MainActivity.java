@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     Button connectionButton;
     Button chainExplorerButton;
     Button resetDatabaseButton;
-    Button keyOptionsButton;
+    Button bluetoothButton;
     EditText editTextDestinationIP;
     EditText editTextDestinationPort;
 
@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
         connectionButton = (Button) findViewById(R.id.connection_button);
         chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
         resetDatabaseButton = (Button) findViewById(R.id.reset_database_button);
-        keyOptionsButton = (Button) findViewById(R.id.key_options_button);
+        bluetoothButton = (Button) findViewById(R.id.bluetooth_connection_button);
     }
 
     private void init() {
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
 
         connectionButton.setOnClickListener(connectionButtonListener);
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener);
-        keyOptionsButton.setOnClickListener(keyOptionsListener);
+        bluetoothButton.setOnClickListener(keyOptionsListener);
         resetDatabaseButton.setOnClickListener(resetDatabaseListener);
 
         //start listening for messages

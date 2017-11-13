@@ -8,6 +8,7 @@ import android.util.Log;
 
 import java.io.IOException;
 
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 
@@ -23,12 +24,14 @@ public class ConnectThread extends Thread {
 
     private BluetoothAdapter btAdapter;
     private  MessageProto.Message message;
+    private CommunicationListener listener;
 
     private static boolean alreadyConnected = false;
 
-    public ConnectThread(BluetoothAdapter btAdapter, BluetoothDevice device, MessageProto.Message message) {
+    public ConnectThread(BluetoothAdapter btAdapter, BluetoothDevice device, MessageProto.Message message, CommunicationListener listener) {
         this.btAdapter = btAdapter;
         this.message = message;
+        this.listener = listener;
 
         try {
             // Get a BluetoothSocket to connect with the given BluetoothDevice.
@@ -67,13 +70,12 @@ public class ConnectThread extends Thread {
 
         // The connection attempt succeeded. Perform work associated with
         // the connection in a separate thread.
-        //TODO: send something
-        Log.e(TAG, "Trying to send data...");
         try {
             //send the message
             message.writeDelimitedTo(mmSocket.getOutputStream());
-            Log.e(TAG, "send message!");
+            Log.e(TAG, "Send message via bluetooth to " + mmSocket.getRemoteDevice().getName());
         } catch (IOException e) {
+            listener.updateLog("Could not send message: " + e.getMessage());
             e.printStackTrace();
         }
         //manageMyConnectedSocket(mmSocket);
@@ -82,7 +84,7 @@ public class ConnectThread extends Thread {
     // Closes the client socket and causes the thread to finish.
     public void cancel() {
         try {
-            Log.e(TAG, "CLOSING CONNECTION");
+            Log.i(TAG, "Closing connection");
             mmSocket.close();
         } catch (IOException e) {
             Log.e(TAG, "Could not close the client socket", e);
