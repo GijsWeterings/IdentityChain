@@ -2,8 +2,6 @@ package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -28,14 +26,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.KeyActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
+import nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
@@ -43,13 +40,10 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
-import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 public class MainActivity extends AppCompatActivity {
@@ -58,8 +52,6 @@ public class MainActivity extends AppCompatActivity {
     final static int DEFAULT_PORT = 8080;
 
     TrustChainDBHelper dbHelper;
-    SQLiteDatabase db;
-    SQLiteDatabase dbReadable;
 
     public Map<String,byte[]> peers;
 
@@ -78,14 +70,15 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Key pair of user
      */
-    KeyPair kp;
+    static KeyPair kp;
 
     /**
      * Listener for the connection button.
      * On click a block is created and send to a peer.
      * When we encounter an unknown peer, send a crawl request to that peer in order to get its
      * public key.
-     * Also send our last 5 blocks to the peer so it gets to know us.
+     * Also, when we want to send a block always send our last 5 blocks to the peer so the block
+     * request won't be rejected due to NO_INFO error.
      *
      * This is code to simulate dispersy, note that this does not work properly with a busy network,
      * because the time delay between sending information to the peer and sending the actual
@@ -98,11 +91,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             String ipAddress = editTextDestinationIP.getText().toString();
+            String portText = editTextDestinationPort.getText().toString();
+            if(ipAddress.length() == 0 || portText.length() == 0) {
+                return;
+            }
             if (peers.containsKey(ipAddress)) {
                 Peer peer = new Peer(
                         peers.get(ipAddress),
                         editTextDestinationIP.getText().toString(),
                         Integer.parseInt(editTextDestinationPort.getText().toString()));
+                sendLatestBlocksToPeer(peer);
                 try {
                     signBlock(TRANSACTION.getBytes("UTF-8"), peer);
                 } catch (UnsupportedEncodingException e) {
@@ -113,10 +111,9 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
                 Peer peer = new Peer(
                         EMPTY_PK.toByteArray(),
-                        editTextDestinationIP.getText().toString(),
-                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                        ipAddress,
+                        Integer.parseInt(portText));
                 sendCrawlRequest(peer,getMyPublicKey(),-5);
-                sendLatestBlocksToPeer(peer);
             }
         }
     };
@@ -174,9 +171,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         dbHelper = new TrustChainDBHelper(thisActivity);
-        db = dbHelper.getWritableDatabase();
-        dbReadable = dbHelper.getReadableDatabase();
-
         peers = new HashMap<>();
 
         //create or load keys
@@ -184,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(isStartedFirstTime()) {
             MessageProto.TrustChainBlock block = TrustChainBlock.createGenesisBlock(kp);
-            insertInDB(block, db);
+            dbHelper.insertInDB(block);
         }
 
         updateIP();
@@ -215,26 +209,12 @@ public class MainActivity extends AppCompatActivity {
      */
     public boolean isStartedFirstTime() {
         // check if a genesis block is present in database
-        String[] projection = {
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
-        };
+        MessageProto.TrustChainBlock genesisBlock = dbHelper.getBlock(getMyPublicKey(),GENESIS_SEQ);
 
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
-        String[] whereArgs = new String[] {Integer.toString(TrustChainBlock.GENESIS_SEQ)};
-
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                projection,                                     // The columns to return
-                whereClause,                                           // Filter for which rows to return
-                whereArgs,                                           // Filter arguments
-                null,                                           // Declares how to group rows
-                null,                                           // Declares which row groups to include
-                null                                           // How the rows should be ordered
-        );
-        if(cursor.getCount() == 1) {
-            return false;
+        if(genesisBlock == null) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
@@ -341,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG,"signBlock: Block is not a request.");
             return;
         }
-        MessageProto.TrustChainBlock block = createBlock(null,dbReadable,
+        MessageProto.TrustChainBlock block = createBlock(null,dbHelper,
                 getMyPublicKey(),
                 linkedBlock,peer.getPublicKey());
 
@@ -364,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
         } else {
-            insertInDB(block,db);
+            dbHelper.insertInDB(block);
             sendBlock(peer,block);
         }
     }
@@ -379,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG,"signBlock: Null transaction given.");
         }
         MessageProto.TrustChainBlock block =
-                createBlock(transaction,dbReadable,
+                createBlock(transaction,dbHelper,
                         getMyPublicKey(),null,peer.getPublicKey());
         block = sign(block, kp.getPrivate());
 
@@ -400,12 +380,12 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                 + validation.getErrors().toString());
         } else {
-            insertInDB(block,db);
+            dbHelper.insertInDB(block);
             sendBlock(peer,block);
         }
     }
 
-    public byte[] getMyPublicKey() {
+    public static byte[] getMyPublicKey() {
         return kp.getPublic().getEncoded();
     }
 
@@ -431,8 +411,8 @@ public class MainActivity extends AppCompatActivity {
     public void sendCrawlRequest(Peer peer, byte[] publicKey, int seqNum) {
         int sq = seqNum;
         if(seqNum == 0) {
-            MessageProto.TrustChainBlock block = TrustChainBlock.getBlock(dbReadable,publicKey,
-                    TrustChainBlock.getMaxSeqNum(dbReadable,publicKey));
+            MessageProto.TrustChainBlock block = dbHelper.getBlock(publicKey,
+                    dbHelper.getMaxSeqNum(publicKey));
             if(block != null) {
                 sq = block.getSequenceNumber();
             } else {
@@ -481,7 +461,7 @@ public class MainActivity extends AppCompatActivity {
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
         if(sq<0) {
-            MessageProto.TrustChainBlock lastBlock = getLatestBlock(dbReadable, getMyPublicKey());
+            MessageProto.TrustChainBlock lastBlock = dbHelper.getLatestBlock(getMyPublicKey());
 
             if(lastBlock != null){
                 sq = Math.max(GENESIS_SEQ, lastBlock.getSequenceNumber() + sq + 1);
