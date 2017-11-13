@@ -46,30 +46,22 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
                 message.writeTo(socket.getOutputStream());
                 socket.shutdownOutput();
 
-                Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
+                // check whether we're sending a half block or a message
+                if(message.getCrawlRequest().getPublicKey().size() == 0) {
+                    Log.i(TAG, "Sent half block to peer with ip " + destinationIP + ":" + destinationPort);
+                    listener.updateLog("\n\nClient: " + "Sent half block to peer with ip " + destinationIP + ":" + destinationPort);
+                } else {
+                    Log.i(TAG, "Sent crawl request to peer with ip " + destinationIP + ":" + destinationPort);
+                    listener.updateLog("\n\nClient: " + "Sent crawl request to peer with ip " + destinationIP + ":" + destinationPort);
+                }
 
-                // Get the response from the server
-               /* ByteArrayOutputStream byteArrayOutputStream =
-                        new ByteArrayOutputStream(1024);
-                byte[] buffer = new byte[1024];
-
-                int bytesRead;
-                InputStream inputStream = socket.getInputStream();
-
-                // notice: inputStream.read() will block if no data return
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    response += byteArrayOutputStream.toString("UTF-8");
-                }*/
             } catch (UnknownHostException e) {
                 e.printStackTrace();
-                response = "UnknownHostException: " + e.toString();
+                listener.updateLog("\n  Client: Cannot resolve host");
             } catch (IOException e) {
                 e.printStackTrace();
-                response = "IOException: " + e.toString();
             } catch (Exception e) {
                 e.printStackTrace();
-                response = "Exception: " + e.toString();
             } finally {
                 if (socket != null) {
                     try {
@@ -95,7 +87,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
      */
     @Override
     protected void onPostExecute(Void result) {
-        listener.updateLog("\n  Client got response: " + response);
+        listener.updateLog("\n  Send message ");
         super.onPostExecute(result);
     }
 

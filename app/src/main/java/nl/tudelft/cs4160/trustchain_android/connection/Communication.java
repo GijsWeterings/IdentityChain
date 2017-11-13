@@ -24,8 +24,6 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
@@ -33,7 +31,6 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIA
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
-import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 /**
@@ -73,8 +70,8 @@ public abstract class Communication {
     public void sendCrawlRequest(Peer peer, byte[] publicKey, int seqNum) {
         int sq = seqNum;
         if (seqNum == 0) {
-            MessageProto.TrustChainBlock block = TrustChainBlock.getBlock(dbReadable, publicKey,
-                    TrustChainBlock.getMaxSeqNum(dbReadable, publicKey));
+            MessageProto.TrustChainBlock block = dbHelper.getBlock(publicKey,
+                    dbHelper.getMaxSeqNum(publicKey));
             if (block != null) {
                 sq = block.getSequenceNumber();
             } else {
@@ -154,9 +151,9 @@ public abstract class Communication {
             Log.e(TAG, "signBlock: Block is not a request.");
             return;
         }
-        MessageProto.TrustChainBlock block = createBlock(null, dbReadable,
+        MessageProto.TrustChainBlock block = createBlock(null,dbHelper,
                 getMyPublicKey(),
-                linkedBlock, peer.getPublicKey());
+                linkedBlock,peer.getPublicKey());
 
         block = sign(block, keyPair.getPrivate());
 
@@ -177,7 +174,7 @@ public abstract class Communication {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
         } else {
-            insertInDB(block, db);
+            dbHelper.insertInDB(block);
             sendHalfBlock(peer, block);
         }
     }
@@ -193,8 +190,8 @@ public abstract class Communication {
             Log.e(TAG, "signBlock: Null transaction given.");
         }
         MessageProto.TrustChainBlock block =
-                createBlock(transaction, dbReadable,
-                        getMyPublicKey(), null, peer.getPublicKey());
+                createBlock(transaction,dbHelper,
+                        getMyPublicKey(),null,peer.getPublicKey());
         block = sign(block, keyPair.getPrivate());
 
         ValidationResult validation;
@@ -214,7 +211,7 @@ public abstract class Communication {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString());
         } else {
-            insertInDB(block, db);
+            dbHelper.insertInDB(block);
             sendHalfBlock(peer, block);
         }
     }
@@ -254,7 +251,7 @@ public abstract class Communication {
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
         if (sq < 0) {
-            MessageProto.TrustChainBlock lastBlock = getLatestBlock(dbReadable, getMyPublicKey());
+            MessageProto.TrustChainBlock lastBlock = dbHelper.getLatestBlock(getMyPublicKey());
 
             if (lastBlock != null) {
                 sq = Math.max(GENESIS_SEQ, lastBlock.getSequenceNumber() + sq + 1);
@@ -346,15 +343,14 @@ public abstract class Communication {
             }
             return;
         } else {
-            insertInDB(block, dbHelper.getWritableDatabase());
+            dbHelper.insertInDB(block);
         }
 
         byte[] pk = getMyPublicKey();
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if (block.getLinkSequenceNumber() != UNKNOWN_SEQ ||
                 !Arrays.equals(block.getLinkPublicKey().toByteArray(), pk) ||
-                null != getBlock(dbHelper.getReadableDatabase(),
-                        block.getLinkPublicKey().toByteArray(),
+                null != dbHelper.getBlock(block.getLinkPublicKey().toByteArray(),
                         block.getLinkSequenceNumber())) {
             Log.e(TAG, "Received block not addressed to me or already signed by me.");
             return;

@@ -2,8 +2,6 @@ package nl.tudelft.cs4160.trustchain_android.main;
 
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -21,7 +19,6 @@ import java.security.KeyPair;
 import java.util.Collections;
 import java.util.List;
 
-import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
@@ -29,12 +26,12 @@ import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.connection.Communication;
 import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.connection.network.NetworkCommunication;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
+import nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.main.bluetooth.BluetoothActivity;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 
 public class MainActivity extends AppCompatActivity implements CommunicationListener {
 
@@ -43,8 +40,6 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     private final static String TAG = MainActivity.class.toString();
 
     TrustChainDBHelper dbHelper;
-    SQLiteDatabase db;
-    SQLiteDatabase dbReadable;
 
     TextView externalIPText;
     TextView localIPText;
@@ -63,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     /**
      * Key pair of user
      */
-    KeyPair kp;
+    static KeyPair kp;
 
     /**
      * Listener for the connection button.
@@ -143,8 +138,6 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
 
     private void init() {
         dbHelper = new TrustChainDBHelper(thisActivity);
-        db = dbHelper.getWritableDatabase();
-        dbReadable = dbHelper.getReadableDatabase();
 
 
         //create or load keys
@@ -152,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
 
         if(isStartedFirstTime()) {
             MessageProto.TrustChainBlock block = TrustChainBlock.createGenesisBlock(kp);
-            insertInDB(block, db);
+            dbHelper.insertInDB(block);
         }
 
         communication = new NetworkCommunication(dbHelper, kp, this);
@@ -187,26 +180,12 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
      */
     public boolean isStartedFirstTime() {
         // check if a genesis block is present in database
-        String[] projection = {
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER,
-        };
+        MessageProto.TrustChainBlock genesisBlock = dbHelper.getBlock(kp.getPublic().getEncoded(),GENESIS_SEQ);
 
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
-        String[] whereArgs = new String[] {Integer.toString(TrustChainBlock.GENESIS_SEQ)};
-
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                projection,                                     // The columns to return
-                whereClause,                                           // Filter for which rows to return
-                whereArgs,                                           // Filter arguments
-                null,                                           // Declares how to group rows
-                null,                                           // Declares which row groups to include
-                null                                           // How the rows should be ordered
-        );
-        if(cursor.getCount() == 1) {
-            return false;
+        if(genesisBlock == null) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
@@ -272,11 +251,6 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
         }
         return null;
     }
-
-
-
-
-
 
 
     @Override
