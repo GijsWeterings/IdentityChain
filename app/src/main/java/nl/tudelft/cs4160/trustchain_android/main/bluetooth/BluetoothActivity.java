@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -64,6 +65,8 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
 
     public void init() {
         textViewLog = (TextView) findViewById(R.id.bluetooth_log);
+        textViewLog.setMovementMethod(new ScrollingMovementMethod());
+
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null) {
             Log.w(TAG, "Bluetooth is not supported");

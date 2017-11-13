@@ -23,13 +23,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <TextView
-            android:id="@+id/bluetooth_log"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#000000"
-            />
+        <android.widget.ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            tools:context="nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity">
+
+            <TextView
+                android:id="@+id/bluetooth_log"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#000000" />
+        </android.widget.ScrollView>
 
     </LinearLayout>
 
