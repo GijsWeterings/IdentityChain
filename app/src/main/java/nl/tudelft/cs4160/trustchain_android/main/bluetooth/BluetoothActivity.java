@@ -22,8 +22,6 @@ import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.connection.Communication;
 import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 
-import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
-
 public class BluetoothActivity extends AppCompatActivity implements CommunicationListener {
 
     private final static String TAG = BluetoothActivity.class.getName();

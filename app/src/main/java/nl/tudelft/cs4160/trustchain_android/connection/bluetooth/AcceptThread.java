@@ -63,17 +63,16 @@ public class AcceptThread extends Thread {
                 try {
                     while(true) {
                         try {
-                            Log.e(TAG, "Starting reading via bluetooth from " + socket.getRemoteDevice().getName());
                             //communication.receivedMessage();
                             MessageProto.Message message= MessageProto.Message.parseDelimitedFrom(socket.getInputStream());
                             if(message == null) {
-                                Log.e(TAG, "MESSAGE IS NULL");
+                                Log.e(TAG, "Message is null");
                                 break;
                             }
                             Peer peer = new Peer(socket.getRemoteDevice());
                             listener.updateLog("Received message");
                             communication.receivedMessage(message, peer);
-                            Log.e(TAG, "Received message ");
+                            Log.i(TAG, "Received message via bluetooth from " + socket.getRemoteDevice().getName());
                         } catch(InvalidProtocolBufferException e) {
                             Log.e(TAG, "invalid message received: " + e.getMessage());
                         }
@@ -90,7 +89,7 @@ public class AcceptThread extends Thread {
     // Closes the connect socket and causes the thread to finish.
     public void cancel() {
         try {
-            Log.e(TAG, "CLOSING CONNECTION");
+            Log.i(TAG, "Closing bluetooth connection");
             mmServerSocket.close();
         } catch (IOException e) {
             Log.e(TAG, "Could not close the connect socket", e);

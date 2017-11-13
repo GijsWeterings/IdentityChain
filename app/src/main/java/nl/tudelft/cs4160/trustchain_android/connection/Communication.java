@@ -1,6 +1,5 @@
 package nl.tudelft.cs4160.trustchain_android.connection;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.google.protobuf.ByteString;
@@ -45,8 +44,6 @@ public abstract class Communication {
 
 
     private TrustChainDBHelper dbHelper;
-    private SQLiteDatabase db;
-    private SQLiteDatabase dbReadable;
 
     private KeyPair keyPair;
 
@@ -55,8 +52,6 @@ public abstract class Communication {
 
     public Communication(TrustChainDBHelper dbHelper, KeyPair kp, CommunicationListener listener) {
         this.dbHelper = dbHelper;
-        this.dbReadable = this.dbHelper.getReadableDatabase();
-        this.db = this.dbHelper.getWritableDatabase();
         this.keyPair = kp;
         this.listener = listener;
         this.peers = new HashMap<>();
@@ -67,6 +62,12 @@ public abstract class Communication {
         return listener;
     }
 
+    /**
+     * Send a crawl request to the peer.
+     * @param peer The peer.
+     * @param publicKey Public key of me.
+     * @param seqNum Requested sequence number.
+     */
     public void sendCrawlRequest(Peer peer, byte[] publicKey, int seqNum) {
         int sq = seqNum;
         if (seqNum == 0) {
@@ -217,14 +218,6 @@ public abstract class Communication {
     }
 
 
-    /**
-     * Retrieves the dbhelper from mainactivity.
-     *
-     * @return
-     */
-    public TrustChainDBHelper getDbHelper() {
-        return dbHelper;
-    }
 
     /**
      * Checks if we should sign the block. For now there is no reason to not sign a block.
@@ -282,6 +275,12 @@ public abstract class Communication {
     }
 
 
+    /**
+     * Process a received message. Checks if the message is a crawl request or a half block
+     * and continues with the appropriate action,
+     * @param message The message.
+     * @param peer From the peer.
+     */
     public void receivedMessage(MessageProto.Message message, Peer peer) {
         MessageProto.TrustChainBlock block = message.getHalfBlock();
         MessageProto.CrawlRequest crawlRequest = message.getCrawlRequest();
@@ -296,7 +295,7 @@ public abstract class Communication {
             listener.updateLog("\n  Server: " + messageLog);
             peer.setPublicKey(block.getPublicKey().toByteArray());
 
-            //TODO: this can not happen with bluetooth devices
+            //make sure the correct port is set
             peer.setPort(NetworkCommunication.DEFAULT_PORT);
             this.synchronizedReceivedHalfBlock(peer, block);
         }
@@ -379,6 +378,11 @@ public abstract class Communication {
     }
 
 
+    /**
+     * Connect with a peer, either unknown or known.
+     * If the peer is not known, this will send a crawl request, otherwise a half block.
+     * @param peer
+     */
     public void connectToPeer(Peer peer) {
         String identifier = peer.getIpAddress();
         if(peer.getDevice() != null) {
@@ -386,7 +390,7 @@ public abstract class Communication {
         }
         Log.e(TAG, "Identifier: " + identifier);
         if (hasPublicKey(identifier)) {
-            listener.updateLog("Known peer send half block");
+            listener.updateLog("Sending half block to known peer");
             peer.setPublicKey(getPublicKey(identifier));
             sendLatestBlocksToPeer(peer);
             try {

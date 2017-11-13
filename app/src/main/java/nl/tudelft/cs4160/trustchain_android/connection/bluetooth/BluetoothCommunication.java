@@ -27,7 +27,7 @@ public class BluetoothCommunication extends Communication {
     }
     @Override
     public void sendMessage(Peer peer, MessageProto.Message message) {
-        new ConnectThread(bluetoothAdapter, peer.getDevice(), message).run();
+        new ConnectThread(bluetoothAdapter, peer.getDevice(), message, getListener()).run();
     }
 
     @Override

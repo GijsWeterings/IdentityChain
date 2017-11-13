@@ -20,7 +20,6 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     MessageProto.Message message;
 
     private final static String TAG = ClientTask.class.getName();
-    private String response;
 
     private CommunicationListener listener;
 
