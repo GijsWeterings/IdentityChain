@@ -19,18 +19,3 @@ TrustChain Android
    installation-instructions
    contact
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

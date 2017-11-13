@@ -5,7 +5,7 @@ Creating a block
 ****************
 In order to complete a transaction with a peer, we need to create a block. A block in TrustChain is a little different than in bitcoin-style blockchains. In bitcoin-style blockchains, a block is a collection of transactions that happened in the network. A block is created by a node and is propagated through the network. All connected nodes validate the block and the transactions. In TrustChain a block is formed by two peers who wish to agree on a transaction. Therefore a TrustChainBlock only has one transaction.
 
-Both parties need to agree on a transaction, so there has to be some interaction between peers. The way this is done in TrustChain is to first create an incomplete block, called a half block. This half block is then sent to the second peer, which creates a full block from the half block and sends it back to the first peer. This process is explained in more detail below.
+Both parties need to agree on a transaction, so there has to be some interaction between peers. The way this is done in TrustChain is to first create an incomplete block, called a half block. This half block is then send to the second peer, which creates a full block from the half block and sends it back to the first peer. This process is explained in more detail below.
 
 Structure of blocks
 ===================
@@ -23,7 +23,7 @@ Note that ``link_sequence_number`` will be unknown for the first half block crea
 
 Create block
 ============
-There are two situation that require creating a block. Initiating the creation of a transaction with another peer and completing a block send to you by another peer. This is both done by calling the ``signBlock`` method in `Communication.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_. This method calls the ``createBlock`` method in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_, signs the block, and validates the correctness of the block, before it gets added to the chain and send.
+There are two situation that require creating a block. Initiating the creation of a transaction with another peer and completing a block send to you by another peer. This is both done by calling the ``signBlock`` method in `Communication.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_. This method calls the ``createBlock`` method in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_, signs the block, and validates the correctness of the block, before it gets added to the chain and send.
 
 Initiating a transaction
 ------------------------
@@ -39,7 +39,7 @@ The next step is signing the block. This is as simple as creating a sha256 hash 
 
 Validate block
 ==============
-Block validation is the most important step here, as this ensures the validity of the blockchain. It plays an important role for trust. The validation function is located in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_. There are 6 different validation results:
+Block validation is the most important step here, as this ensures the validity of the blockchain. The validation function is located in `TrustChainBlock.java <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_. There are 6 different validation results:
 
 * ``VALID``
 * ``PARTIAL`` - There are gaps between this block and the previous and next
@@ -62,10 +62,10 @@ For a more detailed explanation of the validation function, please take a look i
 
 Links to code
 =============
-* `Block structure in ProtocolBuffers (Message.proto) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_
-* `All block related methods (TrustChainBlock.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_
-* `Sign block method (Communication.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_
-* `Validation result (ValidationResult.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/ValidationResult.java>`_
+* `Block structure in ProtocolBuffers (Message.proto) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_
+* `All block related methods (TrustChainBlock.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/TrustChainBlock.java>`_
+* `Sign block method (Communication.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/Communication.java>`_
+* `Validation result (ValidationResult.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/block/ValidationResult.java>`_
 
 Also see the `readme on the ipv8 github <https://github.com/qstokkink/py-ipv8/blob/master/doc/trustchain.md>`_
 
