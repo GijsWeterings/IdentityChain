@@ -65,17 +65,22 @@
                 android:text="@string/chain_explorer"/>
         </LinearLayout>
 
-        <Button
-            android:id="@+id/reset_database_button"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/reset_database_button"/>
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/bluetooth_connection_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/bluetooth_button" />
 
-        <Button
-            android:id="@+id/key_options_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/key_options" />
+            <Button
+                android:id="@+id/reset_database_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reset_database_button"/>
+        </LinearLayout>
 
         <android.widget.ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
