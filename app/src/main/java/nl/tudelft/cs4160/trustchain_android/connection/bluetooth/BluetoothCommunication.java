@@ -10,10 +10,10 @@ import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-/**
- * Created by rico on 13-11-17.
- */
 
+/**
+ * Class that is responsible for the bluetooth connection.
+ */
 public class BluetoothCommunication extends Communication {
 
     private BluetoothAdapter bluetoothAdapter;

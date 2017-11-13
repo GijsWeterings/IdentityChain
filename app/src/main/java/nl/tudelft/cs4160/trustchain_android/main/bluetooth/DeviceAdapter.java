@@ -15,10 +15,6 @@ import java.util.Set;
 
 import nl.tudelft.cs4160.trustchain_android.R;
 
-/**
- * Created by rico on 8-11-17.
- */
-
 public class DeviceAdapter extends BaseAdapter {
     private List<BluetoothDevice> devices;
     private Context context;

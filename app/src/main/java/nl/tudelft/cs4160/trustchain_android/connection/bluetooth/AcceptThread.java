@@ -18,9 +18,8 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 import static android.provider.Settings.NameValueTable.NAME;
 
 /**
- * Created by rico on 13-11-17.
+ * Class that waits for a bluetooth message.
  */
-
 public class AcceptThread extends Thread {
 
     protected final static UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");;

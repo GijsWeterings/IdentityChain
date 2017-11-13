@@ -1,9 +1,9 @@
 package nl.tudelft.cs4160.trustchain_android.connection;
 
-/**
- * Created by rico on 10-11-17.
- */
 
+/**
+ * A listener, which can be used to report what the status is of send/received messages.
+ */
 public interface CommunicationListener {
 
     void updateLog(String msg);
