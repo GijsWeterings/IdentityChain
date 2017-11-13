@@ -61,4 +61,24 @@ public class Util {
         return false;
     }
 
+    /**
+     * Create a ellipsized string
+     * @param input - the string to be ellipsized
+     * @param maxLength - The maximum length the result string can be, minimum should be 6
+     * @return
+     */
+    public static String ellipsize(String input, int maxLength) {
+        String ellip = "(..)";
+        if (input == null || input.length() <= maxLength
+                || input.length() < ellip.length()) {
+            return input;
+        }
+        if (maxLength < ellip.length()+2) {
+            return input.substring(0,1).concat(ellip).concat(input.substring(input.length()-1,input.length()));
+        }
+        return input.substring(0, (maxLength - ellip.length())/2)
+                .concat(ellip)
+                .concat(input.substring(input.length() - (maxLength - ellip.length())/2,input.length()));
+    }
+
 }

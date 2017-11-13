@@ -1,6 +1,5 @@
 package nl.tudelft.cs4160.trustchain_android.block;
 
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
@@ -16,15 +15,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
-
-/**
- * Created by meijer on 20-9-17.
- */
+import static nl.tudelft.cs4160.trustchain_android.Util.Util.ellipsize;
 
 public class TrustChainBlock {
     public static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
@@ -56,16 +51,16 @@ public class TrustChainBlock {
     /**
      * Creates a TrustChainBlock for the given input.
      * @param transaction - Details the message of the block, can be null if there is a linked block
-     * @param db - database in which the previous blocks of this peer can be found
+     * @param dbHelper - database helper for the database in which the previous blocks of this peer can be found
      * @param mypubk - the public key of this peer
      * @param linkedBlock - The halfblock that is linked to this to be created half block, can be null
      * @param linkpubk - The public key of the linked peer
      * @return a new half block
      */
-    public static MessageProto.TrustChainBlock createBlock(byte[] transaction, SQLiteDatabase db,
+    public static MessageProto.TrustChainBlock createBlock(byte[] transaction, TrustChainDBHelper dbHelper,
                                                          byte[] mypubk, MessageProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
-        MessageProto.TrustChainBlock latestBlock = getLatestBlock(db,mypubk);
+        MessageProto.TrustChainBlock latestBlock = dbHelper.getLatestBlock(mypubk);
 
         MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
         if(linkedBlock != null) {
@@ -148,10 +143,10 @@ public class TrustChainBlock {
         // inserted into the database. Thus we can assume that all retrieved blocks are all valid
         // themselves. Blocks can get inserted into the database in any order, so we need to find
         // successors, predecessors as well as the block itself and its linked block.
-        MessageProto.TrustChainBlock dbBlock = getBlock(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
-        MessageProto.TrustChainBlock linkBlock = getBlock(db,block.getLinkPublicKey().toByteArray(),block.getLinkSequenceNumber());
-        MessageProto.TrustChainBlock prevBlock = getBlockBefore(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
-        MessageProto.TrustChainBlock nextBlock = getBlockAfter(db,block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock dbBlock = dbHelper.getBlock(block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock linkBlock = dbHelper.getLinkedBlock(block);
+        MessageProto.TrustChainBlock prevBlock = dbHelper.getBlockBefore(block.getPublicKey().toByteArray(),block.getSequenceNumber());
+        MessageProto.TrustChainBlock nextBlock = dbHelper.getBlockAfter(block.getPublicKey().toByteArray(),block.getSequenceNumber());
 
         // ** Step 2: Determine the maximum validation level **
         // Depending on the blocks we get from the database, we can decide to reduce the validation
@@ -310,7 +305,7 @@ public class TrustChainBlock {
                 // Self counter signs another block (link). If linkBlock has a linked block that is not
                 // equal to block, then block is fraudulent, since it tries to countersign a block
                 // that is already countersigned.
-                MessageProto.TrustChainBlock linkLinkBlock = getBlock(db,
+                MessageProto.TrustChainBlock linkLinkBlock = dbHelper.getBlock(
                         linkBlock.getLinkPublicKey().toByteArray(), linkBlock.getLinkSequenceNumber());
                 if(linkLinkBlock != null && !Arrays.equals(hash(linkLinkBlock), hash(block))) {
                     result.setInvalid();
@@ -354,190 +349,7 @@ public class TrustChainBlock {
         return result.setErrors(errors);
     }
 
-    /**
-     * Retrieves the block associated with the given public key and sequence number from the database
-     * @param dbReadable - Database to search in
-     * @param pubkey - Public key of which the latest block should be found
-     * @param seqNumber - Int value of the sequence number of the block to be retrieved
-     * @return The latest block in the database or null if something went wrong
-     */
-    public static MessageProto.TrustChainBlock getBlock(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber) {
-        MessageProto.TrustChainBlock res = null;
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " = ?";
-        String[] whereArgs = new String[] { Base64.encodeToString(pubkey, Base64.DEFAULT),
-                Integer.toString(seqNumber)};
 
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                null,                                           // The columns to return, in this case all columns
-                whereClause,                                    // Filter for which rows to return
-                whereArgs,                                      // Filter arguments
-                null,                                           // Declares how to group rows
-                null,                                           // Declares which row groups to include
-                null                                            // How the rows should be ordered
-        );
-        if(cursor.getCount() == 1) {
-            cursor.moveToFirst();
-
-            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setLinkSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
-                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
-                    .build();
-        }
-        cursor.close();
-        return res;
-    }
-
-    /**
-     * Returns the block with the highest sequence number smaller than the given sequence number and
-     * the same public key: the previous block in the chain. Sequence number is allowed to be another
-     * value than seqNumber - 1.
-     * @param dbReadable - Database from which to read
-     * @param pubkey - Public key of the block of which to find the previous block in the chain
-     * @param seqNumber - Sequence number of block of which to find the previous block in the chain
-     * @return The previous TrustChainBlock in the chain
-     */
-    public static MessageProto.TrustChainBlock getBlockBefore(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
-        MessageProto.TrustChainBlock res = null;
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " < ?";
-        String[] whereArgs = new String[] {Base64.encodeToString(pubkey, Base64.DEFAULT),
-                Integer.toString(seqNumber)};
-        String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " DESC";
-
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                null,                                           // The columns to return, in this case all columns
-                whereClause,                                    // Filter for which rows to return
-                whereArgs,                                      // Filter arguments
-                null,                                           // Declares how to group rows
-                null,                                           // Declares which row groups to include
-                orderBy                                            // How the rows should be ordered
-        );
-        if(cursor.getCount() >= 1) {
-            cursor.moveToFirst();
-
-            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setLinkSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
-                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
-                    .build();
-        }
-        cursor.close();
-        return res;
-    }
-
-    /**
-     * Returns the block with the lowest sequence number greater than the given sequence number and
-     * the same public key: The next block in the chain. Sequence number is allowed to be another
-     * value than seqNumber + 1.
-     * @param dbReadable - Database from which to read
-     * @param pubkey - Public key of the block of which to find the previous block in the chain
-     * @param seqNumber - Sequence number of block of which to find the previous block in the chain
-     * @return The next TrustChainBlock in the chain
-     */
-    public static MessageProto.TrustChainBlock getBlockAfter(SQLiteDatabase dbReadable, byte[] pubkey, int seqNumber){
-        MessageProto.TrustChainBlock res = null;
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " > ?";
-        String[] whereArgs = new String[] { Base64.encodeToString(pubkey, Base64.DEFAULT),
-                Integer.toString(seqNumber)};
-        String orderBy = TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " ASC";
-
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,     // Table name for the query
-                null,                                           // The columns to return, in this case all columns
-                whereClause,                                    // Filter for which rows to return
-                whereArgs,                                      // Filter arguments
-                null,                                           // Declares how to group rows
-                null,                                           // Declares which row groups to include
-                orderBy                                         // How the rows should be ordered
-        );
-        if(cursor.getCount() >= 1) {
-            cursor.moveToFirst();
-
-            res = MessageProto.TrustChainBlock.newBuilder().setTransaction(ByteString.copyFromUtf8(cursor.getString(
-                    cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
-                    .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER)))
-                    .setLinkPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY)), Base64.DEFAULT)))
-                    .setLinkSequenceNumber(cursor.getInt(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_SEQUENCE_NUMBER)))
-                    .setPreviousHash(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PREVIOUS_HASH)), Base64.DEFAULT)))
-                    .setSignature(ByteString.copyFrom(Base64.decode(cursor.getString(
-                            cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_SIGNATURE)), Base64.DEFAULT)))
-                    .build();
-        }
-        cursor.close();
-        return res;
-    }
-
-    /**
-     * Returns the latest block in the database associated with the given public key.
-     * @param dbReadable - database in which to search
-     * @param pubkey - public key for which to search for blocks
-     * @return
-     */
-    public static MessageProto.TrustChainBlock getLatestBlock(SQLiteDatabase dbReadable, byte[] pubkey) {
-        return getBlock(dbReadable,pubkey,getMaxSeqNum(dbReadable,pubkey));
-    }
-
-    /**
-     * Get the maximum sequence number in the database associated with the given public key
-     * @param dbReadable - database in which to search
-     * @param pubkey - public key for which to search for blocks
-     * @return the maximum sequence number found
-     */
-    public static int getMaxSeqNum(SQLiteDatabase dbReadable, byte[] pubkey) {
-        int res = -1;
-        String[] projection = new String[] {"max(" +
-                TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"};
-        String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ?";
-        String[] whereArgs = new String[] {Base64.encodeToString(pubkey, Base64.DEFAULT)};
-
-        Cursor cursor = dbReadable.query(
-                TrustChainDBContract.BlockEntry.TABLE_NAME,
-                projection,
-                whereClause,
-                whereArgs,
-                null,
-                null,
-                null
-        );
-        if(cursor.getCount() == 1) {
-            cursor.moveToFirst();
-            res = cursor.getInt(cursor.getColumnIndex(
-                    "max(" + TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + ")"));
-        }
-        cursor.close();
-        return res;
-    }
 
     /**
      * Validates the transaction of a block, for now a transaction can be anything so no validation
@@ -555,15 +367,16 @@ public class TrustChainBlock {
      * @param block - The block which needs to be represented as a string
      * @return a string representing block
      */
+
     public static String toString(MessageProto.TrustChainBlock block){
         String res = "Trustchainblock: {\n";
-        res += "Public key: " + bytesToHex(block.getPublicKey().toByteArray()) + "\n";
-        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
-        res += "Link Public Key: " + bytesToHex(block.getLinkPublicKey().toByteArray()) + "\n";
-        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
-        res += "Previous Hash: " + bytesToHex(block.getPreviousHash().toByteArray()) + "\n";
-        res += "Signature: " + bytesToHex(block.getSignature().toByteArray()) + "\n";
-        res += "Transaction: \n" + block.getTransaction().toStringUtf8() + "\n";
+        res += "\tPublic key: " + bytesToHex(block.getPublicKey().toByteArray()) + "\n";
+        res += "\tSequence Number: " + block.getSequenceNumber() + "\n";
+        res += "\tLink Public Key: " + bytesToHex(block.getLinkPublicKey().toByteArray()) + "\n";
+        res += "\tLink Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "\tPrevious Hash: " + bytesToHex(block.getPreviousHash().toByteArray()) + "\n";
+        res += "\tSignature: " + bytesToHex(block.getSignature().toByteArray()) + "\n";
+        res += "\tTransaction: \n" + block.getTransaction().toStringUtf8() + "\n";
         res += "}";
         return res;
     }
@@ -576,29 +389,25 @@ public class TrustChainBlock {
      */
     public static String toShortString(MessageProto.TrustChainBlock block){
         String res = "Trustchainblock: {\n";
-        res += "Public key: " + pubKeyToString(block.getPublicKey().toByteArray()) + "\n";
-        res += "Sequence Number: " + block.getSequenceNumber() + "\n";
-        res += "Link Public Key: " + pubKeyToString(block.getLinkPublicKey().toByteArray()) + "\n";
-        res += "Link Sequence Number: " + block.getLinkSequenceNumber() + "\n";
+        res += "\tPublic key: " + pubKeyToString(block.getPublicKey().toByteArray(),32) + "\n";
+        res += "\tSequence Number: " + block.getSequenceNumber() + "\n";
+        res += "\tLink Public Key: " + pubKeyToString(block.getLinkPublicKey().toByteArray(),32) + "\n";
+        res += "\tLink Sequence Number: " + block.getLinkSequenceNumber() + "\n";
         res += "}";
         return res;
     }
 
     /**
      * Helper method for toString method of TrustChainBlock. Creates a representation of a public key
-     * representing a maximum of 64 bytes.
+     * with a maximum length.
      * @param pubKey
+     * @param maxLength
      * @return
      */
-    private static String pubKeyToString(byte[] pubKey){
+    public static String pubKeyToString(byte[] pubKey, int maxLength){
         String res;
         int length = pubKey.length;
-        if(length > 64) {
-            res = bytesToHex(Arrays.copyOfRange(pubKey,0,32)) + "(...)"
-                    + bytesToHex(Arrays.copyOfRange(pubKey,length-33,length-1));
-        } else {
-            res = bytesToHex(pubKey);
-        }
+        res = ellipsize(bytesToHex(pubKey), maxLength);
         res += " (size: " + length + ")";
         return res;
     }
