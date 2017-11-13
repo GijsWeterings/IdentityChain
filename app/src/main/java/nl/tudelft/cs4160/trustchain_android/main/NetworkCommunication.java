@@ -12,6 +12,8 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 public class NetworkCommunication extends  Communication {
 
+    private Server server;
+
     public NetworkCommunication(TrustChainDBHelper dbHelper, KeyPair kp, CommunicationListener listener) {
         super(dbHelper, kp, listener);
     }
@@ -24,4 +26,23 @@ public class NetworkCommunication extends  Communication {
                 getListener());
         task.execute();
     }
+
+    @Override
+    public void start() {
+        server= new Server(this, getListener());
+        server.start();
+    }
+
+    @Override
+    public void stop() {
+        //TODO: make it stop listening
+    }
+
+
+    @Override
+    public void addNewPublicKey(Peer p) {
+        getPeers().put(p.getIpAddress(), p.getPublicKey());
+    }
+
+
 }
