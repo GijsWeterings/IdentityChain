@@ -28,7 +28,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * Created by rico on 14-9-17.
  * Manages key operations.
  */
 public class Key {
