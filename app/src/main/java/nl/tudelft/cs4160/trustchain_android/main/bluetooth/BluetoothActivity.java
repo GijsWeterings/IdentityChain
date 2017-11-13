@@ -132,7 +132,7 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                textViewLog.append(msg);
+                textViewLog.append(msg + "\n");
             }
         });
     }
