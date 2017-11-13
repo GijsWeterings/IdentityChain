@@ -7,7 +7,7 @@ If you want to quickly test the basic version of TrustChain Android follow :ref:
 
 Installing TrustChainAndroid APK
 ================================
-In order to install an APK of Android TrustChain as found on GitHub. The only thing you need to do is download the `APK <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/build/outputs/apk/app-debug.apk>`_ to your phone and open it to install it. The current minimum version of Android you need is 17 (4.2), however not all features will be available to this version. The recommended version is 21 (5.0) or higher. To manually clear the database on lower versions, simply clear the data of the app in options.
+In order to install an APK of Android TrustChain as found on GitHub. The only thing you need to do is download the `APK <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/build/outputs/apk/debug/app-debug.apk>`_ to your phone and open it to install it. The current minimum version of Android you need is 17 (4.2), however not all features will be available to this version. The recommended version is 21 (5.0) or higher. To manually clear the database on lower versions, simply clear the data of the app in options.
 
 .. _setting-up-project:
 
