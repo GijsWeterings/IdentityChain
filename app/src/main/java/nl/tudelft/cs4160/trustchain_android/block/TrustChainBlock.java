@@ -6,8 +6,6 @@ import android.util.Base64;
 
 import com.google.protobuf.ByteString;
 
-import org.spongycastle.jcajce.provider.symmetric.ARC4;
-
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,10 +22,6 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.Util.Util.ellipsize;
-
-/**
- * Created by meijer on 20-9-17.
- */
 
 public class TrustChainBlock {
     public static final ByteString GENESIS_HASH = ByteString.copyFrom(new byte[] {0x00});
@@ -606,6 +600,7 @@ public class TrustChainBlock {
      * @param block - The block which needs to be represented as a string
      * @return a string representing block
      */
+
     public static String toString(MessageProto.TrustChainBlock block){
         String res = "Trustchainblock: {\n";
         res += "\tPublic key: " + bytesToHex(block.getPublicKey().toByteArray()) + "\n";

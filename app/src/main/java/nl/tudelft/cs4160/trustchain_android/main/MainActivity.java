@@ -28,13 +28,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.KeyActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
 import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
+import nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
@@ -43,7 +43,6 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
@@ -78,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Key pair of user
      */
-    KeyPair kp;
+    static KeyPair kp;
 
     /**
      * Listener for the connection button.
@@ -99,6 +98,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             String ipAddress = editTextDestinationIP.getText().toString();
+            String portText = editTextDestinationPort.getText().toString();
+            if(ipAddress.length() == 0 || portText.length() == 0) {
+                return;
+            }
             if (peers.containsKey(ipAddress)) {
                 Peer peer = new Peer(
                         peers.get(ipAddress),
@@ -115,8 +118,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
                 Peer peer = new Peer(
                         EMPTY_PK.toByteArray(),
-                        editTextDestinationIP.getText().toString(),
-                        Integer.parseInt(editTextDestinationPort.getText().toString()));
+                        ipAddress,
+                        Integer.parseInt(portText));
                 sendCrawlRequest(peer,getMyPublicKey(),-5);
             }
         }
@@ -406,7 +409,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public byte[] getMyPublicKey() {
+    public static byte[] getMyPublicKey() {
         return kp.getPublic().getEncoded();
     }
 
