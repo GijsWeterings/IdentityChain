@@ -17,7 +17,7 @@ The class `Communication` is responsible for handling the data that is received 
 
 Wifi
 ============
-The connection is made by using the `ServerSocket class <https://developer.android.com/reference/java/net/ServerSocket.html>`_. The implementation in TrustChain Android is a basic client-server model. All outgoing messages, like sending a crawl request or half block, is done by the client. The server handles the incoming messages. It checks whether it has received a half block or a crawl request and calls handles the response by calling either ``synchronizedReceivedHalfBlock`` or ``receivedCrawlRequest``.
+The connection is made by using the `ServerSocket class <https://developer.android.com/reference/java/net/ServerSocket.html>`_. The implementation in TrustChain Android is done by a client-server style model. Although, since every device is a server can't really be seen as an exact client-server model. All outgoing messages, like sending a crawl request or half block, is done via client tasks. The server handles the incoming messages. It checks whether it has received a half block or a crawl request and calls handles the response by calling either ``synchronizedReceivedHalfBlock`` or ``receivedCrawlRequest``.
 
 If, from looking at the source code, it is not yet clear how the connection is made, please look into other `Android server/client tutorials <http://android-er.blogspot.nl/2014/02/android-sercerclient-example-server.html>`_ that can be found online.
 
@@ -33,7 +33,7 @@ Example of connecting to a peer using on a device using a WiFi hotspot.
 
 Bluetooth
 ==================================
-Bluetooth works similar to WiFi: a server is created which is listening for messages, and a client send messages to server. However, with WiFi the messages are sent through two different ports and thus two different connections. This is not possible with bluetoooth so the client will reuse the socket.
+Bluetooth works similar to WiFi: a server is created which is listening for messages, and a client send messages to server. However, with WiFi the messages are sent through two different ports and thus two different connections. This is not possible with Bluetoooth so the client will reuse the socket.
 
 .. figure:: ./images/connection_example_bluetooth.jpeg 
 	:width: 300px
@@ -43,8 +43,8 @@ Bluetooth works similar to WiFi: a server is created which is listening for mess
 
 Links to code
 =============
-* `Client implementation (ClientTask.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/bluetooth/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/network/ClientTask.java>`_
-* `Server implementation (Server.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/bluetooth/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/network/Server.java>`_
-* `ConnectThread implementation (ConnectThread.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/bluetooth/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/bluetooth/ConnectThread.java>`_
-* `AcceptThread implementation (AcceptThread.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/bluetooth/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/bluetooth/AcceptThread.java>`_
+* `ClientTask implementation (ClientTask.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/network/ClientTask.java>`_
+* `Server implementation (Server.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/network/Server.java>`_
+* `ConnectThread implementation (ConnectThread.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/bluetooth/ConnectThread.java>`_
+* `AcceptThread implementation (AcceptThread.java) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/connection/bluetooth/AcceptThread.java>`_
 
