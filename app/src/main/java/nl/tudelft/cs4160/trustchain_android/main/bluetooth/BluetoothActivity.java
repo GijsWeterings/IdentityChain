@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.security.KeyPair;
@@ -37,6 +38,8 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
     private Communication communication;
     private KeyPair kp;
 
+    private TextView textViewLog;
+
 
     private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
         @Override
@@ -60,6 +63,7 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
     }
 
     public void init() {
+        textViewLog = (TextView) findViewById(R.id.bluetooth_log);
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null) {
             Log.w(TAG, "Bluetooth is not supported");
@@ -124,10 +128,18 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
         }
     }
 
+    private void addToLog(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                textViewLog.append(msg);
+            }
+        });
+    }
+
 
     @Override
     public void updateLog(String msg) {
-        Log.e(TAG, "RECEIVED UPDATE FROM LOG " + msg);
-        showToast(msg);
+        addToLog(msg);
     }
 }

@@ -13,9 +13,8 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 
 /**
- * Created by rico on 13-11-17.
+ * Class that sends a bluetooth message to another peer.
  */
-
 public class ConnectThread extends Thread {
 
     private final static String TAG = ConnectThread.class.getName();
@@ -76,6 +75,7 @@ public class ConnectThread extends Thread {
             Log.e(TAG, "Send message via bluetooth to " + mmSocket.getRemoteDevice().getName());
         } catch (IOException e) {
             listener.updateLog("Could not send message: " + e.getMessage());
+            mmSocket = null;
             e.printStackTrace();
         }
         //manageMyConnectedSocket(mmSocket);

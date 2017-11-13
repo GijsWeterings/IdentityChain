@@ -32,10 +32,10 @@ import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIA
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
-/**
- * Created by rico on 10-11-17.
- */
 
+/**
+ * Class that is responsible for the communication.
+ */
 public abstract class Communication {
 
     private static final String TAG = Communication.class.getName();
