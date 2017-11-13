@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.connection;
+package nl.tudelft.cs4160.trustchain_android.main.bluetooth;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -13,14 +13,14 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.security.KeyPair;
-import java.util.UUID;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
+import nl.tudelft.cs4160.trustchain_android.connection.bluetooth.BluetoothCommunication;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
-import nl.tudelft.cs4160.trustchain_android.main.Communication;
-import nl.tudelft.cs4160.trustchain_android.main.CommunicationListener;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
@@ -29,8 +29,6 @@ public class BluetoothActivity extends AppCompatActivity implements Communicatio
     private final static String TAG = BluetoothActivity.class.getName();
 
     private BluetoothAdapter btAdapter;
-
-    protected final static UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");;
 
     private final static int REQUEST_BLUETOOTH = 2;
 

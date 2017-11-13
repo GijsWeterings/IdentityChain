@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.trustchain_android.connection;
+package nl.tudelft.cs4160.trustchain_android.main.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;

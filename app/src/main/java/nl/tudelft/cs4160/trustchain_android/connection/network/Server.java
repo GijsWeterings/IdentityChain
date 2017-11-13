@@ -1,31 +1,17 @@
-package nl.tudelft.cs4160.trustchain_android.main;
+package nl.tudelft.cs4160.trustchain_android.connection.network;
 
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
-import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
-import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
-import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
-import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
-import static nl.tudelft.cs4160.trustchain_android.main.MainActivity.DEFAULT_PORT;
 
 /**
  * Class is package private to prevent another activity from accessing it and breaking everything

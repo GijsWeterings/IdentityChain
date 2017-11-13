@@ -15,48 +15,32 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.protobuf.ByteString;
-
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.UnknownHostException;
 import java.security.KeyPair;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
-import nl.tudelft.cs4160.trustchain_android.block.ValidationResult;
-import nl.tudelft.cs4160.trustchain_android.connection.BluetoothActivity;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
+import nl.tudelft.cs4160.trustchain_android.connection.network.NetworkCommunication;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBContract;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.trustchain_android.main.bluetooth.BluetoothActivity;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
-import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
 import static nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper.insertInDB;
-import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
-public class MainActivity extends AppCompatActivity implements CommunicationListener{
+public class MainActivity extends AppCompatActivity implements CommunicationListener {
 
 
-    final static String TRANSACTION = "Hello world!";
+    public final static String TRANSACTION = "Hello world!";
     private final static String TAG = MainActivity.class.toString();
-    final static int DEFAULT_PORT = 8080;
 
     TrustChainDBHelper dbHelper;
     SQLiteDatabase db;

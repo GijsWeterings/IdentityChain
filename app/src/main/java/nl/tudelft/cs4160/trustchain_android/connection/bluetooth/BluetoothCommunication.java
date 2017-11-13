@@ -1,13 +1,13 @@
-package nl.tudelft.cs4160.trustchain_android.connection;
+package nl.tudelft.cs4160.trustchain_android.connection.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 
 import java.security.KeyPair;
 
 import nl.tudelft.cs4160.trustchain_android.Peer;
+import nl.tudelft.cs4160.trustchain_android.connection.Communication;
+import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
-import nl.tudelft.cs4160.trustchain_android.main.Communication;
-import nl.tudelft.cs4160.trustchain_android.main.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 /**
