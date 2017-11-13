@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="4dp"
     tools:context="nl.tudelft.cs4160.trustchain_android.main.MainActivity">
 
     <LinearLayout
@@ -80,7 +81,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            tools:context="nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity">
+            tools:context="nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity">
 
             <TextView
                 android:id="@+id/status"
