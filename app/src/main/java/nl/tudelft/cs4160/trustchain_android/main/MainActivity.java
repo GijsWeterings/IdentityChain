@@ -41,7 +41,6 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.EMPTY_PK;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getLatestBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;

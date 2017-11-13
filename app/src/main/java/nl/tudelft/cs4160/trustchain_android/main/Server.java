@@ -22,7 +22,6 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
-import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.pubKeyToString;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
