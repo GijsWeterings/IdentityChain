@@ -21,4 +21,11 @@
     <string name="valid_signature">Valid signature</string>
     <string name="invalid_signature">Invalid signature</string>
     <string name="chain_explorer">TrustChain Explorer</string>
+
+    <string name="item_public_key">Public key:</string>
+    <string name="item_link_public_key">Link public key:</string>
+    <string name="item_prev_hash">Previous hash:</string>
+    <string name="item_signature">Signature:</string>
+    <string name="item_transaction">Transaction:</string>
+
 </resources>
