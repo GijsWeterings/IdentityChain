@@ -3,7 +3,7 @@
 ****************
 Creating a block
 ****************
-In order to complete a transaction with a peer, we need to create a block. A block in TrustChain is a little different than in bitcoin-style blockchains. In bitcoin-style blockchains, a block is a collection of transactions created by a different nodes and mined by a single node, the block is propagated through the network and all connected nodes validate the block and the transactions. In TrustChain a block is formed by two peers who wish to agree on a transaction. Therefore a TrustChainBlock only has one transaction.
+In order to complete a transaction with a peer, we need to create a block. A block in TrustChain is a little different than in bitcoin-style blockchains. In bitcoin-style blockchains, a block is a collection of transactions that happened in the network. A block is created by a node and is propagated through the network. All connected nodes validate the block and the transactions. In TrustChain a block is formed by two peers who wish to agree on a transaction. Therefore a TrustChainBlock only has one transaction.
 
 Both parties need to agree on a transaction, so there has to be some interaction between peers. The way this is done in TrustChain is to first create an incomplete block, called a half block. This half block is then sent to the second peer, which creates a full block from the half block and sends it back to the first peer. This process is explained in more detail below.
 
