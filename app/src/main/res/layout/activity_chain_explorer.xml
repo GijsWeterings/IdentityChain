@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.widget.ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="nl.tudelft.cs4160.trustchain_android.ChainExplorerActivity">
+    android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/database_content"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <ListView
+        android:id="@+id/blocks_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-</android.widget.ScrollView>
+    </ListView>
+</LinearLayout>
