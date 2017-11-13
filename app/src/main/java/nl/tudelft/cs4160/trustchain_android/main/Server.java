@@ -23,6 +23,7 @@ import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.GENESIS_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN_SEQ;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.getBlock;
+import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.pubKeyToString;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
 import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
@@ -41,7 +42,6 @@ class Server {
     TextView statusText;
 
     String messageLog = "";
-    String responseLog = "";
 
     public Server(MainActivity callingActivity) {
         this.callingActivity = callingActivity;
@@ -73,7 +73,7 @@ class Server {
 
                     @Override
                     public void run() {
-                        statusText.setText("Server is waiting for messages...");
+                        statusText.setText("Waiting for messages...");
                     }
                 });
 
@@ -90,7 +90,7 @@ class Server {
                     // In case we received a halfblock
                     if(block.getPublicKey().size() > 0 && crawlRequest.getPublicKey().size() == 0) {
                         count++;
-                        messageLog += "block received from: " + socket.getInetAddress() + ":"
+                        messageLog += "block received from " + socket.getInetAddress() + ":"
                                 + socket.getPort() + "\n"
                                 + TrustChainBlock.toShortString(block);
                         callingActivity.runOnUiThread(new Runnable() {
@@ -100,6 +100,9 @@ class Server {
                                 statusText.append("\n  Server: " + messageLog);
                             }
                         });
+                        Log.i(TAG, "block received from " + socket.getInetAddress() + ":"
+                                + socket.getPort() + "\n"
+                                + TrustChainBlock.toShortString(block));
 
                         SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                                 socket, count);
@@ -111,16 +114,23 @@ class Server {
                     // In case we received a crawlrequest
                     if(block.getPublicKey().size() == 0 && crawlRequest.getPublicKey().size() > 0) {
                         count++;
-                        messageLog += "crawlrequest received from: " + socket.getInetAddress() + ":"
+                        messageLog += "crawlrequest received from " + socket.getInetAddress() + ":"
                                 + socket.getPort() + "\n"
-                                + crawlRequest.toString();
+                                + "Requested public key: " +
+                                pubKeyToString(crawlRequest.getPublicKey().toByteArray(),32)
+                                + "\n"
+                                + "Requested sequence number: " + crawlRequest.getRequestedSequenceNumber();
                         callingActivity.runOnUiThread(new Runnable() {
 
                             @Override
                             public void run() {
-                                statusText.append("\n  Server: " + messageLog);
+                                statusText.append("\n\nServer: " + messageLog);
                             }
                         });
+                        Log.i(TAG,"crawlrequest received from " + socket.getInetAddress() + ":"
+                                + socket.getPort() + "\n"
+                                + crawlRequest.toString());
+
                         SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                                 socket, count);
                         socketServerReplyThread.run();
@@ -152,26 +162,13 @@ class Server {
         public void run() {
             OutputStream outputStream;
             String msgReply = "message #" + cnt + " received";
-            responseLog = "";
-
             try {
                 outputStream = hostThreadSocket.getOutputStream();
                 PrintStream printStream = new PrintStream(outputStream);
                 printStream.print(msgReply);
                 printStream.close();
-
-                responseLog += "replied: " + msgReply + "\n";
             } catch (IOException e) {
                 e.printStackTrace();
-                responseLog += "Something wrong! " + e.toString() + "\n";
-            } finally {
-                callingActivity.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        statusText.append("\n  Server: " + responseLog);
-                    }
-                });
             }
         }
 

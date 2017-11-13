@@ -24,6 +24,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
     String destinationIP;
     int destinationPort;
     MessageProto.Message message;
+    TextView statusText;
 
     final static String TAG = "ClientTask";
     String response = "";
@@ -41,6 +42,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
      */
     @Override
     protected Void doInBackground(Void... arg0) {
+        statusText = (TextView) callingActivity.findViewById(R.id.status);
         boolean loop = true;
         while(loop) {
             Socket socket = null;
@@ -50,7 +52,27 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
                 message.writeTo(socket.getOutputStream());
                 socket.shutdownOutput();
 
-                Log.i(TAG, "Sent message to peer with ip " + destinationIP + ":" + destinationPort);
+                // check whether we're sending a half block or a message
+                if(message.getCrawlRequest().getPublicKey().size() == 0) {
+                    Log.i(TAG, "Sent half block to peer with ip " + destinationIP + ":" + destinationPort);
+                    callingActivity.runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                        statusText.append("\n\nClient: " + "Sent half block to peer with ip " + destinationIP + ":" + destinationPort);
+                        }
+                    });
+                } else {
+                    Log.i(TAG, "Sent crawl request to peer with ip " + destinationIP + ":" + destinationPort);
+                    callingActivity.runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                        statusText.append("\n\nClient: " + "Sent crawl request to peer with ip " + destinationIP + ":" + destinationPort);
+                        }
+                    });
+
+                }
 
                 // Get the response from the server
                 ByteArrayOutputStream byteArrayOutputStream =
@@ -67,13 +89,17 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
                 }
             } catch (UnknownHostException e) {
                 e.printStackTrace();
-                response = "UnknownHostException: " + e.toString();
+                callingActivity.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        statusText.append("\n  Client: Cannot resolve host");
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
-                response = "IOException: " + e.toString();
             } catch (Exception e) {
                 e.printStackTrace();
-                response = "Exception: " + e.toString();
             } finally {
                 if (socket != null) {
                     try {
@@ -103,7 +129,7 @@ class ClientTask extends AsyncTask<Void, Void, Void> {
 
             @Override
             public void run() {
-                ((TextView) callingActivity.findViewById(R.id.status)).append("\n  Client got response: " + response);
+                statusText.append("\n  Client got response: " + response);
             }
         });
         super.onPostExecute(result);
