@@ -10,7 +10,7 @@
     <string name="reset_database_button">Clear Database (closes app)</string>
 
     <string name="title_activity_key">Key management</string>
-    <string name="key_options">Key options</string>
+    <string name="bluetooth_connection">bluetooth_connection</string>
     <string name="public_key">Public key</string>
     <string name="private_key">Private key</string>
     <string name="create_key">Create new key</string>
@@ -21,11 +21,15 @@
     <string name="valid_signature">Valid signature</string>
     <string name="invalid_signature">Invalid signature</string>
     <string name="chain_explorer">TrustChain Explorer</string>
+    <string name="title_activity_bluetooth">BluetoothActivity</string>
 
     <string name="item_public_key">Public key:</string>
     <string name="item_link_public_key">Link public key:</string>
     <string name="item_prev_hash">Previous hash:</string>
     <string name="item_signature">Signature:</string>
     <string name="item_transaction">Transaction:</string>
+
+    <string name="bluetooth_explanation">First pair with a device via the Android bluetooth manager. After the two devices are paired press on the desired device to initiate a connection.</string>
+    <string name="bluetooth_button">Bluetooth</string>
 
 </resources>

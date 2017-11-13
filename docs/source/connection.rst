@@ -4,8 +4,8 @@ Connection to a peer
 
 In order to send blocks to other people, you will need to find peers. In this simple app, this has to be done manually. In IPv8, this is done with help of `Dispersy <https://dispersy.readthedocs.io/en/devel/system_overview.html#overlay>`_.
 
-There are two ways to connect to a peer: either via local network or bluetooth. Therefore
-Connecting to a peer is very simple. Find out the IP-address of a peer who has opened the app, listed at the top in the main screen. Fill in the ip address and the port number (default hardcoded as 8080) and press connect. Now the app will go through the steps as explained in :ref:`creating-block-label`.
+There are two ways to connect to a peer: either via local network or bluetooth (note that bluetooth is not working perfectly). Therefore
+connecting to a peer is very simple. Find out the IP-address of a peer who has opened the app, listed at the top in the main screen. Fill in the ip address and the port number (default hardcoded as 8080) and press connect. Now the app will go through the steps as explained in :ref:`creating-block-label`.
 
 Sending a transaction to another peer via bluetooth requires you to pair the devices via the Android bluetooth manager. After they are paired, the app will list the devices your device is paired with. To initiate a transaction, press on one of the devices.
 

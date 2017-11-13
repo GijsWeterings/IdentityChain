@@ -5,9 +5,9 @@ Creating a network of TrustChain peers which only run a Java version of TrustCha
 
 Making changes
 ==============
-Protocolbuffers is used to create the structure of both a ``TrustChainBlock`` and ``CrawlRequest``, both can be found in `Message.proto <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_ With Protocolbuffers the corresponding Java classes can then be compiled. Making changes and recompiling the Java classes is quite easy, just follow the `tutorial of ProtocolBuffers <https://developers.google.com/protocol-buffers/docs/javatutorial>`_ and you should be fine. When making changes, don't forget to also update the database structure.
+Protocolbuffers is used to create the structure of both a ``TrustChainBlock`` and ``CrawlRequest``, both can be found in `Message.proto <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_ With Protocolbuffers the corresponding Java classes can then be compiled. Making changes and recompiling the Java classes is quite easy, just follow the `tutorial of ProtocolBuffers <https://developers.google.com/protocol-buffers/docs/javatutorial>`_ and you should be fine. When making changes, don't forget to also update the database structure.
 
 Links to code
 =============
- * `Structure of message (Message.proto) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/develop/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_ 
+ * `Structure of message (Message.proto) <https://github.com/wkmeijer/CS4160-trustchain-android/blob/master/app/src/main/java/nl/tudelft/cs4160/trustchain_android/Message.proto>`_ 
 
