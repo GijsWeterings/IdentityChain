@@ -99,28 +99,10 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     View.OnClickListener connectionButtonListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {
-            String ipAddress = editTextDestinationIP.getText().toString();
-            if (communication.hasPublicKey(ipAddress)) {
-                Peer peer = new Peer(
-                        communication.getPublicKey(ipAddress),
-                        ipAddress,
-                        Integer.parseInt(editTextDestinationPort.getText().toString()));
-                communication.sendLatestBlocksToPeer(peer);
-                try {
-                    communication.signBlock(TRANSACTION.getBytes("UTF-8"), peer);
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-            }
-            else {
-                Toast.makeText(getApplicationContext(),"Unknown peer, sending crawl request, when received press connect again",Toast.LENGTH_LONG).show();
-                Peer peer = new Peer(
-                        EMPTY_PK.toByteArray(),
-                        editTextDestinationIP.getText().toString(),
-                        Integer.parseInt(editTextDestinationPort.getText().toString()));
-
-                communication.sendCrawlRequest(peer, communication.getMyPublicKey(),-5);
-            }
+            Peer peer = new Peer(null, editTextDestinationIP.getText().toString(),
+                    Integer.parseInt(editTextDestinationPort.getText().toString()));
+            //send either a crawl request or a half block
+            communication.connectToPeer(peer);
         }
     };
 
@@ -199,8 +181,9 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
         keyOptionsButton.setOnClickListener(keyOptionsListener);
         resetDatabaseButton.setOnClickListener(resetDatabaseListener);
 
-        Server socketServer = new Server(communication, this);
-        socketServer.start();
+        //start listening for messages
+        communication.start();
+
     }
 
     private void initKeys() {
