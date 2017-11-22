@@ -18,6 +18,7 @@ import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
+import static nl.tudelft.cs4160.core.FooKt.id;
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 import static nl.tudelft.cs4160.trustchain_android.Util.Util.ellipsize;
 
@@ -72,6 +73,8 @@ public class TrustChainBlock {
                     .setLinkPublicKey(ByteString.copyFrom(linkpubk))
                     .setLinkSequenceNumber(TrustChainBlock.UNKNOWN_SEQ);
         }
+
+        builder = id(builder);
 
         // if a latest block was found set the correct fields, if not the block won't be validated
         // so it doesn't matter much that no exception is raised here.
