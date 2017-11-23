@@ -19,18 +19,18 @@ import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
 import static nl.tudelft.cs4160.trustchain_android.Peer.bytesToHex;
 
-public class ChainExplorerAdapter extends BaseAdapter{
+public class ChainExplorerAdapter extends BaseAdapter {
 
     Context context;
     List<MessageProto.TrustChainBlock> blocksList;
-    HashMap<ByteString,String> peerList = new HashMap<>();
+    HashMap<ByteString, String> peerList = new HashMap<>();
 
     public ChainExplorerAdapter(Context context, List<MessageProto.TrustChainBlock> blocksList, byte[] myPubKey) {
         this.context = context;
         this.blocksList = blocksList;
         // put my public key in the peerList
-        peerList.put(ByteString.copyFrom(myPubKey),"me");
-        peerList.put(TrustChainBlock.EMPTY_PK,"unknown");
+        peerList.put(ByteString.copyFrom(myPubKey), "me");
+        peerList.put(TrustChainBlock.EMPTY_PK, "unknown");
     }
 
     @Override
@@ -50,6 +50,7 @@ public class ChainExplorerAdapter extends BaseAdapter{
 
     /**
      * Puts the data from a TrustChainBlock object into the item textview.
+     *
      * @param position
      * @param convertView
      * @param parent
@@ -69,30 +70,30 @@ public class ChainExplorerAdapter extends BaseAdapter{
         String peerAlias;
         String linkPeerAlias;
 
-        if(peerList.containsKey(pubKeyByteStr)) {
+        if (peerList.containsKey(pubKeyByteStr)) {
             peerAlias = peerList.get(pubKeyByteStr);
         } else {
-            peerAlias = "peer" + (peerList.size()-1);
-            peerList.put(pubKeyByteStr,peerAlias);
+            peerAlias = "peer" + (peerList.size() - 1);
+            peerList.put(pubKeyByteStr, peerAlias);
         }
 
-        if(peerList.containsKey(linkPubKeyByteStr)) {
+        if (peerList.containsKey(linkPubKeyByteStr)) {
             linkPeerAlias = peerList.get(linkPubKeyByteStr);
         } else {
-            linkPeerAlias = "peer" + (peerList.size()-1);
-            peerList.put(linkPubKeyByteStr,linkPeerAlias);
+            linkPeerAlias = "peer" + (peerList.size() - 1);
+            peerList.put(linkPubKeyByteStr, linkPeerAlias);
         }
 
         // Check if the sequence numbers are 0, which would mean that they are unknown
         String seqNumStr;
         String linkSeqNumStr;
-        if(block.getSequenceNumber() == 0) {
+        if (block.getSequenceNumber() == 0) {
             seqNumStr = "unknown";
         } else {
             seqNumStr = String.valueOf(block.getSequenceNumber());
         }
 
-        if(block.getLinkSequenceNumber() == 0) {
+        if (block.getLinkSequenceNumber() == 0) {
             linkSeqNumStr = "unknown";
         } else {
             linkSeqNumStr = String.valueOf(block.getLinkSequenceNumber());
@@ -125,7 +126,7 @@ public class ChainExplorerAdapter extends BaseAdapter{
         signature.setText(bytesToHex(block.getSignature().toByteArray()));
         expTransaction.setText(block.getTransaction().toStringUtf8());
 
-        if(peerAlias.equals("me") || linkPeerAlias.equals("me")) {
+        if (peerAlias.equals("me") || linkPeerAlias.equals("me")) {
             convertView.findViewById(R.id.own_chain_indicator).setBackgroundColor(Color.GREEN);
         } else {
             convertView.findViewById(R.id.own_chain_indicator).setBackgroundColor(Color.TRANSPARENT);
