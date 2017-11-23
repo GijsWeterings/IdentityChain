@@ -39,7 +39,7 @@ public class ChainExplorerAdapter extends BaseAdapter {
     }
 
     @Override
-    public Object getItem(int position) {
+    public MessageProto.TrustChainBlock getItem(int position) {
         return blocksList.get(position);
     }
 
@@ -58,7 +58,7 @@ public class ChainExplorerAdapter extends BaseAdapter {
      */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        MessageProto.TrustChainBlock block = (MessageProto.TrustChainBlock) getItem(position);
+        MessageProto.TrustChainBlock block = getItem(position);
         if (convertView == null) {
             convertView = LayoutInflater.from(context).inflate(R.layout.item_trustchainblock,
                     parent, false);
