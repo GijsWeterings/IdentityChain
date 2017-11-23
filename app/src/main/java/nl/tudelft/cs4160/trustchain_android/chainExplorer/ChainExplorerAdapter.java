@@ -67,37 +67,13 @@ public class ChainExplorerAdapter extends BaseAdapter {
         // Check if we already know the peer, otherwise add it to the peerList
         ByteString pubKeyByteStr = block.getPublicKey();
         ByteString linkPubKeyByteStr = block.getLinkPublicKey();
-        String peerAlias;
-        String linkPeerAlias;
 
-        if (peerList.containsKey(pubKeyByteStr)) {
-            peerAlias = peerList.get(pubKeyByteStr);
-        } else {
-            peerAlias = "peer" + (peerList.size() - 1);
-            peerList.put(pubKeyByteStr, peerAlias);
-        }
-
-        if (peerList.containsKey(linkPubKeyByteStr)) {
-            linkPeerAlias = peerList.get(linkPubKeyByteStr);
-        } else {
-            linkPeerAlias = "peer" + (peerList.size() - 1);
-            peerList.put(linkPubKeyByteStr, linkPeerAlias);
-        }
+        String peerAlias = findInPeersOrAdd(pubKeyByteStr);
+        String linkPeerAlias = findInPeersOrAdd(linkPubKeyByteStr);
 
         // Check if the sequence numbers are 0, which would mean that they are unknown
-        String seqNumStr;
-        String linkSeqNumStr;
-        if (block.getSequenceNumber() == 0) {
-            seqNumStr = "unknown";
-        } else {
-            seqNumStr = String.valueOf(block.getSequenceNumber());
-        }
-
-        if (block.getLinkSequenceNumber() == 0) {
-            linkSeqNumStr = "unknown";
-        } else {
-            linkSeqNumStr = String.valueOf(block.getLinkSequenceNumber());
-        }
+        String seqNumStr = displayStringForSequenceNumber(block.getSequenceNumber());
+        String linkSeqNumStr = displayStringForSequenceNumber(block.getLinkSequenceNumber());
 
         // collapsed view
         TextView peer = (TextView) convertView.findViewById(R.id.peer);
@@ -133,4 +109,26 @@ public class ChainExplorerAdapter extends BaseAdapter {
         }
         return convertView;
     }
+
+    // Check if we already know the peer, otherwise add it to the peerList
+    String findInPeersOrAdd(ByteString keyByteString) {
+        if (peerList.containsKey(keyByteString)) {
+            return peerList.get(keyByteString);
+        } else {
+            String peerAlias = "peer" + (peerList.size() - 1);
+            peerList.put(keyByteString, peerAlias);
+            return peerAlias;
+        }
+    }
+
+    // Check if the sequence numbers are 0, which would mean that they are unknown
+    static String displayStringForSequenceNumber(int sequenceNumber) {
+        if (sequenceNumber == 0) {
+            return "unknown";
+        } else {
+            return String.valueOf(sequenceNumber);
+        }
+
+    }
+
 }
