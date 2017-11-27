@@ -38,12 +38,7 @@ public class KeyActivity extends AppCompatActivity {
         signedData = (TextView ) findViewById(R.id.signed_data);
         verifySignature = (Button) findViewById(R.id.verify_sig);
 
-        KeyPair kp = Key.loadKeys(getApplicationContext());
-        if(kp == null) {
-            kp = Key.createNewKeyPair();
-            Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
-            Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
-        }
+        KeyPair kp = Key.ensureKeysExist(getApplicationContext());
         textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
         verifySignature.setOnClickListener(new View.OnClickListener() {
@@ -63,9 +58,7 @@ public class KeyActivity extends AppCompatActivity {
         buttonNewKey.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                KeyPair kp = Key.createNewKeyPair();
-                Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
-                Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+                KeyPair kp = Key.createAndSaveKeys(getApplicationContext());
                 textPrivateKey.setText(Base64.encodeToString(kp.getPrivate().getEncoded(), Base64.DEFAULT));
 
             }

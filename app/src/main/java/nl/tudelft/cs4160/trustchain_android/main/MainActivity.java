@@ -166,9 +166,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     private void initKeys() {
         kp = Key.loadKeys(getApplicationContext());
         if(kp == null) {
-            kp = Key.createNewKeyPair();
-            Key.saveKey(getApplicationContext(), Key.DEFAULT_PUB_KEY_FILE, kp.getPublic());
-            Key.saveKey(getApplicationContext(), Key.DEFAULT_PRIV_KEY_FILE, kp.getPrivate());
+            kp = Key.createAndSaveKeys(getApplicationContext());
             Log.i(TAG, "New keys created" );
         }
     }
