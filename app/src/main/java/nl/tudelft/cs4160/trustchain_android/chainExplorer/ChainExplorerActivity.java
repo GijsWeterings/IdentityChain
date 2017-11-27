@@ -33,7 +33,7 @@ public class ChainExplorerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chain_explorer);
-        blocksList = (ListView) findViewById(R.id.blocks_list);
+        blocksList = findViewById(R.id.blocks_list);
 
         // Create a progress bar to display while the list loads
         ProgressBar progressBar = new ProgressBar(this);
@@ -43,7 +43,7 @@ public class ChainExplorerActivity extends AppCompatActivity {
         blocksList.setEmptyView(progressBar);
 
         // Must add the progress bar to the root of the layout
-        ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
+        ViewGroup root = findViewById(android.R.id.content);
         root.addView(progressBar);
 
         init();
@@ -62,8 +62,8 @@ public class ChainExplorerActivity extends AppCompatActivity {
         blocksList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                LinearLayout expandedItem = (LinearLayout) view.findViewById(R.id.expanded_item);
-                ImageView expandArrow = (ImageView) view.findViewById(R.id.expand_arrow);
+                LinearLayout expandedItem = view.findViewById(R.id.expanded_item);
+                ImageView expandArrow = view.findViewById(R.id.expand_arrow);
 
                 // Expand the item when it is clicked
                 if(expandedItem.getVisibility() == View.GONE) {

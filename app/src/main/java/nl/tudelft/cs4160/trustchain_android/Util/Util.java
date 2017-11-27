@@ -9,10 +9,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-/**
- * Created by rico on 15-9-17.
- */
-
 public class Util {
 
     /**
@@ -65,7 +61,7 @@ public class Util {
      * Create a ellipsized string
      * @param input - the string to be ellipsized
      * @param maxLength - The maximum length the result string can be, minimum should be 6
-     * @return
+     * @return An ellipsized string of the input
      */
     public static String ellipsize(String input, int maxLength) {
         String ellip = "(..)";

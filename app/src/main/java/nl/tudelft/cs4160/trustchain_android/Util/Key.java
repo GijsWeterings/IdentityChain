@@ -81,11 +81,7 @@ public class Key {
             KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, provider);
             g.initialize(ecSpec, new SecureRandom());
             keyPair = g.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return keyPair;
@@ -120,13 +116,7 @@ public class Key {
             sig.initSign(privateKey);
             sig.update(data);
             return sig.sign();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -145,13 +135,7 @@ public class Key {
             sig.initVerify(publicKey);
             sig.update(msg);
             return sig.verify(rawSig);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;

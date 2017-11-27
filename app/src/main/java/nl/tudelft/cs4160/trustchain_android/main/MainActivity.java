@@ -23,10 +23,10 @@ import nl.tudelft.cs4160.trustchain_android.Peer;
 import nl.tudelft.cs4160.trustchain_android.R;
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
 import nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock;
+import nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.connection.Communication;
 import nl.tudelft.cs4160.trustchain_android.connection.CommunicationListener;
 import nl.tudelft.cs4160.trustchain_android.connection.network.NetworkCommunication;
-import nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.main.bluetooth.BluetoothActivity;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
@@ -124,16 +124,16 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
 
     private void initVariables() {
         thisActivity = this;
-        localIPText = (TextView) findViewById(R.id.my_local_ip);
-        externalIPText = (TextView) findViewById(R.id.my_external_ip);
-        statusText = (TextView) findViewById(R.id.status);
+        localIPText = findViewById(R.id.my_local_ip);
+        externalIPText = findViewById(R.id.my_external_ip);
+        statusText = findViewById(R.id.status);
         statusText.setMovementMethod(new ScrollingMovementMethod());
-        editTextDestinationIP = (EditText) findViewById(R.id.destination_IP);
-        editTextDestinationPort = (EditText) findViewById(R.id.destination_port);
-        connectionButton = (Button) findViewById(R.id.connection_button);
-        chainExplorerButton = (Button) findViewById(R.id.chain_explorer_button);
-        resetDatabaseButton = (Button) findViewById(R.id.reset_database_button);
-        bluetoothButton = (Button) findViewById(R.id.bluetooth_connection_button);
+        editTextDestinationIP = findViewById(R.id.destination_IP);
+        editTextDestinationPort = findViewById(R.id.destination_port);
+        connectionButton = findViewById(R.id.connection_button);
+        chainExplorerButton = findViewById(R.id.chain_explorer_button);
+        resetDatabaseButton = findViewById(R.id.reset_database_button);
+        bluetoothButton = findViewById(R.id.bluetooth_connection_button);
     }
 
     private void init() {
@@ -180,10 +180,7 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
         // check if a genesis block is present in database
         MessageProto.TrustChainBlock genesisBlock = dbHelper.getBlock(kp.getPublic().getEncoded(),GENESIS_SEQ);
 
-        if(genesisBlock == null) {
-            return true;
-        }
-        return false;
+        return genesisBlock == null;
     }
 
     /**
@@ -205,7 +202,6 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
     /**
      * Finds the external IP address of this device by making an API call to https://www.ipify.org/.
      * The networking runs on a separate thread.
-     * @return a string representation of the device's external IP address
      */
     public void updateIP() {
         Thread thread = new Thread(new Runnable() {
@@ -258,7 +254,8 @@ public class MainActivity extends AppCompatActivity implements CommunicationList
         runOnUiThread(new Runnable() {
                   @Override
                   public void run() {
-                      ((TextView)findViewById(R.id.status)).append(msg);
+                      TextView statusText = findViewById(R.id.status);
+                      statusText.append(msg);
                   }
               });
     }

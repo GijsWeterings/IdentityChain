@@ -27,7 +27,7 @@ public class ValidationResult {
     /**
      * The block does not violate any rules, but there are gaps between this and previous or next
      * blocks, or it does not have previous or next blocks.
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setPartial(){
         this.status = PARTIAL;
@@ -37,7 +37,7 @@ public class ValidationResult {
     /**
      * The block does not violate any rules, but there are gaps between this and the next block
      * or no next blocks.
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setPartialNext(){
         this.status = PARTIAL_NEXT;
@@ -47,7 +47,7 @@ public class ValidationResult {
     /**
      * The block does not violate any rules, but there are gaps between this and the previous block
      * or no previous blocks.
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setPartialPrevious(){
         this.status = PARTIAL_PREVIOUS;
@@ -56,7 +56,7 @@ public class ValidationResult {
 
     /**
      * There are no blocks (previous or next) to validate against.
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setNoInfo(){
         this.status = NO_INFO;
@@ -65,7 +65,7 @@ public class ValidationResult {
 
     /**
      * The block violates at least one validation rule.
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setInvalid(){
         this.status = INVALID;
@@ -75,7 +75,7 @@ public class ValidationResult {
     /**
      * General method for setting the status.
      * @param newStatus - Integer representing the new status
-     * @return
+     * @return the updated validation result
      */
     public ValidationResult setStatus(int newStatus){
         if(0 <= newStatus && status < 6) {

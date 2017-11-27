@@ -49,8 +49,8 @@ public class DeviceAdapter extends BaseAdapter {
             view = LayoutInflater.from(context).inflate(R.layout.item_device, viewGroup, false);
         }
 
-        TextView deviceName = (TextView)view.findViewById(R.id.device_name);
-        TextView deviceMAC = (TextView)view.findViewById(R.id.device_mac);
+        TextView deviceName = view.findViewById(R.id.device_name);
+        TextView deviceMAC = view.findViewById(R.id.device_mac);
 
         deviceName.setText(device.getName());
         deviceMAC.setText(device.getAddress());

@@ -2,10 +2,6 @@ package nl.tudelft.cs4160.trustchain_android;
 
 import android.bluetooth.BluetoothDevice;
 
-/**
- * Created by wkmeijer on 20-10-17.
- */
-
 public class Peer {
     private byte[] publicKey;
     private String ipAddress;

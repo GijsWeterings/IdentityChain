@@ -76,11 +76,11 @@ public class ChainExplorerAdapter extends BaseAdapter {
         String linkSeqNumStr = displayStringForSequenceNumber(block.getLinkSequenceNumber());
 
         // collapsed view
-        TextView peer = (TextView) convertView.findViewById(R.id.peer);
-        TextView seqNum = (TextView) convertView.findViewById(R.id.sequence_number);
-        TextView linkPeer = (TextView) convertView.findViewById(R.id.link_peer);
-        TextView linkSeqNum = (TextView) convertView.findViewById(R.id.link_sequence_number);
-        TextView transaction = (TextView) convertView.findViewById(R.id.transaction);
+        TextView peer = convertView.findViewById(R.id.peer);
+        TextView seqNum = convertView.findViewById(R.id.sequence_number);
+        TextView linkPeer = convertView.findViewById(R.id.link_peer);
+        TextView linkSeqNum = convertView.findViewById(R.id.link_sequence_number);
+        TextView transaction = convertView.findViewById(R.id.transaction);
 
         // For the collapsed view, set the public keys to the aliases we gave them.
         peer.setText(peerAlias);
@@ -90,11 +90,11 @@ public class ChainExplorerAdapter extends BaseAdapter {
         transaction.setText(block.getTransaction().toStringUtf8());
 
         // expanded view
-        TextView pubKey = (TextView) convertView.findViewById(R.id.pub_key);
-        TextView linkPubKey = (TextView) convertView.findViewById(R.id.link_pub_key);
-        TextView prevHash = (TextView) convertView.findViewById(R.id.prev_hash);
-        TextView signature = (TextView) convertView.findViewById(R.id.signature);
-        TextView expTransaction = (TextView) convertView.findViewById(R.id.expanded_transaction);
+        TextView pubKey = convertView.findViewById(R.id.pub_key);
+        TextView linkPubKey = convertView.findViewById(R.id.link_pub_key);
+        TextView prevHash = convertView.findViewById(R.id.prev_hash);
+        TextView signature = convertView.findViewById(R.id.signature);
+        TextView expTransaction = convertView.findViewById(R.id.expanded_transaction);
 
         pubKey.setText(bytesToHex(pubKeyByteStr.toByteArray()));
         linkPubKey.setText(bytesToHex(linkPubKeyByteStr.toByteArray()));

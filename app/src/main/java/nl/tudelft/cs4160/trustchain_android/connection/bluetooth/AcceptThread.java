@@ -22,7 +22,7 @@ import static android.provider.Settings.NameValueTable.NAME;
  */
 public class AcceptThread extends Thread {
 
-    protected final static UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");;
+    protected final static UUID myUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
 
 
     private static final String TAG = AcceptThread.class.getName();
