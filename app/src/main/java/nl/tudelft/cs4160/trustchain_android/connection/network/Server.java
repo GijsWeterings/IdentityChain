@@ -39,7 +39,7 @@ class Server {
 
     }
 
-    private class SocketServerThread extends Thread {
+    private class SocketServerThread implements Runnable {
         static final int SocketServerPORT = 8080;
         int count = 0;
 
