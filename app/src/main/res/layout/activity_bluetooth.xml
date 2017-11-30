@@ -19,7 +19,7 @@
             />
 
         <ListView
-            android:id="@+id/bluetooth_list"
+            android:id="@+id/pairedDevicesList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
@@ -30,7 +30,7 @@
             tools:context="nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity">
 
             <TextView
-                android:id="@+id/bluetooth_log"
+                android:id="@+id/bluetoothLog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""
