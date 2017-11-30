@@ -15,7 +15,6 @@ build/
 !build/outputs/
 
 build/outputs/*
-!build/outputs/apk/
 
 # Local configuration file (sdk path, etc)
 local.properties
