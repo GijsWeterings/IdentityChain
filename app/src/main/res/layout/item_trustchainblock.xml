@@ -48,7 +48,7 @@
                         android:text="peer"/>
 
                     <TextView
-                        android:id="@+id/sequence_number"
+                        android:id="@+id/seqNum"
                         android:layout_width="80dp"
                         android:layout_height="wrap_content"
                         android:textSize="12sp"
@@ -63,7 +63,7 @@
                     android:orientation="vertical"
                     android:paddingEnd="6dp">
                     <TextView
-                        android:id="@+id/link_peer"
+                        android:id="@+id/linkPeer"
                         android:layout_width="80dp"
                         android:layout_height="wrap_content"
                         android:textSize="13sp"
@@ -73,7 +73,7 @@
                         android:text="Link peer"/>
 
                     <TextView
-                        android:id="@+id/link_sequence_number"
+                        android:id="@+id/linkSeqNum"
                         android:layout_width="80dp"
                         android:layout_height="wrap_content"
                         android:textSize="12sp"
@@ -131,7 +131,7 @@
                 android:text="@string/item_public_key"/>
 
             <TextView
-                android:id="@+id/pub_key"
+                android:id="@+id/pubKey"
                 android:textSize="13sp"/>
         </TableRow>
 
@@ -142,7 +142,7 @@
                 android:text="@string/item_link_public_key"/>
 
             <TextView
-                android:id="@+id/link_pub_key"
+                android:id="@+id/linkPubKey"
                 android:textSize="13sp"/>
         </TableRow>
 
@@ -153,7 +153,7 @@
                 android:text="@string/item_prev_hash"/>
 
             <TextView
-                android:id="@+id/prev_hash"
+                android:id="@+id/prevHash"
                 android:textSize="13sp"/>
         </TableRow>
 
@@ -175,7 +175,7 @@
                 android:text="@string/item_transaction"/>
 
             <TextView
-                android:id="@+id/expanded_transaction"
+                android:id="@+id/expandedTransaction"
                 android:textSize="13sp"/>
         </TableRow>
 
