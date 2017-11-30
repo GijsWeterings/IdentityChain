@@ -393,7 +393,7 @@ public abstract class Communication {
             peer.setPublicKey(getPublicKey(identifier));
             sendLatestBlocksToPeer(peer);
             try {
-                signBlock(MainActivity.TRANSACTION.getBytes("UTF-8"), peer);
+                signBlock(MainActivity.Companion.getTRANSACTION().getBytes("UTF-8"), peer);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }

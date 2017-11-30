@@ -17,7 +17,7 @@
             android:text="@string/my_external_ip" />
 
         <TextView
-            android:id="@+id/my_external_ip"
+            android:id="@+id/externalIPText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
@@ -27,7 +27,7 @@
             android:text="@string/my_local_ip" />
 
         <TextView
-            android:id="@+id/my_local_ip"
+            android:id="@+id/localIPText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
@@ -38,13 +38,13 @@
             android:text="@string/connect_to" />
 
         <EditText
-            android:id="@+id/destination_IP"
+            android:id="@+id/destinationIPText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/connect_ip_hint" />
 
         <EditText
-            android:id="@+id/destination_port"
+            android:id="@+id/destinationPortText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/default_port" />
@@ -54,12 +54,12 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button
-                android:id="@+id/connection_button"
+                android:id="@+id/connectionButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/connect" />
             <Button
-                android:id="@+id/chain_explorer_button"
+                android:id="@+id/chainExplorerButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/chain_explorer"/>
@@ -70,13 +70,13 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button
-                android:id="@+id/bluetooth_connection_button"
+                android:id="@+id/bluetoothButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/bluetooth_button" />
 
             <Button
-                android:id="@+id/reset_database_button"
+                android:id="@+id/resetDatabaseButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/reset_database_button"/>
@@ -89,7 +89,7 @@
             tools:context="nl.tudelft.cs4160.trustchain_android.chainExplorer.ChainExplorerActivity">
 
             <TextView
-                android:id="@+id/status"
+                android:id="@+id/statusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </android.widget.ScrollView>
