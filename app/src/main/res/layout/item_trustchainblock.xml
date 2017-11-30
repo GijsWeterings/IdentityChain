@@ -106,7 +106,7 @@
                 android:background="@android:color/darker_gray" />
 
             <ImageView
-                android:id="@+id/expand_arrow"
+                android:id="@+id/expandArrow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_expand_more_black_24dp" />
@@ -115,7 +115,7 @@
     </LinearLayout>
 
     <TableLayout
-        android:id="@+id/expanded_item"
+        android:id="@+id/expandedItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:shrinkColumns="1"
