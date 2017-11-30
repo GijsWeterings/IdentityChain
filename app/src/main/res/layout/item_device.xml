@@ -7,7 +7,7 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/device_name"
+        android:id="@+id/deviceName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textStyle="bold"
@@ -15,7 +15,7 @@
         android:textColor="#000000"
         android:text="device_name" />
     <TextView
-        android:id="@+id/device_mac"
+        android:id="@+id/deviceMac"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
