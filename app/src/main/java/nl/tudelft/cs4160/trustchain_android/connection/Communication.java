@@ -25,11 +25,7 @@ import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.UNKNOWN
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.createBlock;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.sign;
 import static nl.tudelft.cs4160.trustchain_android.block.TrustChainBlock.validate;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.NO_INFO;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_NEXT;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.PARTIAL_PREVIOUS;
-import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.VALID;
+import static nl.tudelft.cs4160.trustchain_android.block.ValidationResult.ValidationStatus.*;
 import static nl.tudelft.cs4160.trustchain_android.message.MessageProto.Message.newBuilder;
 
 
@@ -335,7 +331,7 @@ public abstract class Communication {
         Log.i(TAG, "Received block validation result " + validation.toString() + "("
                 + TrustChainBlock.toString(block) + ")");
 
-        if (validation.getStatus() == ValidationResult.INVALID) {
+        if (validation.getStatus() == INVALID) {
             for (String error : validation.getErrors()) {
                 Log.e(TAG, "Validation error: " + error);
             }

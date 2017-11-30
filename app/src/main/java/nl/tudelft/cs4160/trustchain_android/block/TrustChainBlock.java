@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import nl.tudelft.cs4160.trustchain_android.Util.Key;
+import nl.tudelft.cs4160.trustchain_android.block.ValidationResult.ValidationStatus;
 import nl.tudelft.cs4160.trustchain_android.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.trustchain_android.message.MessageProto;
 
@@ -202,7 +203,7 @@ public class TrustChainBlock {
         // impossible to hit many of these for blocks that went over the network.
 
         ValidationResult txValidation = validateTransaction(block, db);
-        if(txValidation.getStatus() != ValidationResult.VALID) {
+        if(txValidation.getStatus() != ValidationStatus.VALID) {
             result.setStatus(txValidation.getStatus());
             for (String error : txValidation.getErrors()) {
                 errors.add(error);
