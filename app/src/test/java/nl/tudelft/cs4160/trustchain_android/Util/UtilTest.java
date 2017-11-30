@@ -7,11 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import static nl.tudelft.cs4160.trustchain_android.Util.Util.ellipsize;
-import static org.junit.Assert.*;
 
-/**
- * Created by meijer on 10-11-17.
- */
 @RunWith(JUnit4.class)
 public class UtilTest {
     @Test

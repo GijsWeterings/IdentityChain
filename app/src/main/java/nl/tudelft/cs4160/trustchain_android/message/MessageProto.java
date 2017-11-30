@@ -612,8 +612,7 @@ public final class MessageProto {
           nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlock, nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlock.Builder, nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlockOrBuilder> 
           getHalfBlockFieldBuilder() {
         if (halfBlockBuilder_ == null) {
-          halfBlockBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlock, nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlock.Builder, nl.tudelft.cs4160.trustchain_android.message.MessageProto.TrustChainBlockOrBuilder>(
+          halfBlockBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<>(
                   getHalfBlock(),
                   getParentForChildren(),
                   isClean());
@@ -729,8 +728,7 @@ public final class MessageProto {
           nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequest, nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequest.Builder, nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequestOrBuilder> 
           getCrawlRequestFieldBuilder() {
         if (crawlRequestBuilder_ == null) {
-          crawlRequestBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequest, nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequest.Builder, nl.tudelft.cs4160.trustchain_android.message.MessageProto.CrawlRequestOrBuilder>(
+          crawlRequestBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<>(
                   getCrawlRequest(),
                   getParentForChildren(),
                   isClean());

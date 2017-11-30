@@ -2,10 +2,6 @@ package nl.tudelft.cs4160.trustchain_android.block;
 
 import java.util.List;
 
-/**
- * Created by wkmeijer on 18-10-17.
- */
-
 public class ValidationResult {
     int status;
     List<String> errors;
