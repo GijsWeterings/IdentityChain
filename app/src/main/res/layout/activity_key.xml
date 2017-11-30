@@ -21,30 +21,30 @@
                 android:text="@string/private_key" />
 
             <TextView
-                android:id="@+id/private_key"
+                android:id="@+id/privateKey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
             <Button
-                android:id="@+id/new_key"
+                android:id="@+id/newKey"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/create_key" />
 
             <Button
-                android:id="@+id/sign_data"
+                android:id="@+id/signData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/sign_data" />
 
             <Button
-                android:id="@+id/verify_sig"
+                android:id="@+id/verifySignature"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/verify_sig" />
 
             <TextView
-                android:id="@+id/signed_data"
+                android:id="@+id/signedData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </LinearLayout>
