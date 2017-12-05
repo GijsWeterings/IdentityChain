@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TrustChain Android</string>
+    <string name="app_name">IdentityChain</string>
     <string name="my_external_ip">My external ip is:</string>
     <string name="my_local_ip">My local ip is:</string>
     <string name="connect_ip_hint">127.0.0.1</string>

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="nl.tudelft.cs4160.trustchain_android.KeyActivity">
+    tools:context="nl.tudelft.cs4160.identitychain.KeyActivity">
 
     <android.widget.ScrollView
         android:layout_width="match_parent"
