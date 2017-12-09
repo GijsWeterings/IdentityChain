@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         init()
 
         val sf = ServiceFactory(this)
-        sf.initializeServerSocket()
+        sf.initializeDiscoveryServer()
     }
 
     private fun initVariables() {

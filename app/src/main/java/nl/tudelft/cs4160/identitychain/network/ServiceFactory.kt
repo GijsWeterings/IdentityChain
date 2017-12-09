@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.nsd.NsdServiceInfo
 import java.net.ServerSocket
 import android.net.nsd.NsdManager
-import android.content.ContentValues.TAG
 import android.util.Log
 
 
@@ -16,43 +15,39 @@ class ServiceFactory(val context: Context) {
     lateinit var resolvedService: NsdServiceInfo
 
 
-    fun registerService(port: Int) {
-        // Create the NsdServiceInfo object, and populate it.
+    fun initializeDiscoveryServer() {
+        val port = 8081
+        val serverSocket = ServerSocket(port)
 
-        // The name is subject to change based on conflicts
-        // with other services advertised on the same network.
+        registerService(port)
+    }
+
+    fun startPeerDiscovery() {
+        nsdManager.discoverServices(
+                serviceType, NsdManager.PROTOCOL_DNS_SD, initializeDiscoveryListener())
+    }
+
+    fun registerService(port: Int) {
+        // Warning: Multiple Services with the same name will get their name changed automatically,
+        // This is checked and corrected in the RegistrationListener::onServiceRegistered method.
         serviceInfo.serviceName = serviceName
         serviceInfo.serviceType = serviceType
         serviceInfo.port = port
 
         nsdManager.registerService(
                 serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
-
     }
-
-    fun initializeServerSocket() {
-        val port = 8081
-        val serverSocket = ServerSocket(port)
-
-        registerService(port)
-        nsdManager.discoverServices(
-                serviceType, NsdManager.PROTOCOL_DNS_SD, initializeDiscoveryListener());
-
-    }
-
 
     fun initializeRegistrationListener(): NsdManager.RegistrationListener {
         return object : NsdManager.RegistrationListener {
 
             override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {
-                // Save the service name.  Android may have changed it in order to
-                // resolve a conflict, so update the name you initially requested
-                // with the name Android actually used.
+                // Update serviceName to deal with conflicts.
                 serviceInfo.serviceName = NsdServiceInfo.serviceName
             }
 
             override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                // Registration failed!  Put debugging code here to determine why.
+                Log.e(TAG, "Service Registration failed with errorCode $errorCode")
             }
 
             override fun onServiceUnregistered(arg0: NsdServiceInfo) {
@@ -139,6 +134,7 @@ class ServiceFactory(val context: Context) {
     companion object {
         val serviceType = "_http._tcp."
         val serviceName = "IdentityChain"
+        val TAG = "ServiceFactory"
     }
 
 
