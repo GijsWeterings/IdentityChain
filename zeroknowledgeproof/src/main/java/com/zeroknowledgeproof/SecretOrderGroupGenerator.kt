@@ -17,7 +17,7 @@
  *
  */
 
-package com.example.zeroknowledgeproof
+package com.zeroknowledgeproof
 
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -66,6 +66,7 @@ class SecretOrderGroupGenerator(private val bitLength: Int, private val certaint
                 smallPrime = bigPrime.subtract(ONE).divide(TWO)
 
                 if (attempts % 100 == 0) {
+                    println("#attempts = " + attempts)
 //                    LOGGER.debug("#attempts = " + attempts)
                 }
 

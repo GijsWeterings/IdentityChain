@@ -17,7 +17,7 @@
  *
  */
 
-package com.example.zeroknowledgeproof
+package com.zeroknowledgeproof
 
 import java.io.Serializable
 import java.math.BigInteger
