@@ -21,8 +21,8 @@ class ServiceFactory(val context: Context) {
 
         // The name is subject to change based on conflicts
         // with other services advertised on the same network.
-        serviceInfo.serviceName = "IdentityChain"
-        serviceInfo.serviceType = "_http._tcp"
+        serviceInfo.serviceName = serviceName
+        serviceInfo.serviceType = serviceType
         serviceInfo.port = port
 
         nsdManager.registerService(
@@ -36,7 +36,7 @@ class ServiceFactory(val context: Context) {
 
         registerService(port)
         nsdManager.discoverServices(
-                "_http._tcp", NsdManager.PROTOCOL_DNS_SD, initializeDiscoveryListener());
+                serviceType, NsdManager.PROTOCOL_DNS_SD, initializeDiscoveryListener());
 
     }
 
@@ -82,12 +82,12 @@ class ServiceFactory(val context: Context) {
                 if (service.serviceType != serviceInfo.serviceType) {
                     // Service type is the string containing the protocol and
                     // transport layer for this service.
-                    Log.d(TAG, "Unknown Service Type: " + service.serviceType)
+                    Log.d(TAG, "Unknown Service Type: " + service.serviceType + serviceInfo.serviceType)
                 } else if (service.serviceName == serviceInfo.serviceName) {
                     // The name of the service tells the user what they'd be
                     // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceInfo.serviceName)
-                } else if (service.serviceName.contains("IdentityChain")) {
+                } else if (service.serviceName.contains(serviceName)) {
                     nsdManager.resolveService(service, resolveListener)
                 }
             }
@@ -134,6 +134,11 @@ class ServiceFactory(val context: Context) {
                 val host = resolvedService.getHost()
             }
         }
+    }
+
+    companion object {
+        val serviceType = "_http._tcp."
+        val serviceName = "IdentityChain"
     }
 
 
