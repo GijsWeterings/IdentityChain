@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
@@ -23,6 +24,7 @@ import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity
+import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
 import java.security.KeyPair
@@ -31,6 +33,8 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     private var communication: Communication? = null
+    val serviceFactory = ServiceFactory(this)
+
 
     /**
      * Listener for the connection button.
@@ -116,8 +120,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         initVariables()
         init()
 
-        val sf = ServiceFactory(this)
-        sf.initializeDiscoveryServer()
+        serviceFactory.initializeDiscoveryServer()
     }
 
     private fun initVariables() {
@@ -145,6 +148,10 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
         bluetoothButton.setOnClickListener(keyOptionsListener)
         resetDatabaseButton.setOnClickListener(resetDatabaseListener)
+
+        discoveryList.layoutManager = LinearLayoutManager(this)
+        discoveryList.adapter = PeerViewRecyclerAdapter()
+
 
         //start listening for messages
         communication!!.start()

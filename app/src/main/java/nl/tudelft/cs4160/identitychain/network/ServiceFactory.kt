@@ -12,7 +12,7 @@ class ServiceFactory(val context: Context) {
     val resolveListener: NsdManager.ResolveListener by lazy { initializeResolveListener() }
     val serviceInfo = NsdServiceInfo()
     val nsdManager: NsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-    lateinit var resolvedService: NsdServiceInfo
+    var resolvedServices: MutableList<NsdServiceInfo> = ArrayList()
 
 
     fun initializeDiscoveryServer() {
@@ -124,9 +124,8 @@ class ServiceFactory(val context: Context) {
                     Log.d(TAG, "Same IP.")
                     return
                 }
-                resolvedService = info
-                val port = resolvedService.getPort()
-                val host = resolvedService.getHost()
+
+                resolvedServices.add(info)
             }
         }
     }
