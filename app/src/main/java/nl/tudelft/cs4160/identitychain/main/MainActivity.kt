@@ -23,6 +23,7 @@ import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity
+import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
 import java.security.KeyPair
 
@@ -114,6 +115,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         initVariables()
         init()
+
+        val sf = ServiceFactory(this)
+        sf.initializeServerSocket()
     }
 
     private fun initVariables() {
