@@ -19,7 +19,10 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
 
     override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) {
         holder.textview.text = peers[position].name
+
     }
+
+    fun getItem(position: Int): PeerItem = peers.get(position)
 
     fun addItem(item: PeerItem) {
         peers.add(item)
@@ -30,9 +33,13 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
 
 }
 
-class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view), View.OnLongClickListener {
     val textview = view.peerName
 
+    override fun onLongClick(v: View?): Boolean {
+        // TODO
+        return true
+    }
 }
 
-data class PeerItem(val name: String) {}
+data class PeerItem(val name: String, val host: String, val port: Int)

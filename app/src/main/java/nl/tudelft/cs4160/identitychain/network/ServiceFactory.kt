@@ -19,8 +19,6 @@ class ServiceFactory(val context: Context) {
 
     fun initializeDiscoveryServer() {
         val port = 8081
-        val serverSocket = ServerSocket(port)
-
         registerService(port)
     }
 
@@ -85,12 +83,8 @@ class ServiceFactory(val context: Context) {
                 // A service was found!  Do something with it.
                 Log.d(TAG, "Service discovery success" + service)
                 if (service.serviceType != serviceInfo.serviceType) {
-                    // Service type is the string containing the protocol and
-                    // transport layer for this service.
                     Log.d(TAG, "Unknown Service Type: " + service.serviceType + serviceInfo.serviceType)
                 } else if (service.serviceName == serviceInfo.serviceName) {
-                    // The name of the service tells the user what they'd be
-                    // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceInfo.serviceName)
                 } else if (service.serviceName.contains(serviceName)) {
                     nsdManager.resolveService(service, listener)
@@ -135,7 +129,7 @@ class ServiceFactory(val context: Context) {
                     return
                 }
 
-                emitter.onNext(PeerItem(info.serviceName))
+                emitter.onNext(PeerItem(info.serviceName, info.host.hostAddress, info.port))
             }
         }
     }
