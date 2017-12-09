@@ -21,6 +21,13 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
         holder.textview.text = peers[position].name
     }
 
+    fun addItem(item: PeerItem) {
+        peers.add(item)
+        val size = peers.size
+
+        this.notifyItemInserted(size - 1)
+    }
+
 }
 
 class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {

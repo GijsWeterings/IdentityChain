@@ -5,14 +5,16 @@ import android.net.nsd.NsdServiceInfo
 import java.net.ServerSocket
 import android.net.nsd.NsdManager
 import android.util.Log
+import io.reactivex.Emitter
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.disposables.Disposables
 
 
 class ServiceFactory(val context: Context) {
     val registrationListener: NsdManager.RegistrationListener by lazy { initializeRegistrationListener() }
-    val resolveListener: NsdManager.ResolveListener by lazy { initializeResolveListener() }
     val serviceInfo = NsdServiceInfo()
     val nsdManager: NsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-    var resolvedServices: MutableList<NsdServiceInfo> = ArrayList()
 
 
     fun initializeDiscoveryServer() {
@@ -22,9 +24,17 @@ class ServiceFactory(val context: Context) {
         registerService(port)
     }
 
-    fun startPeerDiscovery() {
-        nsdManager.discoverServices(
-                serviceType, NsdManager.PROTOCOL_DNS_SD, initializeDiscoveryListener())
+    fun startPeerDiscovery(): Observable<PeerItem> {
+        return Observable.create {
+
+            val resolveListener = initializeResolveListener(it)
+
+            val discoveryListener = initializeDiscoveryListener(resolveListener)
+            nsdManager.discoverServices(
+                    serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+
+            it.setDisposable(Disposables.fromAction {nsdManager.stopServiceDiscovery(discoveryListener)})
+        }
     }
 
     fun registerService(port: Int) {
@@ -61,7 +71,7 @@ class ServiceFactory(val context: Context) {
         }
     }
 
-    fun initializeDiscoveryListener(): NsdManager.DiscoveryListener {
+    fun initializeDiscoveryListener(listener: NsdManager.ResolveListener): NsdManager.DiscoveryListener {
 
         // Instantiate a new DiscoveryListener
         return object : NsdManager.DiscoveryListener {
@@ -83,7 +93,7 @@ class ServiceFactory(val context: Context) {
                     // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + serviceInfo.serviceName)
                 } else if (service.serviceName.contains(serviceName)) {
-                    nsdManager.resolveService(service, resolveListener)
+                    nsdManager.resolveService(service, listener)
                 }
             }
 
@@ -109,7 +119,7 @@ class ServiceFactory(val context: Context) {
         }
     }
 
-    fun initializeResolveListener(): NsdManager.ResolveListener {
+    fun initializeResolveListener(emitter: ObservableEmitter<PeerItem>): NsdManager.ResolveListener {
         return object : NsdManager.ResolveListener {
 
             override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
@@ -125,7 +135,7 @@ class ServiceFactory(val context: Context) {
                     return
                 }
 
-                resolvedServices.add(info)
+                emitter.onNext(PeerItem(info.serviceName))
             }
         }
     }

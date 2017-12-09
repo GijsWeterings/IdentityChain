@@ -12,8 +12,8 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     private var communication: Communication? = null
-    val serviceFactory = ServiceFactory(this)
+
 
 
     /**
@@ -52,10 +52,11 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
      * the network is not compromised due to not using dispersy.
      */
     internal var connectionButtonListener: View.OnClickListener = View.OnClickListener {
-        val peer = Peer(null, destinationIPText.text.toString(),
-                Integer.parseInt(destinationPortText.text.toString()))
+        //TODO PUT THIS BACK
+//        val peer = Peer(null, destinationIPText.text.toString(),
+//                Integer.parseInt(destinationPortText.text.toString()))
         //send either a crawl request or a half block
-        communication!!.connectToPeer(peer)
+//        communication!!.connectToPeer(peer)
     }
 
     internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
@@ -117,8 +118,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val serviceFactory = ServiceFactory(this)
         initVariables()
-        init()
+        init(serviceFactory)
 
         serviceFactory.initializeDiscoveryServer()
     }
@@ -127,7 +129,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         statusText.movementMethod = ScrollingMovementMethod()
     }
 
-    private fun init() {
+    private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
 
 
@@ -141,16 +143,18 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         communication = NetworkCommunication(dbHelper, kp, this)
 
-        updateIP()
-        updateLocalIPField(localIPAddress)
-
         connectionButton.setOnClickListener(connectionButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
         bluetoothButton.setOnClickListener(keyOptionsListener)
         resetDatabaseButton.setOnClickListener(resetDatabaseListener)
 
         discoveryList.layoutManager = LinearLayoutManager(this)
-        discoveryList.adapter = PeerViewRecyclerAdapter()
+        val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
+        discoveryList.adapter = peerViewRecyclerAdapter
+
+        serviceFactory.startPeerDiscovery()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(peerViewRecyclerAdapter::addItem)
 
 
         //start listening for messages
@@ -166,41 +170,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         }
     }
 
-    /**
-     * Updates the external IP address textfield to the given IP address.
-     */
-    fun updateExternalIPField(ipAddress: String) {
-        externalIPText.text = ipAddress
-        Log.i(TAG, "Updated external IP Address: " + ipAddress)
-    }
-
-    /**
-     * Updates the internal IP address textfield to the given IP address.
-     */
-    fun updateLocalIPField(ipAddress: String?) {
-        localIPText.text = ipAddress
-        Log.i(TAG, "Updated local IP Address:" + ipAddress)
-
-    }
-
-    /**
-     * Finds the external IP address of this device by making an API call to https://www.ipify.org/.
-     * The networking runs on a separate thread.
-     */
-    fun updateIP() {
-        val thread = Thread(Runnable {
-            try {
-                java.util.Scanner(java.net.URL("https://api.ipify.org").openStream(), "UTF-8").useDelimiter("\\A").use { s ->
-                    val ip = s.next()
-                    // new thread to handle UI updates
-                    this@MainActivity.runOnUiThread { updateExternalIPField(ip) }
-                }
-            } catch (e: java.io.IOException) {
-                e.printStackTrace()
-            }
-        })
-        thread.start()
-    }
 
 
     override fun updateLog(msg: String) {
