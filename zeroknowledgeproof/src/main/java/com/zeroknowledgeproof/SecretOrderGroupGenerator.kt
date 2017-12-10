@@ -20,12 +20,12 @@
 package com.zeroknowledgeproof
 
 import java.math.BigInteger
-import java.security.SecureRandom
 import java.math.BigInteger.ONE
+import java.security.SecureRandom
 
 class SecretOrderGroupGenerator(private val bitLength: Int, private val certainty: Int) {
 
-    @JvmOverloads constructor(bitlength: Int = 1024) : this(bitlength, 50) {}
+    @JvmOverloads constructor(bitlength: Int = 1024) : this(bitlength, 50)
 
     fun generate(): SecretOrderGroup {
 

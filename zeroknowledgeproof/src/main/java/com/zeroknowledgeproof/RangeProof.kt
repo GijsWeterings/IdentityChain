@@ -1,13 +1,11 @@
 package com.zeroknowledgeproof
 
-import java.math.BigInteger
-import java.security.SecureRandom
 import com.zeroknowledgeproof.SecretOrderGroupGenerator.Companion.findGenerators
-import com.zeroknowledgeproof.SecretOrderGroupGenerator.Companion.generateSafePrimes
-import java.lang.Math.floor
 import java.lang.Math.sqrt
-import java.math.BigInteger.*
-import java.util.*
+import java.math.BigInteger
+import java.math.BigInteger.ONE
+import java.math.BigInteger.ZERO
+import java.security.SecureRandom
 
 
 // An implementation based on An Efficient Range Proof Scheme by Kun Peng and Feng Bao
@@ -44,7 +42,6 @@ class RangeProof () {
         var p: BigInteger
         var q: BigInteger
 //        var PminOne: BigInteger
-
 //        var attempts = 0;
 //        do {
 //            P = BigInteger.probablePrime(2048, rand)
@@ -55,9 +52,16 @@ class RangeProof () {
 //            PminOne = P.subtract(ONE).divide(BigInteger.valueOf(2))
 //        } while (!PminOne.isProbablePrime(50) )
 
-          var QPprimes = generateSafePrimes(2048, 50)
-            val P = QPprimes[0]
-            val Q = QPprimes[1]
+        //var QPprimes = generateSafePrimes(2048, 1)
+
+//        val P = QPprimes[0]
+//        val Q = QPprimes[1]
+        val P = BigInteger("10884337314880555232019005600512485388635114928977749495197997511132444534784363420761844523524326951763781845571098166762818719135614858892829212280070629102254332916999805264285510188888598855891880720226108402203826465403996415246453666229849488467565977389939240636987630647810957722217092924924850583022260813143738261026077485734809492004779747492417357325821756269791278292986962899180971445135037905301057430172470769084970601366873772836422018159683586710345788686941021649183610200986497812455648197730536572177421713854416957767791850376100921811690177035025819326299687245445814727551484584402277783476019", 10)
+        val Q = BigInteger("10437558790360158623790510859672926100811669989566014388872925454878207758905617190842580772849281472689600966498109393227200905424003699620742597321371403980549610681832319041825178497454344663116250096256559313673794425491983864544939134682788052849309592394789218470604209019089144699023578101534821440986883654031516961176249508522671578368340198855445235889464318568531239257730151412951428174660257640796266671461956359403488437210402505823621394910554213838114674109439472964459901970675384069890407061015988992907036108805829209974538359143677594199385526792563393291701665742990942212051595771814287939663839", 10)
+        println(P.toString(10))
+        println(Q.toString(10))
+
+        println(1)
 
 //        do {
 //            Q = BigInteger.probablePrime(2048, rand)
@@ -68,20 +72,25 @@ class RangeProof () {
 //        } while (!Q.subtract(ONE).divide(BigInteger.valueOf(2)).isProbablePrime(50) || P.equals(Q))
 
         val N = P.multiply(Q)
+        println("We have an N")
 
         val k1 = BigInteger(1024, rand)
         val k2 = BigInteger(160, rand)
 
 
         val (g,h) = findGenerators(findTwoPrimes(2048))
+        println("We have generators")
 
         val r = BigInteger(N.bitLength(), rand)
 
         val c = g.modPow(toBigInt(m), N).times(h.modPow(r, N)).mod(N)
 
+        println("We have a c")
+
         val c1 = c.divide(g.modPow(toBigInt(a-1), N)).mod(N) // c1 = c/(g^a-1) modN
         //TODO Maybe this should not be Integer division, but cyclic group division (groot crypto fun)
         val c2 = g.modPow(toBigInt(b+1), N).divide(c).mod(N)
+        println("We have c1 and c2")
         val rPrime = BigInteger(N.bitLength(), rand)
 
         val cPrime = c1.modPow(toBigInt(b - m + 1), N).times(h.modPow(rPrime, N)).mod(N)
