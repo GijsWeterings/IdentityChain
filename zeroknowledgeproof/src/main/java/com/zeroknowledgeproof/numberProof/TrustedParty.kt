@@ -24,7 +24,7 @@ object TrustedParty {
         // Init done, now run the prover 100 times
         for (t in 1..10) {
             succeeds = succeeds && runProver(prover, verifier)
-            if (succeeds) println("And ANOTHER success!")
+            if (debug) if (succeeds) println("And ANOTHER success!")
         }
 
         return succeeds
