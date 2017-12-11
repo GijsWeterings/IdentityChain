@@ -1,7 +1,6 @@
 package com.zeroknowledgeproof
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -15,16 +14,4 @@ class ExampleUnitTest {
     fun addition_isCorrect() {
         assertEquals(4, (2 + 2).toLong())
     }
-
-    @Test
-    fun testProver() {
-        val rp = RangeProof()
-
-        val result = rp.Prover(22,18,100)
-
-        assertTrue(result)
-    }
-
-
-
 }

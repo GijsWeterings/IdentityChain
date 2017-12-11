@@ -3,7 +3,7 @@ package com.zeroknowledgeproof.numberProof
 import java.math.BigInteger
 import java.security.SecureRandom
 
-object TrustedParty {
+object NumberProofTrustedParty {
 
     private val debug = false
 
@@ -17,9 +17,9 @@ object TrustedParty {
         var succeeds = true
 
         if (debug) println("Hi.")
-        val prover = Prover(N, s)
+        val prover = NumberProofProver(N, s)
         if (debug) println("We have a prover")
-        val verifier = Verifier(N)
+        val verifier = NumberProofVerifier(N)
         if (debug) println("We have also a verifier")
         // Init done, now run the prover 100 times
         for (t in 1..10) {
@@ -30,14 +30,14 @@ object TrustedParty {
         return succeeds
     }
 
-    private fun runProver(prover: Prover, verifier: Verifier): Boolean {
-        val newX : BigInteger = prover.newChallenge()
-        if (debug) println("Prover generated new challenge")
-        val challenge : Challenge = verifier.requestChallenge()
+    private fun runProver(numberProofProver: NumberProofProver, numberProofVerifier: NumberProofVerifier): Boolean {
+        val newX : BigInteger = numberProofProver.newChallenge()
+        if (debug) println("NumberProofProver generated new challenge")
+        val challenge : Challenge = numberProofVerifier.requestChallenge()
         if (debug) println("Challenger generated a bit.")
-        val y : BigInteger = prover.answerChallenge(newX, challenge) ?: return false
-        if (debug) println("Prover answered the challenge: " + y)
-        val accepted = verifier.verify(newX, y, prover.getPublicKey(), challenge)
+        val y : BigInteger = numberProofProver.answerChallenge(newX, challenge) ?: return false
+        if (debug) println("NumberProofProver answered the challenge: " + y)
+        val accepted = numberProofVerifier.verify(newX, y, numberProofProver.getPublicKey(), challenge)
         if (!accepted) {
             if (debug) println("Challenge has NOT been accepted")
             if (debug) println("X: {newX}\nChallenge bit: {challenge}\ny = {y}")

@@ -5,11 +5,11 @@ import java.security.SecureRandom
 
 typealias Challenge = Boolean
 
-class Prover (givenN: BigInteger, givenS: Int? = null){
+class NumberProofProver(givenN: BigInteger, givenS: Int? = null){
     private val debug = false
     private val N = givenN
     private val rand = SecureRandom()
-    private val tp = TrustedParty;
+    private val tp = NumberProofTrustedParty;
 
     private val s : Int = givenS ?: initS()
     private var challenges : MutableMap<BigInteger, BigInteger> = mutableMapOf()

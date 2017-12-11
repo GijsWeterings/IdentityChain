@@ -1,5 +1,7 @@
 package com.zeroknowledgeproof
 
+import com.zeroknowledgeproof.rangeProof.pow
+import com.zeroknowledgeproof.rangeProof.toBigInt
 import java.math.BigInteger
 import java.math.BigInteger.ONE
 import java.security.SecureRandom

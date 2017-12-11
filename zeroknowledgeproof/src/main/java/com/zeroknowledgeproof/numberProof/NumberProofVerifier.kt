@@ -3,7 +3,7 @@ package com.zeroknowledgeproof.numberProof
 import java.math.BigInteger
 import java.security.SecureRandom
 
-class Verifier (givenN: BigInteger) {
+class NumberProofVerifier(givenN: BigInteger) {
     private val debug = false
     private val N = givenN
     private val rand = SecureRandom()
