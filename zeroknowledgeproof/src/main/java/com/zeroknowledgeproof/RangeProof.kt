@@ -178,22 +178,9 @@ class RangeProof () {
         return temp
     }
 
-    private fun toBigInt(i: Int) : BigInteger {
-        return BigInteger.valueOf(i.toLong())
-    }
 
-    //from: https://stackoverflow.com/questions/4582277/biginteger-powbiginteger
-    fun pow(base: BigInteger, exponent: BigInteger): BigInteger {
-        var base = base
-        var exponent = exponent
-        var result = BigInteger.ONE
-        while (exponent.signum() > 0) {
-            if (exponent.testBit(0)) result = result.multiply(base)
-            base = base.multiply(base)
-            exponent = exponent.shiftRight(1)
-        }
-        return result
-    }
+
+
 
     private fun generateToSum(sum: BigInteger): BigInteger {
         var result: BigInteger = sum.plus(ONE);
@@ -226,4 +213,21 @@ class RangeProof () {
 //        val m2 = remaining.subtract(m1)
 //        return arrayOf(m1, m2, m4)
 //    }
+}
+
+fun toBigInt(i: Int) : BigInteger {
+    return BigInteger.valueOf(i.toLong())
+}
+
+//from: https://stackoverflow.com/questions/4582277/biginteger-powbiginteger
+fun pow(base: BigInteger, exponent: BigInteger): BigInteger {
+    var base = base
+    var exponent = exponent
+    var result = BigInteger.ONE
+    while (exponent.signum() > 0) {
+        if (exponent.testBit(0)) result = result.multiply(base)
+        base = base.multiply(base)
+        exponent = exponent.shiftRight(1)
+    }
+    return result
 }
