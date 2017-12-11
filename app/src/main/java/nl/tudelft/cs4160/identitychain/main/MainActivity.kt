@@ -25,10 +25,8 @@ import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity
-import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
-import java.net.NetworkInterface
 import java.security.KeyPair
 
 class MainActivity : AppCompatActivity(), CommunicationListener {
@@ -129,7 +127,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         discoveryList.layoutManager = LinearLayoutManager(this)
         val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
         discoveryList.adapter = peerViewRecyclerAdapter
-        
+
         serviceFactory.startPeerDiscovery()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(peerViewRecyclerAdapter::addItem)
