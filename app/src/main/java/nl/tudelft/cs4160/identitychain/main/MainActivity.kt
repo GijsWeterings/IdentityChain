@@ -54,8 +54,10 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
         val peeritem = adapter.getItem(0)
         val peer = Peer(null, peeritem.host, peeritem.port)
+        val payload = payloadValue.text.toString().trim()
+        Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
 //      send either a crawl request or a half block
-        communication!!.connectToPeer(peer)
+        communication!!.connectToPeer(peer, payload)
     }
 
     internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
@@ -157,7 +159,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     }
 
     companion object {
-        val TRANSACTION = "Hello world!"
         private val TAG = MainActivity::class.java.toString()
 
         /**

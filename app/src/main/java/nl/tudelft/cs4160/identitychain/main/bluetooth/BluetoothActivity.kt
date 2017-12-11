@@ -33,7 +33,7 @@ class BluetoothActivity : AppCompatActivity(), CommunicationListener {
         Log.e(TAG, "pressed " + device.name + "\nUUID: " + device.uuids[0].uuid)
 
         val peer = Peer(device)
-        communication!!.connectToPeer(peer)
+        communication!!.connectToPeer(peer, "HELLO BLUETOOTH!") //FIXME either we dump bluetooth or we need to insert the payload here
     }
 
 
