@@ -24,7 +24,6 @@ import nl.tudelft.cs4160.identitychain.connection.Communication
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
-import nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.security.KeyPair
@@ -62,11 +61,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
     internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
         val intent = Intent(this, ChainExplorerActivity::class.java)
-        startActivity(intent)
-    }
-
-    internal var keyOptionsListener: View.OnClickListener = View.OnClickListener {
-        val intent = Intent(this, BluetoothActivity::class.java)
         startActivity(intent)
     }
 
@@ -123,7 +117,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         connectionButton.setOnClickListener(connectionButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
-        bluetoothButton.setOnClickListener(keyOptionsListener)
         resetDatabaseButton.setOnClickListener(resetDatabaseListener)
 
         discoveryList.layoutManager = LinearLayoutManager(this)

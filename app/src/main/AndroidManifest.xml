@@ -29,11 +29,6 @@
             android:name="nl.tudelft.cs4160.identitychain.KeyActivity"
             android:label="@string/title_activity_key"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name="nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity"
-            android:label="@string/title_activity_bluetooth"
-            android:theme="@style/AppTheme.NoActionBar" />
-
         <activity android:name="nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity" />
     </application>
 
