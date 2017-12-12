@@ -6,11 +6,13 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
@@ -22,14 +24,15 @@ import nl.tudelft.cs4160.identitychain.connection.Communication
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
-import nl.tudelft.cs4160.identitychain.main.bluetooth.BluetoothActivity
-import java.net.NetworkInterface
+import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
+import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.security.KeyPair
 
 class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     private var communication: Communication? = null
+
 
     /**
      * Listener for the connection button.
@@ -47,19 +50,17 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
      * the network is not compromised due to not using dispersy.
      */
     internal var connectionButtonListener: View.OnClickListener = View.OnClickListener {
-        val peer = Peer(null, destinationIPText.text.toString(),
-                Integer.parseInt(destinationPortText.text.toString()))
-        //send either a crawl request or a half block
-        communication!!.connectToPeer(peer)
+        val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
+        val peeritem = adapter.getItem(0)
+        val peer = Peer(null, peeritem.host, peeritem.port)
+        val payload = payloadValue.text.toString().trim()
+        Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
+//      send either a crawl request or a half block
+        communication!!.connectToPeer(peer, payload)
     }
 
     internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
         val intent = Intent(this, ChainExplorerActivity::class.java)
-        startActivity(intent)
-    }
-
-    internal var keyOptionsListener: View.OnClickListener = View.OnClickListener {
-        val intent = Intent(this, BluetoothActivity::class.java)
         startActivity(intent)
     }
 
@@ -85,42 +86,22 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
             return genesisBlock == null
         }
 
-    /**
-     * Finds the local IP address of this device, loops trough network interfaces in order to find it.
-     * The address that is not a loopback address is the IP of the device.
-     * @return a string representation of the device's IP address
-     */
-    val localIPAddress: String?
-        get() {
-            try {
-                val netInterfaces = NetworkInterface.getNetworkInterfaces()
-                for (netInt in netInterfaces) {
-                    for (addr in netInt.inetAddresses) {
-                        if (addr.isSiteLocalAddress) {
-                            return addr.hostAddress
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            return null
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val serviceFactory = ServiceFactory(this)
         initVariables()
-        init()
+        init(serviceFactory)
+
+        serviceFactory.initializeDiscoveryServer()
     }
 
     private fun initVariables() {
         statusText.movementMethod = ScrollingMovementMethod()
     }
 
-    private fun init() {
+    private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
 
 
@@ -134,13 +115,18 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         communication = NetworkCommunication(dbHelper, kp, this)
 
-        updateIP()
-        updateLocalIPField(localIPAddress)
-
         connectionButton.setOnClickListener(connectionButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
-        bluetoothButton.setOnClickListener(keyOptionsListener)
         resetDatabaseButton.setOnClickListener(resetDatabaseListener)
+
+        discoveryList.layoutManager = LinearLayoutManager(this)
+        val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
+        discoveryList.adapter = peerViewRecyclerAdapter
+
+        serviceFactory.startPeerDiscovery()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(peerViewRecyclerAdapter::addItem)
+
 
         //start listening for messages
         communication!!.start()
@@ -155,42 +141,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         }
     }
 
-    /**
-     * Updates the external IP address textfield to the given IP address.
-     */
-    fun updateExternalIPField(ipAddress: String) {
-        externalIPText.text = ipAddress
-        Log.i(TAG, "Updated external IP Address: " + ipAddress)
-    }
-
-    /**
-     * Updates the internal IP address textfield to the given IP address.
-     */
-    fun updateLocalIPField(ipAddress: String?) {
-        localIPText.text = ipAddress
-        Log.i(TAG, "Updated local IP Address:" + ipAddress)
-
-    }
-
-    /**
-     * Finds the external IP address of this device by making an API call to https://www.ipify.org/.
-     * The networking runs on a separate thread.
-     */
-    fun updateIP() {
-        val thread = Thread(Runnable {
-            try {
-                java.util.Scanner(java.net.URL("https://api.ipify.org").openStream(), "UTF-8").useDelimiter("\\A").use { s ->
-                    val ip = s.next()
-                    // new thread to handle UI updates
-                    this@MainActivity.runOnUiThread { updateExternalIPField(ip) }
-                }
-            } catch (e: java.io.IOException) {
-                e.printStackTrace()
-            }
-        })
-        thread.start()
-    }
-
 
     override fun updateLog(msg: String) {
         //just to be sure run it on the ui thread
@@ -202,7 +152,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     }
 
     companion object {
-        val TRANSACTION = "Hello world!"
         private val TAG = MainActivity::class.java.toString()
 
         /**
