@@ -1,9 +1,5 @@
 package com.zeroknowledgeproof.rangeProof
 
-import android.provider.Settings
-import com.zeroknowledgeproof.SecretOrderGroupGenerator
-import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
-import com.zeroknowledgeproof.rangeProof.calculateInverse
 import junit.framework.Assert.assertTrue
 import org.junit.Test
 import java.math.BigInteger
