@@ -1,5 +1,7 @@
 package com.zeroknowledgeproof.rangeProof
 
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertTrue
 import java.math.BigInteger
 import java.math.BigInteger.ONE
 import java.math.BigInteger.ZERO
@@ -138,13 +140,13 @@ object RangeProofTrustedParty {
 
         // Assert the rest
 
-        assert(c1 == c * calculateInverse(g.modPow(toBigInt(a-1), N), N) % N)
-        assert(c2 == g.modPow(toBigInt(b+1), N) * calculateInverse(c, N) % N )
-        assert(cDPrime == c1Prime * c2Prime * c3Prime % N)
-        assert(c1Prime.modPow(s, N) * c2Prime * c3Prime % N == g.modPow(toPublish.x, N) * h.modPow(toPublish.u, N) % N)
-        assert(c1Prime * c2Prime.modPow(t, N) * c3Prime % N == g.modPow(toPublish.y, N) * h.modPow(toPublish.v, N) % N)
-        assert(toPublish.x > ZERO)
-        assert(toPublish.y > ZERO)
+        assertEquals(c1.mod(N),c.times(calculateInverse(g.modPow(toBigInt(a-1), N), N)).mod(N))
+        assertEquals(c2.mod(N),g.modPow(toBigInt(b+1), N).times(calculateInverse(c, N)).mod(N) )
+        assertEquals(cDPrime.mod(N), c1Prime.times(c2Prime).times(c3Prime).mod(N))
+        assertEquals(c1Prime.modPow(s, N).times(c2Prime).times(c3Prime).mod(N), g.modPow(toPublish.x, N).times(h.modPow(toPublish.u, N)).mod(N))
+        assertEquals(c1Prime.times(c2Prime.modPow(t, N)).times(c3Prime).mod(N), g.modPow(toPublish.y, N).times(h.modPow(toPublish.v, N)).mod(N))
+        assertTrue(toPublish.x > ZERO)
+        assertTrue(toPublish.y > ZERO)
 
 
 //        if (!c1.equals(c.divide(g.modPow(toBigInt(a - 1), N)).mod(N))) {
