@@ -140,7 +140,7 @@ class SecretOrderGroupGenerator(private val bitLength: Int, private val certaint
             return g
         }
 
-        private fun extendedGCDBezout(a: BigInteger, b: BigInteger): Array<BigInteger> {
+        fun extendedGCDBezout(a: BigInteger, b: BigInteger): Array<BigInteger> {
             var s0 = BigInteger.ONE
             var s1 = BigInteger.ZERO
             var t0 = BigInteger.ZERO

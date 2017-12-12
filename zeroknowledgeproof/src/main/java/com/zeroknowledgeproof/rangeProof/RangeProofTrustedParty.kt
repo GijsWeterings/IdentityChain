@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.math.BigInteger.ONE
 import java.math.BigInteger.ZERO
 import java.security.SecureRandom
-import kotlin.math.sqrt
 import kotlin.system.exitProcess
 
 
@@ -80,9 +79,9 @@ object RangeProofTrustedParty {
         println(">STEP 0 COMPLETE")
 
         /// Step 1: calculate c1 and c2
-        val c1 = c.times(findCyclicInverse(g.pow(a - 1), N)).mod(N)
+        val c1 = c.times(calculateInverse(g.pow(a - 1), N)).mod(N)
         toPublish.c1 = c1
-        val c2 = g.pow(b+1).times(findCyclicInverse(c, N)).mod(N)
+        val c2 = g.pow(b+1).times(calculateInverse(c, N)).mod(N)
         toPublish.c2 = c2
         println(">STEP 1 COMPLETE")
 
@@ -115,7 +114,7 @@ object RangeProofTrustedParty {
         // Then, prove that m3 is a square.
         val c1Prime = g.modPow(m1, N).times(h.modPow(r1, N)).mod(N)
         val c2Prime = g.modPow(m2, N).times(h.modPow(r2, N)).mod(N)
-        val c3Prime = cDPrime.times(findCyclicInverse(c1Prime * c2Prime, N)).mod(N)
+        val c3Prime = cDPrime.times(calculateInverse(c1Prime * c2Prime, N)).mod(N)
 
         proveCommittedNumberIsSquare()// LIAM, DO STUFF
         println(">STEP 4 COMPLETE")
@@ -135,21 +134,34 @@ object RangeProofTrustedParty {
         println("Verifier should check all results")
         // Step 7: NumberProofVerifier verifies ALL of these claims.
 
-        if (!c1.equals(c.divide(g.modPow(toBigInt(a - 1), N)).mod(N))) {
-            println("first")
-        } else if (!c2.equals(g.modPow(toBigInt(b + 1), N).divide(c).mod(N))) {
-            println("2")
-        } else if (!cDPrime.equals(c1Prime.times(c2Prime).times(c3Prime).mod(N))) {
-            println("3")
-        } else if (!pow(c1Prime, s).times(c2Prime).times(c3Prime).equals(g.mod(toPublish.x).times(pow(h, toPublish.u)).mod(N))) {
-            println("4")
-        } else if (!pow(c2Prime, t).times(c1Prime).times(c3Prime).equals(g.mod(toPublish.y).times(pow(h, toPublish.v)).mod(N))) {
-            println("5")
-        } else if (toPublish.x < ZERO) {
-            println("x zero")
-        } else if (toPublish.y < ZERO) {
-            println("y zero")
-        }
+        // Assert the three things
+
+        // Assert the rest
+
+        assert(c1 == c * calculateInverse(g.modPow(toBigInt(a-1), N), N) % N)
+        assert(c2 == g.modPow(toBigInt(b+1), N) * calculateInverse(c, N) % N )
+        assert(cDPrime == c1Prime * c2Prime * c3Prime % N)
+        assert(c1Prime.modPow(s, N) * c2Prime * c3Prime % N == g.modPow(toPublish.x, N) * h.modPow(toPublish.u, N) % N)
+        assert(c1Prime * c2Prime.modPow(t, N) * c3Prime % N == g.modPow(toPublish.y, N) * h.modPow(toPublish.v, N) % N)
+        assert(toPublish.x > ZERO)
+        assert(toPublish.y > ZERO)
+
+
+//        if (!c1.equals(c.divide(g.modPow(toBigInt(a - 1), N)).mod(N))) {
+//            println("first")
+//        } else if (!c2.equals(g.modPow(toBigInt(b + 1), N).divide(c).mod(N))) {
+//            println("2")
+//        } else if (!cDPrime.equals(c1Prime.times(c2Prime).times(c3Prime).mod(N))) {
+//            println("3")
+//        } else if (!pow(c1Prime, s).times(c2Prime).times(c3Prime).equals(g.mod(toPublish.x).times(pow(h, toPublish.u)).mod(N))) {
+//            println("4")
+//        } else if (!pow(c2Prime, t).times(c1Prime).times(c3Prime).equals(g.mod(toPublish.y).times(pow(h, toPublish.v)).mod(N))) {
+//            println("5")
+//        } else if (toPublish.x < ZERO) {
+//            println("x zero")
+//        } else if (toPublish.y < ZERO) {
+//            println("y zero")
+//        } else println("GREAT SUCCESS")
 
         return rpverifier.verify(toPublish)
     }
@@ -181,9 +193,59 @@ object RangeProofTrustedParty {
         return arrayOf(m1, m2, m4)
     }
 
-    private fun proveTwoCommittedIntegersAreEqual() {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    /**
+     * @param N: Large composite, factorization unknown
+     * @param g1: Element of large order in Zn*
+     */
+    private fun proveTwoCommittedIntegersAreEqual(){ return}
+//    private fun proveTwoCommittedIntegersAreEqual(committedNum: BigInteger, r1 :BigInteger, r2: BigInteger, N: BigInteger, g1 : BigInteger, h1: BigInteger, g2: BigInteger, h2: BigInteger) : commitmentReturn {
+////        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//
+//        // Init security parameters
+//        val b = BigInteger(512, rand)
+//        val t = 80
+//        val l = 40
+//        val s1 = 40
+//        val s2 = 552
+//
+//        // Hash function H should output 2t-bit strings.
+//
+//
+//        // Step 1: Generate random numbers.
+//        val w = generateRandomInterval(ONE, TWO.pow(l+t) * b - ONE)
+//        val eta1 = generateRandomInterval(ONE, TWO.pow(l+t+s1) * N - ONE)
+//        val eta2 = generateRandomInterval(ONE, TWO.pow(l+t+s2) * N - ONE)
+//
+//        // Generate two commitments
+//        val W1 = g1.modPow(w, N) * h1.modPow(eta1, N) % N
+//        val W1ShouldBe = g1.modPow(w, N).times(h1.modPow(eta1, N)).mod(N)
+//        assert(W1 == W1ShouldBe)
+//
+//        val W2 = g2.modPow(w, N).times(h2.modPow(eta2, N)).mod(N)
+//
+//        // Step 2: Use the hash function.
+//        // TODO Implement hash function
+//        val c = W1 + W2
+//
+//        // Step 3: Compute verification parameters
+//        val D = w + c * committedNum;
+//        val D1 = eta1 + c*r1
+//        val D2 = eta2 + c*r2
+//
+//        val E = g1.modPow(committedNum ,N).times(h1.modPow(r1, N)).mod(N)
+//        val F = g2.modPow(committedNum ,N).times(h2.modPow(r2, N)).mod(N)
+//
+//        return commitmentReturn(c, D, D1, D2, E, F)
+//    }
+
+    data class commitmentReturn (
+            val c : BigInteger,
+            val D : BigInteger,
+            val D1: BigInteger,
+            val D2: BigInteger,
+            val E : BigInteger, // One of the commitments
+            val F : BigInteger
+    )
 
     private fun generateRandomInterval(lowerBound: BigInteger, upperBound: BigInteger): BigInteger {
         var res: BigInteger
@@ -210,12 +272,6 @@ object RangeProofTrustedParty {
             res // HOORAY WE'VE WON
         }
     }
-
-    private fun findCyclicInverse(num: BigInteger, N: BigInteger): BigInteger {
-        return num;
-        //TODO Implement Bezout's algorithm for cyclic inverse finding
-    }
-
 
 //        //This structure makes debugging easier as you can set breakpoints on all the cases :)
 

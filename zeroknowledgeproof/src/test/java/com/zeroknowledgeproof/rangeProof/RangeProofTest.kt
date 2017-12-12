@@ -1,4 +1,4 @@
-package com.zeroknowledgeproof.numberProof
+package com.zeroknowledgeproof.rangeProof
 
 import android.provider.Settings
 import com.zeroknowledgeproof.SecretOrderGroupGenerator
