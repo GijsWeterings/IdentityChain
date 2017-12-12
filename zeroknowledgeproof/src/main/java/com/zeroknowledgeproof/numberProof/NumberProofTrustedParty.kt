@@ -16,15 +16,12 @@ object NumberProofTrustedParty {
     fun proofValue (s: Int = 1800) : Boolean {
         var succeeds = true
 
-        if (debug) println("Hi.")
         val prover = NumberProofProver(N, s)
-        if (debug) println("We have a prover")
         val verifier = NumberProofVerifier(N)
-        if (debug) println("We have also a verifier")
         // Init done, now run the prover 100 times
         for (t in 1..10) {
             succeeds = succeeds && runProver(prover, verifier)
-            if (debug) if (succeeds) println("And ANOTHER success!")
+            if (debug) if (succeeds) println("Proof was a success")
         }
 
         return succeeds

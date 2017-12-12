@@ -21,12 +21,11 @@ class NumberProofVerifier(givenN: BigInteger) {
             println("challenge = " + challenge)
             println("N = " + N.toString(10))
         }
-        if (y == BigInteger.ZERO) return false;
+        if (y == BigInteger.ZERO)
+            throw ZeroKnowledgeException("Y is zero, number proof cannot be verified")
 
-        return if (challenge) {
-            y.times(y).mod(N) == x.times(publicKey).mod(N)
-        } else {
-            y.times(y).mod(N) == x
-        }
+        if ((y * y) % N != x * publicKey.pow(if (challenge) 1 else 0).mod(N))
+            throw ZeroKnowledgeException("Number proof verification failed")
+        return true
     }
 }

@@ -9,7 +9,7 @@ class RangeProofTest {
     @Test
     fun completeProcedure() {
         val tp = RangeProofTrustedParty
-        val res = tp.genRangeProof(19, 18, 100) // I am 19 years old.
+        val res = tp.rangeProofSetup(19, 18, 100) // I am 19 years old.
         assertTrue(res)
     }
 
