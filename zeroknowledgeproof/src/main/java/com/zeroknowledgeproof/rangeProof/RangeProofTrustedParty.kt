@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.math.BigInteger.ONE
 import java.math.BigInteger.ZERO
 import java.security.SecureRandom
+import kotlin.math.sqrt
 import kotlin.system.exitProcess
 
 
@@ -74,20 +75,20 @@ object RangeProofTrustedParty {
         /////////////////////////////////////////////
         /// Step 0: Create initial commitment
         val r = generateRandomInterval(ZERO, k2)
-        val c = g.modPow(toBigInt(m), N) * h.modPow(r, N)
+        val c = g.modPow(toBigInt(m), N).times(h.modPow(r, N)).mod(N)
         toPublish.c = c
         println(">STEP 0 COMPLETE")
 
         /// Step 1: calculate c1 and c2
-        val c1 = c * findCyclicInverse(g.pow(a - 1), N)
+        val c1 = c.times(findCyclicInverse(g.pow(a - 1), N)).mod(N)
         toPublish.c1 = c1
-        val c2 = g.pow(b+1) * findCyclicInverse(c, N)
+        val c2 = g.pow(b+1).times(findCyclicInverse(c, N)).mod(N)
         toPublish.c2 = c2
         println(">STEP 1 COMPLETE")
 
         // Step 2: Generate rPrime, calculate cPrime, publish it.
         val rPrime = generateRandomInterval(ZERO, k2)
-        val cPrime = c1.modPow(toBigInt(b - m + 1), N) * h.modPow(rPrime, N)
+        val cPrime = c1.modPow(toBigInt(b - m + 1), N).times(h.modPow(rPrime, N)).mod(N)
         proveTwoCommittedIntegersAreEqual()// LIAM, DO STUFF
         toPublish.cPrime = cPrime
         println(">STEP 2 COMPLETE")
@@ -97,7 +98,8 @@ object RangeProofTrustedParty {
         val rDPrime = generateRandomInterval(ZERO, k2)
         // Publicly give a proof that two integers are equal
 
-        val cDPrime = pow(cPrime, w * w).mod(N).times(h.modPow(rDPrime, N))
+        // This is a problem statement, because it takes impossibly long to perform cPrime^(w*w)
+        val cDPrime = cPrime.modPow(w*w, N).times(h.modPow(rDPrime, N))
         proveCommittedNumberIsSquare() // LIAM, DO STUFF
         //TODO Yield all results so far to the Verifier
         println(">STEP 3 COMPLETE")
@@ -122,11 +124,9 @@ object RangeProofTrustedParty {
         // Step 5: Generate s,t in Zk1 - {0} // By RangeProofVerifier
         val rpverifier = RangeProofVerifier(N)
 
-        val s = rpverifier.generateRandomInterval(ONE, k1)
-        val t = rpverifier.generateRandomInterval(ONE, k1)
+        val (s, t) = rpverifier.requestChallenge(k1)
 
         // Step 6: NumberProofProver publishes x, y, u, v
-
         toPublish.x = s*m1 + m2 + m3
         toPublish.y = m1 + t*m2 + m3
         toPublish.u = s*r1 + r2 + r3
@@ -134,6 +134,23 @@ object RangeProofTrustedParty {
 
         println("Verifier should check all results")
         // Step 7: NumberProofVerifier verifies ALL of these claims.
+
+        if (!c1.equals(c.divide(g.modPow(toBigInt(a - 1), N)).mod(N))) {
+            println("first")
+        } else if (!c2.equals(g.modPow(toBigInt(b + 1), N).divide(c).mod(N))) {
+            println("2")
+        } else if (!cDPrime.equals(c1Prime.times(c2Prime).times(c3Prime).mod(N))) {
+            println("3")
+        } else if (!pow(c1Prime, s).times(c2Prime).times(c3Prime).equals(g.mod(toPublish.x).times(pow(h, toPublish.u)).mod(N))) {
+            println("4")
+        } else if (!pow(c2Prime, t).times(c1Prime).times(c3Prime).equals(g.mod(toPublish.y).times(pow(h, toPublish.v)).mod(N))) {
+            println("5")
+        } else if (toPublish.x < ZERO) {
+            println("x zero")
+        } else if (toPublish.y < ZERO) {
+            println("y zero")
+        }
+
         return rpverifier.verify(toPublish)
     }
 
@@ -156,7 +173,7 @@ object RangeProofTrustedParty {
 
         do {
             m1 = generateRandomInterval(ONE, upperBound)
-            m4 = generateRandomInterval(ONE, upperBound)
+            m4 = generateRandomInterval(ONE, sqrt(upperBound))
         } while (upperBound - m4*m4 - m1 < ONE)
 
         m2 = upperBound - m4.pow(2) - m1
@@ -190,7 +207,7 @@ object RangeProofTrustedParty {
         } else if (res.modPow(p, p * q) == ZERO || res.modPow(q, p * q) == ZERO) { // Not a generator, EXPENSIVE CALCULATION
             genGenerator(n + 1)
         } else {
-            g // HOORAY WE'VE WON
+            res // HOORAY WE'VE WON
         }
     }
 
@@ -200,152 +217,12 @@ object RangeProofTrustedParty {
     }
 
 
-//
-//    fun NumberProofProver (m: Int, a: Int, b: Int) : Boolean {
-//        // Prove that boundedNumber is between lower and upper bound
-//        if ((m - a + 1)*(b - m + 1) <= 0) {
-//            throw IllegalArgumentException("Cannot generate proof, because this is just NOT TRUE")
-//        }
-//
-//
-//        val w = rand.nextInt(10000)
-//
-//        val theProof = toBigInt(w * w).times(toBigInt(m - a + 1)).times(toBigInt(b - m + 1))
-//
-//        val m4 = generateToSum(toBigInt(sqrt(theProof.toDouble()).toInt()))
-//        val m3 = m4.times(m4);
-//        val m2 = generateToSum(theProof.subtract(m3)) //Take a random int of interval [0, theProof-m3]
-//        val m1 = theProof.subtract(m3).subtract(m2)      // Now m1 + m2 + m3 = w^2 * (m-a+1) * (b-m+1)
-//
-////        var P: BigInteger
-////        var Q: BigInteger
-//        var p: BigInteger
-//        var q: BigInteger
-////        var PminOne: BigInteger
-////        var attempts = 0;
-////        do {
-////            P = BigInteger.probablePrime(2048, rand)
-////            attempts++
-////            if (attempts % 25 == 0) {
-////                println("Calculating P and p, now at " + attempts + " attempts.")
-////            }
-////            PminOne = P.subtract(ONE).divide(BigInteger.valueOf(2))
-////        } while (!PminOne.isProbablePrime(50) )
-//
-//        //var QPprimes = generateSafePrimes(2048, 1)
-//
-////        val P = QPprimes[0]
-////        val Q = QPprimes[1]
-//        val P = BigInteger("10884337314880555232019005600512485388635114928977749495197997511132444534784363420761844523524326951763781845571098166762818719135614858892829212280070629102254332916999805264285510188888598855891880720226108402203826465403996415246453666229849488467565977389939240636987630647810957722217092924924850583022260813143738261026077485734809492004779747492417357325821756269791278292986962899180971445135037905301057430172470769084970601366873772836422018159683586710345788686941021649183610200986497812455648197730536572177421713854416957767791850376100921811690177035025819326299687245445814727551484584402277783476019", 10)
-//        val Q = BigInteger("10437558790360158623790510859672926100811669989566014388872925454878207758905617190842580772849281472689600966498109393227200905424003699620742597321371403980549610681832319041825178497454344663116250096256559313673794425491983864544939134682788052849309592394789218470604209019089144699023578101534821440986883654031516961176249508522671578368340198855445235889464318568531239257730151412951428174660257640796266671461956359403488437210402505823621394910554213838114674109439472964459901970675384069890407061015988992907036108805829209974538359143677594199385526792563393291701665742990942212051595771814287939663839", 10)
-//        println(P.toString(10))
-//        println(Q.toString(10))
-//
-//        println(1)
-//
-////        do {
-////            Q = BigInteger.probablePrime(2048, rand)
-////            attempts++
-////            if (attempts % 25 == 0) {
-////                println("Calculating Q and q now at " + attempts + " attempts.")
-////            }
-////        } while (!Q.subtract(ONE).divide(BigInteger.valueOf(2)).isProbablePrime(50) || P.equals(Q))
-//
-//        val N = P.multiply(Q)
-//        println("We have an N")
-//
-//        val k1 = BigInteger(1024, rand)
-//        val k2 = BigInteger(160, rand)
-//
-//
-//        val (g,h) = findGenerators(findTwoPrimes(2048))
-//        println("We have generators")
-//
-//        val r = BigInteger(N.bitLength(), rand)
-//
-//        val c = g.modPow(toBigInt(m), N).times(h.modPow(r, N)).mod(N)
-//
-//        println("We have a c")
-//
-//        val c1 = c.divide(g.modPow(toBigInt(a-1), N)).mod(N) // c1 = c/(g^a-1) modN
-//        //TODO Maybe this should not be Integer division, but cyclic group division (groot crypto fun)
-//        val c2 = g.modPow(toBigInt(b+1), N).divide(c).mod(N)
-//        println("We have c1 and c2")
-//        val rPrime = BigInteger(N.bitLength(), rand)
-//
-//        val cPrime = c1.modPow(toBigInt(b - m + 1), N).times(h.modPow(rPrime, N)).mod(N)
-//        val rDPrime = BigInteger(N.bitLength(), rand)
-//
-//        val cDPrime = cPrime.modPow(toBigInt(w*w), N).times(h.modPow(rDPrime, N)).mod(N)
-//
-//        val publicProof = cPrime.toString(10) + "," + h.toString(10)
-//        print("The Public Proof is " + publicProof)
-//
-//        // Prove that the hidden number is a square with base (c', h)
-//        //TODO: implement, ING used a lot of classes for this
-//
-//        val rSum = toBigInt((w*w)*((b-m+1))).times(r) + rPrime + rDPrime
-//
-//        val r1 = BigInteger(160, rand)
-//        val r2 = BigInteger(160, rand)
-//        val r3 = rSum-r1-r2                     //r1 + r2 + r3 = rSum
-//
-//        val c1Prime = g.modPow(m1, N).times(h.modPow(r1,N)).mod(N)
-//        val c2Prime = g.modPow(m2, N).times(h.modPow(r2,N)).mod(N)
-//        val c3Prime = cDPrime.divide(c1Prime).times(c2Prime).mod(N)
-//
-//
-//        val x = s.times(m1).plus(m2 + m3)
-//        val y = m1.plus(m3).plus(t.times(m2))
-//        val u = s.times(r1).plus(r2 + r3)
-//        val v = r1.plus(r3).plus(t.times(r2))
-//
-//        //TODO: Publish x,y,u,v
-//
-//
-//        //verify
-////
-////        if(!c1.equals(c.divide(g.modPow(toBigInt(a-1), N)).mod(N)) ||
-////                !c2.equals(g.modPow(toBigInt(b+1), N).divide(c).mod(N)) ||
-////                !cDPrime.equals(c1Prime.times(c2Prime).times(c3Prime).mod(N)) ||
-////                !pow(c1Prime,s).times(c2Prime).times(c3Prime).equals(g.mod(x).times(pow(h,u)).mod(N)) ||
-////                !pow(c2Prime,t).times(c1Prime).times(c3Prime).equals(g.mod(y).times(pow(h,v)).mod(N)) ||
-////                x < ZERO ||
-////                y < ZERO){
-////            throw Exception("Verify gone wrong")
-////        }
-//
 //        //This structure makes debugging easier as you can set breakpoints on all the cases :)
-//        if(!c1.equals(c.divide(g.modPow(toBigInt(a-1), N)).mod(N))){
-//            println("first")
-//        } else if(!c2.equals(g.modPow(toBigInt(b+1), N).divide(c).mod(N))){
-//            println("2")
-//        }
-//        else if(!cDPrime.equals(c1Prime.times(c2Prime).times(c3Prime).mod(N))) {
-//            println("3")
-//        }
-//        else if(!pow(c1Prime,s).times(c2Prime).times(c3Prime).equals(g.mod(x).times(pow(h,u)).mod(N))) {
-//            println("4")
-//        }
-//        else if(!pow(c2Prime,t).times(c1Prime).times(c3Prime).equals(g.mod(y).times(pow(h,v)).mod(N))) {
-//            println("5")
-//        }
-//        else if(x < ZERO) {
-//            println("x zero")
-//        }
-//        else if(y < ZERO) {
-//            println("y zero")
-//        }
+
 //
 //
 //        return true;
 //    }
-//
-//    fun verifier(k1 : BigInteger) {
-//        s = generateInCyclicGroup(k1)
-//        t = generateInCyclicGroup(k1)
-//    }
-//
 //
 //    private fun generateInCyclicGroup(k : BigInteger) : BigInteger{
 //        var temp = BigInteger(k.bitLength(),rand)
@@ -393,6 +270,21 @@ object RangeProofTrustedParty {
 //        val m2 = remaining.subtract(m1)
 //        return arrayOf(m1, m2, m4)
 //    }
+}
+
+// From: https://stackoverflow.com/a/42205084
+fun sqrt(n: BigInteger): BigInteger {
+    var a = BigInteger.ONE
+    var b = n.shiftRight(5).add(BigInteger.valueOf(8))
+    while (b.compareTo(a) >= 0) {
+        val mid = a.add(b).shiftRight(1)
+        if (mid.multiply(mid).compareTo(n) > 0) {
+            b = mid.subtract(BigInteger.ONE)
+        } else {
+            a = mid.add(BigInteger.ONE)
+        }
+    }
+    return a.subtract(BigInteger.ONE)
 }
 
 fun toBigInt(i: Int) : BigInteger {
