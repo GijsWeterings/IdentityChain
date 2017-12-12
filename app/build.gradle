@@ -22,6 +22,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        pickFirst 'META-INF/INDEX.LIST'
+        pickFirst 'META-INF/io.netty.versions.properties'
+    }
 }
 
 
@@ -70,9 +75,11 @@ dependencies {
 
     //grpc
     // You need to build grpc-java to obtain these libraries below.
-    compile 'io.grpc:grpc-okhttp:1.8.0'
+//    compile 'io.grpc:grpc-okhttp:1.8.0'
     compile 'io.grpc:grpc-protobuf-lite:1.8.0'
     compile 'io.grpc:grpc-stub:1.8.0'
+    compile 'javax.annotation:javax.annotation-api:1.2'
+    compile 'io.grpc:grpc-netty:1.8.0'
 
 }
 repositories {

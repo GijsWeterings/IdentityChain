@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "Message.proto";
+
+package message;
+
+option java_package = "nl.tudelft.cs4160.identitychain.message";
+option java_outer_classname = "ChainService";
+
+message MetaBlock {
+    TrustChainBlock halfBlock = 1;
+    int32 metaData = 2;
+}
+
+message Empty {}
+
+service Chain {
+    rpc GetMetaBlock(Empty) returns (MetaBlock) {}
+}
