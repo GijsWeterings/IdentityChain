@@ -1,6 +1,8 @@
+apply plugin: 'com.google.protobuf'
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+
 
 android {
     compileSdkVersion 26
@@ -22,12 +24,38 @@ android {
     }
 }
 
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.4.0'
+    }
+    plugins {
+        javalite {
+            artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0"
+        }
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.8.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                javalite {}
+                grpc {
+                    // Options added to --grpc_out
+                    option 'lite'
+                }
+            }
+        }
+    }
+}
+
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile files('libs/protobuf-java-3.4.1.jar')
     compile 'com.android.support:appcompat-v7:26.1.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.madgag.spongycastle:core:1.58.0.0'
@@ -39,6 +67,13 @@ dependencies {
     //rx
     compile group: 'io.reactivex.rxjava2', name: 'rxkotlin', version: '2.2.0'
     compile group: 'io.reactivex.rxjava2', name: 'rxandroid', version: '2.0.1'
+
+    //grpc
+    // You need to build grpc-java to obtain these libraries below.
+    compile 'io.grpc:grpc-okhttp:1.8.0'
+    compile 'io.grpc:grpc-protobuf-lite:1.8.0'
+    compile 'io.grpc:grpc-stub:1.8.0'
+
 }
 repositories {
     mavenCentral()
