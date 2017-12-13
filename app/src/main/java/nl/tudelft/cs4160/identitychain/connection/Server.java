@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.identitychain.connection.network;
+package nl.tudelft.cs4160.identitychain.connection;
 
 
 import java.io.IOException;

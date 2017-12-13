@@ -12,9 +12,7 @@ import java.util.HashMap
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
-import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
-import nl.tudelft.cs4160.identitychain.main.MainActivity
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 
 import nl.tudelft.cs4160.identitychain.Peer.bytesToHex
@@ -30,12 +28,13 @@ import nl.tudelft.cs4160.identitychain.message.MessageProto.Message.newBuilder
 /**
  * Class that is responsible for the communication.
  */
-abstract class Communication(private val dbHelper: TrustChainDBHelper, private val keyPair: KeyPair, val listener: CommunicationListener) {
+class Communication(private val dbHelper: TrustChainDBHelper, private val keyPair: KeyPair, val listener: CommunicationListener) {
 
-    protected val peers: Map<String, ByteArray>
+    protected val peers: MutableMap<String, ByteArray>
 
     val myPublicKey: ByteArray
         get() = keyPair.public.encoded
+    private var server: Server? = null
 
 
     init {
@@ -88,24 +87,6 @@ abstract class Communication(private val dbHelper: TrustChainDBHelper, private v
         sendMessage(peer, message)
     }
 
-    /**
-     * Send either a crawl request of a block to a peer.
-     *
-     * @param peer    The peer
-     * @param message The message.
-     */
-    abstract fun sendMessage(peer: Peer, message: MessageProto.Message)
-
-    /**
-     * Start listening for messages.
-     */
-    abstract fun start()
-
-
-    /**
-     * Stop listening to messages
-     */
-    abstract fun stop()
 
     /**
      * Sign a half block and send block.
@@ -263,7 +244,7 @@ abstract class Communication(private val dbHelper: TrustChainDBHelper, private v
             peer.publicKey = block.publicKey.toByteArray()
 
             //make sure the correct port is set
-            peer.port = NetworkCommunication.DEFAULT_PORT
+            peer.port = Communication.DEFAULT_PORT
             this.synchronizedReceivedHalfBlock(peer, block)
         }
 
@@ -380,11 +361,34 @@ abstract class Communication(private val dbHelper: TrustChainDBHelper, private v
         return peers[identifier] ?: ByteArray(0)
     }
 
-    abstract fun addNewPublicKey(p: Peer)
+    fun addNewPublicKey(p: Peer) {
+        peers[p.ipAddress] = p.publicKey
+    }
+
+    fun sendMessage(peer: Peer, message: MessageProto.Message) {
+        val task = ClientTask(
+                peer.ipAddress,
+                peer.port,
+                message,
+                listener)
+        task.execute()
+    }
+
+    fun start() {
+        val server1 = Server(this, listener)
+        server1.start()
+        server = server1
+    }
+
+    fun stop() {
+        //TODO: make it stop listening
+    }
+
 
     companion object {
 
         private val TAG = Communication::class.java.name
+        val DEFAULT_PORT = 8080
 
 
         /**

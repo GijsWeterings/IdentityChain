@@ -22,7 +22,6 @@ import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.Communication
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
-import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -32,7 +31,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     private var communication: Communication? = null
-
+    val kp by lazy(this::initKeys)
 
     /**
      * Listener for the connection button.
@@ -81,7 +80,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     // check if a genesis block is present in database
     val isStartedFirstTime: Boolean
         get() {
-            val genesisBlock = dbHelper.getBlock(kp!!.public.encoded, GENESIS_SEQ)
+            val genesisBlock = dbHelper.getBlock(kp.public.encoded, GENESIS_SEQ)
 
             return genesisBlock == null
         }
@@ -104,16 +103,12 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
 
-
-        //create or load keys
-        initKeys()
-
         if (isStartedFirstTime) {
             val block = TrustChainBlock.createGenesisBlock(kp)
             dbHelper.insertInDB(block)
         }
 
-        communication = NetworkCommunication(dbHelper, kp, this)
+        communication = Communication(dbHelper, kp, this)
 
         connectionButton.setOnClickListener(connectionButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
@@ -133,12 +128,14 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
     }
 
-    private fun initKeys() {
-        kp = Key.loadKeys(applicationContext)
+    private fun initKeys(): KeyPair {
+        val kp = Key.loadKeys(applicationContext)
         if (kp == null) {
-            kp = Key.createAndSaveKeys(applicationContext)
+            val kp = Key.createAndSaveKeys(applicationContext)
             Log.i(TAG, "New keys created")
+            return kp
         }
+        return kp
     }
 
 
@@ -153,10 +150,5 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
     companion object {
         private val TAG = MainActivity::class.java.toString()
-
-        /**
-         * Key pair of user
-         */
-        internal var kp: KeyPair? = null
     }
 }
