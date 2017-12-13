@@ -22,47 +22,9 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
     val myPublicKey = keyPair.public.encoded
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<MessageProto.TrustChainBlock>) {
+        val validation = saveBlock(request) ?: return
         val peer = request.peer
         val block = request.block
-        Log.i(TAG, "Received half block from peer with IP: " + peer.hostname + ":" + peer.port +
-                " and public key: " + Peer.bytesToHex(peer.publicKey.toByteArray()))
-
-        val validation: ValidationResult
-        try {
-            validation = TrustChainBlock.validate(block, dbHelper)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return
-        }
-
-        Log.i(TAG, "Received block validation result " + validation.toString() + "("
-                + TrustChainBlock.toString(block) + ")")
-
-        if (validation.getStatus() === ValidationResult.ValidationStatus.INVALID) {
-            for (error in validation.getErrors()) {
-                Log.e(TAG, "Validation error: " + error)
-            }
-            return
-        } else {
-            dbHelper.insertInDB(block)
-        }
-
-        val pk = me.publicKey.toByteArray()
-        // check if addressed to me and if we did not sign it already, if so: do nothing.
-        if (block.linkSequenceNumber != TrustChainBlock.UNKNOWN_SEQ ||
-                !Arrays.equals(block.linkPublicKey.toByteArray(), pk) ||
-                null != dbHelper.getBlock(block.linkPublicKey.toByteArray(),
-                        block.linkSequenceNumber)) {
-            Log.e(TAG, "Received block not addressed to me or already signed by me.")
-            return
-        }
-
-        // determine if we should sign the block, if not: do nothing
-        if (!Communication.shouldSign(block)) {
-            Log.e(TAG, "Will not sign received block.")
-            return
-        }
-
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
         // the gap and delay the method until the gap is filled.
@@ -80,9 +42,62 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         }
     }
 
-    fun connectToPeer(peer: PeerItem): MutableIterator<MessageProto.TrustChainBlock> {
+    fun saveBlock(request: ChainService.PeerTrustChainBlock): ValidationResult? {
+        val peer = request.peer
+        val block = request.block
+        Log.i(TAG, "Received half block from peer with IP: " + peer.hostname + ":" + peer.port +
+                " and public key: " + Peer.bytesToHex(peer.publicKey.toByteArray()))
+
+        val validation: ValidationResult
+        try {
+            validation = TrustChainBlock.validate(block, dbHelper)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+
+        Log.i(TAG, "Received block validation result " + validation.toString() + "("
+                + TrustChainBlock.toString(block) + ")")
+
+        if (validation.getStatus() === ValidationResult.ValidationStatus.INVALID) {
+            for (error in validation.getErrors()) {
+                Log.e(TAG, "Validation error: " + error)
+            }
+            return null
+        } else {
+            dbHelper.insertInDB(block)
+        }
+
+        val pk = me.publicKey.toByteArray()
+        // check if addressed to me and if we did not sign it already, if so: do nothing.
+        if (block.linkSequenceNumber != TrustChainBlock.UNKNOWN_SEQ ||
+                !Arrays.equals(block.linkPublicKey.toByteArray(), pk) ||
+                null != dbHelper.getBlock(block.linkPublicKey.toByteArray(),
+                        block.linkSequenceNumber)) {
+            Log.e(TAG, "Received block not addressed to me or already signed by me.")
+            return null
+        }
+
+        // determine if we should sign the block, if not: do nothing
+        if (!Communication.shouldSign(block)) {
+            Log.e(TAG, "Will not sign received block.")
+            return null
+        }
+
+        return validation
+    }
+
+    fun connectToPeer(peer: PeerItem): List<ChainService.PeerTrustChainBlock> {
         val connectablePeer = ChainService.Peer.newBuilder().setHostname(peer.host).setPort(peer.port).build()
-        return sendCrawlRequest(connectablePeer, myPublicKey, -5)
+        val crawledBlocks = sendCrawlRequest(connectablePeer, myPublicKey, -5)
+
+        val bufferedCrawledBlocks = crawledBlocks.asSequence().toList()
+
+        for (crawledBlock in bufferedCrawledBlocks) {
+            saveBlock(crawledBlock)
+        }
+
+        return bufferedCrawledBlocks
     }
 
     fun signBlock(peer: ChainService.Peer, linkedBlock: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock? {
@@ -126,7 +141,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         return null
     }
 
-    fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): MutableIterator<MessageProto.TrustChainBlock> {
+    fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): MutableIterator<ChainService.PeerTrustChainBlock> {
         var sq = seqNum
         if (seqNum == 0) {
             sq = dbHelper.getBlock(publicKey,
@@ -149,7 +164,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         return registry.findStub(peer).recieveCrawlRequest(message)
     }
 
-    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<MessageProto.TrustChainBlock>) {
+    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
         var sq = crawlRequest.request.requestedSequenceNumber
         println("processing crawl request")
         Log.i(TAG, "Received crawl crawlRequest")
@@ -169,7 +184,8 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         val blockList = dbHelper.crawl(myPublicKey, sq)
 
         for (block in blockList) {
-            responseObserver.onNext(block)
+            val peerTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
+            responseObserver.onNext(peerTrustChainBlock)
         }
         responseObserver.onCompleted()
 

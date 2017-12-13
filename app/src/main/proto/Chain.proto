@@ -30,5 +30,5 @@ message PeerCrawlRequest {
 
 service Chain {
     rpc recieveHalfBlock(PeerTrustChainBlock) returns (TrustChainBlock);
-    rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream TrustChainBlock);
+    rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream PeerTrustChainBlock);
 }

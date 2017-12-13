@@ -21,17 +21,17 @@ class TrustChainMemoryStorage(kp: KeyPair) : TrustChainStorage {
     override fun getBlock(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock? = blocks.find((hasPubKey(pubkey) and hasSequenceNumber(seqNumber)))
 
 
-    override fun getLinkedBlock(block: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock {
+    override fun getLinkedBlock(block: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock? {
         val where = hasPubKey(block.linkPublicKey) and hasSequenceNumber(block.linkSequenceNumber) and hasLinkPubKey(block.publicKey) and hasLinkSequenceNumber(block.sequenceNumber)
-        return blocks.find(where)!!
+        return blocks.find(where)
     }
 
-    override fun getBlockBefore(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock {
-        return blocks.filter(hasPubKey(pubkey) and comesBefore(seqNumber)).maxBy { it.sequenceNumber }!!
+    override fun getBlockBefore(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock? {
+        return blocks.filter(hasPubKey(pubkey) and comesBefore(seqNumber)).maxBy { it.sequenceNumber }
     }
 
-    override fun getBlockAfter(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock {
-        return blocks.filter(hasPubKey(pubkey) and comesAfterStrictly(seqNumber)).minBy { it.sequenceNumber }!!
+    override fun getBlockAfter(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock? {
+        return blocks.filter(hasPubKey(pubkey) and comesAfterStrictly(seqNumber)).minBy { it.sequenceNumber }
     }
 
     override fun getLatestBlock(pubkey: ByteArray): MessageProto.TrustChainBlock? = getBlock(pubkey, getMaxSeqNum(pubkey))
