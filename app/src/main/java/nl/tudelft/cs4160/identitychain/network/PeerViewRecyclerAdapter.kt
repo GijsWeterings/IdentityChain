@@ -44,5 +44,8 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view), View.OnLon
 }
 
 data class PeerItem(val name: String, val host: String, val port: Int) {
+
+    fun withPort(port: Int) = PeerItem(name, host, port)
+
     fun asPeerMessage() = ChainService.Peer.newBuilder().setHostname(host).setPort(port).build()
 }

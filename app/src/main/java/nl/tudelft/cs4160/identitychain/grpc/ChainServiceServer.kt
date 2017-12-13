@@ -2,11 +2,13 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
+import io.grpc.Server
+import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
 import nl.tudelft.cs4160.identitychain.Peer
+import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
-import nl.tudelft.cs4160.identitychain.connection.Communication
 import nl.tudelft.cs4160.identitychain.database.TrustChainStorage
 import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
@@ -98,7 +100,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         }
 
         // determine if we should sign the block, if not: do nothing
-        if (!Communication.shouldSign(block)) {
+        if (!shouldSign(block)) {
             Log.e(TAG, "Will not sign received block.")
             return null
         }
@@ -259,6 +261,20 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             }
         } else {
             return sq
+        }
+    }
+
+    companion object {
+        fun shouldSign(block: MessageProto.TrustChainBlock): Boolean {
+            return true
+        }
+
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage): Pair<ChainServiceServer, Server> {
+            val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair)
+
+            val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
+            return Pair(chainServiceServer, grpcServer)
         }
     }
 }

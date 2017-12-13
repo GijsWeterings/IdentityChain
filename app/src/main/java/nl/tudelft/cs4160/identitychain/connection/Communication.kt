@@ -1,32 +1,23 @@
 package nl.tudelft.cs4160.identitychain.connection
 
 import android.util.Log
-
 import com.google.protobuf.ByteString
-
-import java.io.UnsupportedEncodingException
-import java.security.KeyPair
-import java.util.Arrays
-import java.util.HashMap
-
 import nl.tudelft.cs4160.identitychain.Peer
+import nl.tudelft.cs4160.identitychain.Peer.bytesToHex
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
+import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.*
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
+import nl.tudelft.cs4160.identitychain.block.ValidationResult.ValidationStatus.*
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.message.MessageProto
-
-import nl.tudelft.cs4160.identitychain.Peer.bytesToHex
-import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
-import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.UNKNOWN_SEQ
-import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.createBlock
-import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.sign
-import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.validate
-import nl.tudelft.cs4160.identitychain.block.ValidationResult.ValidationStatus.*
 import nl.tudelft.cs4160.identitychain.message.MessageProto.Message.newBuilder
+import java.io.UnsupportedEncodingException
+import java.security.KeyPair
+import java.util.*
 
 
 /**
- * Class that is responsible for the communication.
+ * Leaving this here so we can see what they were doing.
  */
 class Communication(private val dbHelper: TrustChainDBHelper, private val keyPair: KeyPair, val listener: CommunicationListener) {
 
@@ -34,7 +25,7 @@ class Communication(private val dbHelper: TrustChainDBHelper, private val keyPai
 
     val myPublicKey: ByteArray
         get() = keyPair.public.encoded
-    private var server: Server? = null
+//    private var server: Server? = null
 
     /**
      * Send a crawl request to the peer.
@@ -347,18 +338,18 @@ class Communication(private val dbHelper: TrustChainDBHelper, private val keyPai
     }
 
     fun sendMessage(peer: Peer, message: MessageProto.Message) {
-        val task = ClientTask(
-                peer.ipAddress,
-                peer.port,
-                message,
-                listener)
-        task.execute()
+//        val task = ClientTask(
+//                peer.ipAddress,
+//                peer.port,
+//                message,
+//                listener)
+//        task.execute()
     }
 
     fun start() {
-        val server1 = Server(this, listener)
-        server1.start()
-        server = server1
+//        val server1 = Server(this, listener)
+//        server1.start()
+//        server = server1
     }
 
     fun stop() {
