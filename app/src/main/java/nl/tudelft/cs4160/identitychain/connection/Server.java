@@ -69,39 +69,4 @@ class Server {
             }
         }
     }
-
-    private class SocketServerReplyThread extends Thread {
-        private Socket hostThreadSocket;
-        int cnt;
-
-        SocketServerReplyThread(Socket socket, int c) {
-            hostThreadSocket = socket;
-            cnt = c;
-        }
-
-        /**
-         * Replies to the client that sent a message to the server.
-         */
-        @Override
-        public void run() {
-            OutputStream outputStream;
-            String msgReply = "message #" + cnt + " received";
-            responseLog = "";
-
-            try {
-                outputStream = hostThreadSocket.getOutputStream();
-                PrintStream printStream = new PrintStream(outputStream);
-                printStream.print(msgReply);
-                printStream.close();
-
-                responseLog += "replied: " + msgReply + "\n";
-            } catch (IOException e) {
-                e.printStackTrace();
-                responseLog += "Something wrong! " + e.toString() + "\n";
-            } finally {
-                listener.updateLog("\n  Server: " + responseLog);
-            }
-        }
-
-    }
 }

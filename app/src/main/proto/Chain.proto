@@ -12,8 +12,23 @@ message MetaBlock {
     int32 metaData = 2;
 }
 
-message Empty {}
+message Peer {
+    string hostname = 1;
+    int32 port = 2;
+    bytes publicKey = 3;
+}
+
+message PeerTrustChainBlock {
+    Peer peer = 1;
+    TrustChainBlock block = 2;
+}
+
+message PeerCrawlRequest {
+    Peer peer = 1;
+    CrawlRequest request = 2;
+}
 
 service Chain {
-    rpc GetMetaBlock(Empty) returns (MetaBlock) {}
+    rpc recieveHalfBlock(PeerTrustChainBlock) returns (TrustChainBlock);
+    rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream TrustChainBlock);
 }

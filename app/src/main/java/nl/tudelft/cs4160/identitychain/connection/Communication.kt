@@ -30,17 +30,11 @@ import nl.tudelft.cs4160.identitychain.message.MessageProto.Message.newBuilder
  */
 class Communication(private val dbHelper: TrustChainDBHelper, private val keyPair: KeyPair, val listener: CommunicationListener) {
 
-    protected val peers: MutableMap<String, ByteArray>
+    protected val peers: MutableMap<String, ByteArray> = HashMap()
 
     val myPublicKey: ByteArray
         get() = keyPair.public.encoded
     private var server: Server? = null
-
-
-    init {
-        this.peers = HashMap()
-
-    }
 
     /**
      * Send a crawl request to the peer.
@@ -51,13 +45,8 @@ class Communication(private val dbHelper: TrustChainDBHelper, private val keyPai
     fun sendCrawlRequest(peer: Peer, publicKey: ByteArray, seqNum: Int) {
         var sq = seqNum
         if (seqNum == 0) {
-            val block = dbHelper.getBlock(publicKey,
-                    dbHelper.getMaxSeqNum(publicKey))
-            if (block != null) {
-                sq = block.sequenceNumber
-            } else {
-                sq = GENESIS_SEQ
-            }
+            sq = dbHelper.getBlock(publicKey,
+                    dbHelper.getMaxSeqNum(publicKey))?.sequenceNumber ?: GENESIS_SEQ
         }
 
         if (sq >= 0) {
@@ -98,12 +87,7 @@ class Communication(private val dbHelper: TrustChainDBHelper, private val keyPai
      *
      * Similar to signblock of https://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.pyhttps://github.com/qstokkink/py-ipv8/blob/master/ipv8/attestation/trustchain/community.py
      */
-    fun signBlock(peer: Peer, linkedBlock: MessageProto.TrustChainBlock?) {
-        // assert that the linked block is not null
-        if (linkedBlock == null) {
-            Log.e(TAG, "signBlock: Linked block is null.")
-            return
-        }
+    fun signBlock(peer: Peer, linkedBlock: MessageProto.TrustChainBlock) {
         // do nothing if linked block is not addressed to me
         if (!Arrays.equals(linkedBlock.linkPublicKey.toByteArray(), myPublicKey)) {
             Log.e(TAG, "signBlock: Linked block not addressed to me.")
