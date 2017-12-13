@@ -8,17 +8,19 @@ import java.security.SecureRandom
 class RangeProofTest {
     @Test
     fun completeProcedure() {
-        val tp = RangeProofTrustedParty
-        val res = tp.runInteractiveProver(19, 18, 100) // I am 19 years old.
-        assertTrue(res)
+        var attempts = 0
+        while (attempts++ < 50) {
+            val tp = RangeProofTrustedParty()
+            val res = tp.runInteractiveProver(19, 18, 100) // I am 19 years old.
+            assertTrue(res)
+        }
     }
 
     @Test
     fun testBezout () {
-        var attempt = 0;
-        while (attempt < 50) {
-            attempt++
-            val n = BigInteger(1024, 50,SecureRandom())
+        var attempts = 0
+        while (attempts++ < 50) {
+            val n = BigInteger(1024, 1, SecureRandom())
             val a = BigInteger(1024, SecureRandom())
             val b = calculateInverse(a, n)
             assertTrue(b.times(a).mod(n) == BigInteger.ONE)

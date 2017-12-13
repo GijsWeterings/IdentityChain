@@ -1,19 +1,17 @@
 package com.zeroknowledgeproof.rangeProof
 
-import android.util.Log
 import java.math.BigInteger
 import java.math.BigInteger.ZERO
 import java.security.SecureRandom
 
 // An implementation based on An Efficient Range Proof Scheme by Kun Peng and Feng Bao
 
-object RangeProofTrustedParty {
-    private val TAG = "RangeProofTrustedParty"
+class RangeProofTrustedParty {
     /**
      * Generate a proof that a given number (m) is in a range [a-b]
      */
 
-    val rand = SecureRandom() // Cryptographically secure PRNG
+    private val rand = SecureRandom() // Cryptographically secure PRNG
 
     // Secret prime factors of the large composite N
     private val p = BigInteger(1024, 256, rand) // SECRET
@@ -24,13 +22,14 @@ object RangeProofTrustedParty {
         val p = RangeProofProver(m = m, a = a, b = b, N = N)
         val v = RangeProofVerifier(N = N, low = a, up = b)
 
-        val (setupPublic, setupPrivate) = p.rangeSetup() // Step 1-4
+        val (setupPublic, setupPrivate) = p.rangeSetup(this) // Step 1-4
         // The verifier should interactiveVerify everything possible at this point
         var success = v.setupVerify(setupPublic)
         if (!success) {
             println("Could not verify setup parameters")
-            return false;
+            return false
         }
+        println("")
         for (i in 1..10) {
             // First generate a new challenge
             val challenge = v.requestChallenge(setupPublic.k1) // Step 5
@@ -39,9 +38,10 @@ object RangeProofTrustedParty {
 
             if (!success) {
                 println("Could not verify interactive prover " + i)
-                return false;
+                return false
             }
         }
+        println("Great success in constructing a rangeproof")
         return true
     }
 

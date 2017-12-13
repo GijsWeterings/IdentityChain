@@ -3,6 +3,7 @@ package com.zeroknowledgeproof.rangeProof
 import java.math.BigInteger
 import java.math.BigInteger.ONE
 import java.math.BigInteger.ZERO
+import java.security.SecureRandom
 
 typealias Composite = BigInteger
 typealias Base = BigInteger
@@ -123,7 +124,7 @@ fun toBigInt(i: Int) = BigInteger.valueOf(i.toLong())
 fun generateRandomInterval(lowerBound: BigInteger, upperBound: BigInteger): BigInteger {
     var res: BigInteger
     do {
-        res = BigInteger(upperBound.bitLength(), RangeProofTrustedParty.rand)
+        res = BigInteger(upperBound.bitLength(), SecureRandom())
     } while (res > upperBound || res == ZERO || res < lowerBound)
     return res
 }

@@ -24,8 +24,10 @@ class NumberProofVerifier(givenN: BigInteger) {
         if (y == BigInteger.ZERO)
             throw ZeroKnowledgeException("Y is zero, number proof cannot be verified")
 
-        if ((y * y) % N != x * publicKey.pow(if (challenge) 1 else 0).mod(N))
-            throw ZeroKnowledgeException("Number proof verification failed")
+        if ((y * y).mod(N) != (x * publicKey.pow(if (challenge) 1 else 0)).mod(N)) {
+            println("Number proof verification failed")
+            return false
+        }
         return true
     }
 }

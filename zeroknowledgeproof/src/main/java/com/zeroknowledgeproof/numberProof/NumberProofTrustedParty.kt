@@ -3,7 +3,7 @@ package com.zeroknowledgeproof.numberProof
 import java.math.BigInteger
 import java.security.SecureRandom
 
-object NumberProofTrustedParty {
+class NumberProofTrustedParty {
 
     private val debug = false
 
@@ -16,10 +16,10 @@ object NumberProofTrustedParty {
     fun proofValue (s: Int = 1800) : Boolean {
         var succeeds = true
 
-        val prover = NumberProofProver(N, s)
+        val prover = NumberProofProver(this, N, s)
         val verifier = NumberProofVerifier(N)
         // Init done, now run the prover 100 times
-        for (t in 1..10) {
+        for (t in 1..100) {
             succeeds = succeeds && runProver(prover, verifier)
             if (debug) if (succeeds) println("Proof was a success")
         }

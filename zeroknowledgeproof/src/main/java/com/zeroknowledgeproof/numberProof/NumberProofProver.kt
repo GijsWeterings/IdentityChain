@@ -5,12 +5,10 @@ import java.math.BigInteger.ONE
 import java.math.BigInteger.ZERO
 import java.security.SecureRandom
 
-class NumberProofProver(givenN: BigInteger, givenS: Int? = null) {
+class NumberProofProver(val that: NumberProofTrustedParty, val N: BigInteger, val givenS: Int?= null) {
 
     private val debug = false
-    private val N = givenN
     private val rand = SecureRandom()
-    private val tp = NumberProofTrustedParty;
 
     private val s: Int = givenS ?: initS()
     private var challenges: MutableMap<BigInteger, BigInteger> = mutableMapOf()
@@ -19,9 +17,8 @@ class NumberProofProver(givenN: BigInteger, givenS: Int? = null) {
         var toTry: Int;
         do {
             toTry = rand.nextInt()
-        } while (!tp.isCoPrime(toTry) || N - toBigInt(toTry) > BigInteger.ZERO)
+        } while (!that.isCoPrime(toTry) || N - toBigInt(toTry) > BigInteger.ZERO)
         // We need an integer that is both coprime to N (as in not divisible by p or q) and smaller than N
-
         return toTry
     }
 
