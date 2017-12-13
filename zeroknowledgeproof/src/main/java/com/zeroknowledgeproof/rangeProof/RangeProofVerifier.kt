@@ -22,26 +22,11 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
     fun interactiveVerify(setupRes: setupResult, answer: interactiveResult): Boolean {
         // Step 7: Verifier verifies ALL of these claims.
         // First extract all structs
-
-        val c = setupRes.c
-        val c1 = setupRes.c1
-        val c2 = setupRes.c2
-        val sameCommitment = setupRes.sameCommitment
-        val cPrime = setupRes.cPrime
-        val cDPrime = setupRes.cDPrime
-        val cDPrimeIsSquare = setupRes.cDPrimeIsSquare
-        val c1Prime = setupRes.c1Prime
-        val c2Prime = setupRes.c2Prime
-        val c3Prime = setupRes.c3Prime
-        val m3IsSquare = setupRes.m3IsSquare
-        val g = setupRes.g
-        val h = setupRes.h
+        val (c, c1, c2, sameCommitment, cPrime, cDPrime, cDPrimeIsSquare, c1Prime, c2Prime, c3Prime,
+                m3IsSquare, g, h, k1) = setupRes
 
         val (s, t) = answer.challenge
-        val x = answer.x
-        val y = answer.y
-        val u = answer.u
-        val v = answer.v
+        val (x, y, u, v) = answer
 
         // Check that nothing is zero
 
@@ -58,8 +43,8 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
                 // First check whether the three commitments in the original setupResult are equal
                 verifyTwoCommitments(sameCommitment) &&
-                verifyIsSquare(cDPrimeIsSquare) &&
-                verifyIsSquare(m3IsSquare) &&
+                verifyTwoCommitments(cDPrimeIsSquare) &&
+                verifyTwoCommitments(m3IsSquare) &&
 
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
 
@@ -90,10 +75,6 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
                 }
     }
 
-    private fun verifyIsSquare(m3IsSquare: commitVerification): Boolean {
-        return true
-    }
-
     private fun verifyTwoCommitments(ver: commitVerification): Boolean {
         Security.insertProviderAt(org.spongycastle.jce.provider.BouncyCastleProvider(), 1)
         val messageDigest = MessageDigest.getInstance("SHA-512")
@@ -108,23 +89,21 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
         return true
     }
 
+    /**
+     * The proof that the committed number is a square only holds if the base of the second number
+     * is actually the outcome of the first number.
+     */
+    private fun verifyIsSquare(ver: commitVerification) : Boolean {
+        return ver.g2 == ver.E &&
+                verifyTwoCommitments(ver)
+    }
+
     fun setupVerify(setupRes: setupResult): Boolean {
-        val c = setupRes.c
-        val c1 = setupRes.c1
-        val c2 = setupRes.c2
-        val sameCommitment = setupRes.sameCommitment
-        val cPrime = setupRes.cPrime
-        val cDPrime = setupRes.cDPrime
-        val cDPrimeIsSquare = setupRes.cDPrimeIsSquare
-        val c1Prime = setupRes.c1Prime
-        val c2Prime = setupRes.c2Prime
-        val c3Prime = setupRes.c3Prime
-        val m3IsSquare = setupRes.m3IsSquare
-        val g = setupRes.g
-        val h = setupRes.h
+        val (c, c1, c2, sameCommitment, cPrime, cDPrime, cDPrimeIsSquare, c1Prime, c2Prime, c3Prime,
+                m3IsSquare, g, h, k1) = setupRes
 
         // First verify that none of the given BigIntegers is zero
-        var isNonZero = c != ZERO &&
+        val isNonZero = c != ZERO &&
                 c1 != ZERO &&
                 c2 != ZERO &&
                 cPrime != ZERO &&
@@ -142,8 +121,8 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
         // Then verify the three public commitments
         val commitmentVerified =
                 verifyTwoCommitments(sameCommitment) &&
-                verifyIsSquare(cDPrimeIsSquare) &&
-                verifyIsSquare(m3IsSquare)
+                verifyTwoCommitments(cDPrimeIsSquare) &&
+                verifyTwoCommitments(m3IsSquare)
         if (!commitmentVerified)
             println("One of the public commitments could not be verified")
 

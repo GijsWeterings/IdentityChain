@@ -8,41 +8,42 @@ import java.security.SecureRandom
 typealias Composite = BigInteger
 typealias Base = BigInteger
 typealias Commitment = BigInteger
+typealias IsSquare = commitVerification
 
 val TWO = BigInteger.valueOf(2)!!
 
 data class setupPrivateResult(
         var m1: BigInteger = ZERO,
-        var m2: BigInteger = ZERO,
-        var m3: BigInteger = ZERO,
-        var r1: BigInteger = ZERO,
-        var r2: BigInteger = ZERO,
-        var r3: BigInteger = ZERO
+        val m2: BigInteger = ZERO,
+        val m3: BigInteger = ZERO,
+        val r1: BigInteger = ZERO,
+        val r2: BigInteger = ZERO,
+        val r3: BigInteger = ZERO
 )
 
 data class setupResult(
-        var c: BigInteger = ZERO,
-        var c1: BigInteger = ZERO,
-        var c2: BigInteger = ZERO,
-        var sameCommitment: commitVerification = commitVerification(),
-        var cPrime: BigInteger = ZERO,
-        var cDPrime: BigInteger = ZERO,
-        var cDPrimeIsSquare: commitVerification = commitVerification(),
-        var c1Prime: BigInteger = ZERO,
-        var c2Prime: BigInteger = ZERO,
-        var c3Prime: BigInteger = ZERO,
-        var m3IsSquare: commitVerification = commitVerification(),
-        var g: Base = ZERO,
-        var h: Base = ZERO,
-        var k1: BigInteger = ZERO
+        val c: BigInteger = ZERO,
+        val c1: BigInteger = ZERO,
+        val c2: BigInteger = ZERO,
+        val sameCommitment: commitVerification = commitVerification(),
+        val cPrime: BigInteger = ZERO,
+        val cDPrime: BigInteger = ZERO,
+        val cDPrimeIsSquare: commitVerification = commitVerification(),
+        val c1Prime: BigInteger = ZERO,
+        val c2Prime: BigInteger = ZERO,
+        val c3Prime: BigInteger = ZERO,
+        val m3IsSquare: commitVerification = commitVerification(),
+        val g: Base = ZERO,
+        val h: Base = ZERO,
+        val k1: BigInteger = ZERO
 )
 
 data class interactiveResult(
-        var x: BigInteger = ZERO,
-        var y: BigInteger = ZERO,
-        var u: BigInteger = ZERO,
-        var v: BigInteger = ZERO,
-        var challenge: Challenge = Challenge()
+        val x: BigInteger = ZERO,
+        val y: BigInteger = ZERO,
+        val u: BigInteger = ZERO,
+        val v: BigInteger = ZERO,
+        val challenge: Challenge = Challenge()
 )
 
 data class Challenge (
@@ -51,16 +52,16 @@ data class Challenge (
 )
 
 data class commitVerification(
-        var g1: Base = ZERO,
-        var g2: Base = ZERO,
-        var h1: Base = ZERO,
-        var h2: Base = ZERO,
-        var E: Commitment = ZERO,
-        var F: Commitment = ZERO,
-        var c: BigInteger = ZERO,
-        var D: BigInteger = ZERO,
-        var D1: BigInteger = ZERO,
-        var D2: BigInteger = ZERO
+        val g1: Base = ZERO,
+        val g2: Base = ZERO,
+        val h1: Base = ZERO,
+        val h2: Base = ZERO,
+        val E: Commitment = ZERO,
+        val F: Commitment = ZERO,
+        val c: BigInteger = ZERO,
+        val D: BigInteger = ZERO,
+        val D1: BigInteger = ZERO,
+        val D2: BigInteger = ZERO
 )
 
 /**

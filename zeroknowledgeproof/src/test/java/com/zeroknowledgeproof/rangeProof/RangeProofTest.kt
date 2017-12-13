@@ -9,10 +9,11 @@ class RangeProofTest {
     @Test
     fun completeProcedure() {
         var attempts = 0
-        while (attempts++ < 50) {
+        while (attempts++ < 3) {
             val tp = RangeProofTrustedParty()
             val res = tp.runInteractiveProver(19, 18, 100) // I am 19 years old.
             assertTrue(res)
+            println("Great success in interactive rangeproof")
         }
     }
 
