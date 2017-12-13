@@ -10,7 +10,16 @@ typealias Commitment = BigInteger
 
 val TWO = BigInteger.valueOf(2)!!
 
-data class rangeProofResult(
+data class setupPrivateResult(
+        var m1: BigInteger = ZERO,
+        var m2: BigInteger = ZERO,
+        var m3: BigInteger = ZERO,
+        var r1: BigInteger = ZERO,
+        var r2: BigInteger = ZERO,
+        var r3: BigInteger = ZERO
+)
+
+data class setupResult(
         var c: BigInteger = ZERO,
         var c1: BigInteger = ZERO,
         var c2: BigInteger = ZERO,
@@ -23,38 +32,48 @@ data class rangeProofResult(
         var c3Prime: BigInteger = ZERO,
         var m3IsSquare: commitVerification = commitVerification(),
         var g: Base = ZERO,
-        var h: Base = ZERO
+        var h: Base = ZERO,
+        var k1: BigInteger = ZERO
 )
 
-data class interactiveProof(
-        var rpr: rangeProofResult = rangeProofResult(),
+data class interactiveResult(
         var x: BigInteger = ZERO,
         var y: BigInteger = ZERO,
         var u: BigInteger = ZERO,
         var v: BigInteger = ZERO,
-        var s: BigInteger = ZERO,
-        var t: BigInteger = ZERO
+        var challenge: Challenge = Challenge()
+)
+
+data class Challenge (
+        val s: BigInteger = ZERO,
+        val t: BigInteger = ZERO
 )
 
 data class commitVerification(
-        var g1: BigInteger = ZERO,
-        var g2: BigInteger = ZERO,
-        var h1: BigInteger = ZERO,
-        var h2: BigInteger = ZERO,
-        var E: BigInteger = ZERO,
-        var F: BigInteger = ZERO,
+        var g1: Base = ZERO,
+        var g2: Base = ZERO,
+        var h1: Base = ZERO,
+        var h2: Base = ZERO,
+        var E: Commitment = ZERO,
+        var F: Commitment = ZERO,
         var c: BigInteger = ZERO,
         var D: BigInteger = ZERO,
         var D1: BigInteger = ZERO,
         var D2: BigInteger = ZERO
 )
 
-fun calculateInverse(a: BigInteger, b: BigInteger): BigInteger {
+/**
+ * Calculate the inverse of [a] in mod [modN]
+ * @param a BigInteger
+ * @param modN BigInteger
+ * @return 1/[a] mod [modN]
+ */
+fun calculateInverse(a: BigInteger, modN: BigInteger): BigInteger {
     var s = ZERO
     var sp = ONE
     var t = ONE
     var tp = ZERO
-    var r = b
+    var r = modN
     var rp = a
     var temp: BigInteger
     var q: BigInteger
