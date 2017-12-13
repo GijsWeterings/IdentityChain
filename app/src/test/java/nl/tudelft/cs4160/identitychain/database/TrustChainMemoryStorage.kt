@@ -1,16 +1,24 @@
 package nl.tudelft.cs4160.identitychain.database
 
 import com.google.protobuf.ByteString
+import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.message.MessageProto
+import java.security.KeyPair
 
-class TrustChainMemoryStorage : TrustChainStorage {
+class TrustChainMemoryStorage(kp: KeyPair) : TrustChainStorage {
     val blocks: MutableList<MessageProto.TrustChainBlock> = ArrayList()
+
+    init {
+        val genesisBlock = TrustChainBlock.createGenesisBlock(kp)
+        insertInDB(genesisBlock)
+    }
+
     override fun insertInDB(block: MessageProto.TrustChainBlock): Long {
         blocks.add(block)
         return 0L
     }
 
-    override fun getBlock(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock = blocks.find((hasPubKey(pubkey) and hasSequenceNumber(seqNumber)))!!
+    override fun getBlock(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock? = blocks.find((hasPubKey(pubkey) and hasSequenceNumber(seqNumber)))
 
 
     override fun getLinkedBlock(block: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock {
@@ -23,16 +31,16 @@ class TrustChainMemoryStorage : TrustChainStorage {
     }
 
     override fun getBlockAfter(pubkey: ByteArray, seqNumber: Int): MessageProto.TrustChainBlock {
-        return blocks.filter(hasPubKey(pubkey) and comesAfter(seqNumber)).minBy { it.sequenceNumber }!!
+        return blocks.filter(hasPubKey(pubkey) and comesAfterStrictly(seqNumber)).minBy { it.sequenceNumber }!!
     }
 
-    override fun getLatestBlock(pubkey: ByteArray): MessageProto.TrustChainBlock = getBlock(pubkey, getMaxSeqNum(pubkey))
+    override fun getLatestBlock(pubkey: ByteArray): MessageProto.TrustChainBlock? = getBlock(pubkey, getMaxSeqNum(pubkey))
 
     override fun getMaxSeqNum(pubkey: ByteArray): Int = blocks.filter(hasPubKey(pubkey)).map { it.sequenceNumber }.max() ?: -1
 
     override fun getAllBlocks(): MutableList<MessageProto.TrustChainBlock> = blocks
 
-    override fun crawl(pubKey: ByteArray, seqNum: Int, limit: Int): MutableList<MessageProto.TrustChainBlock> = blocks.filter(hasPubKey(pubKey) and comesAfter(seqNum)).subList(0, 100).toMutableList()
+    override fun crawl(pubKey: ByteArray, seqNum: Int, limit: Int): MutableList<MessageProto.TrustChainBlock> = blocks.filter(hasPubKey(pubKey) and comesAfter(seqNum)).take(100).toMutableList()
 
     override fun crawl(pubKey: ByteArray, seqNum: Int): MutableList<MessageProto.TrustChainBlock> = crawl(pubKey, seqNum, 100)
 
@@ -46,5 +54,6 @@ class TrustChainMemoryStorage : TrustChainStorage {
     fun hasLinkSequenceNumber(seqNumber: Int): (MessageProto.TrustChainBlock) -> Boolean = { it.linkSequenceNumber == seqNumber }
 
     fun comesBefore(seqNumber: Int): (MessageProto.TrustChainBlock) -> Boolean = { it.sequenceNumber < seqNumber }
-    fun comesAfter(seqNumber: Int): (MessageProto.TrustChainBlock) -> Boolean = { it.sequenceNumber > seqNumber }
+    fun comesAfterStrictly(seqNumber: Int): (MessageProto.TrustChainBlock) -> Boolean = { it.sequenceNumber > seqNumber }
+    fun comesAfter(seqNumber: Int): (MessageProto.TrustChainBlock) -> Boolean = { it.sequenceNumber >= seqNumber }
 }

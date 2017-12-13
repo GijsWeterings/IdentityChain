@@ -315,10 +315,7 @@ class Communication(private val dbHelper: TrustChainDBHelper, private val keyPai
      * @param peer - The peer that we want to connect to
      */
     fun connectToPeer(peer: Peer, payload: String) {
-        var identifier = peer.ipAddress
-        if (peer.device != null) {
-            identifier = peer.device.address
-        }
+        val identifier = peer.ipAddress
         Log.e(TAG, "Identifier: " + identifier)
         if (hasPublicKey(identifier)) {
             listener.updateLog("Sending half block to known peer")

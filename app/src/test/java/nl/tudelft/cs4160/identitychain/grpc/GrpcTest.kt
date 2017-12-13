@@ -1,34 +1,38 @@
 package nl.tudelft.cs4160.identitychain.grpc
 
-import com.google.common.util.concurrent.ListenableFuture
-import io.grpc.ManagedChannelBuilder
 import io.grpc.ServerBuilder
-import io.grpc.stub.StreamObserver
-import nl.tudelft.cs4160.identitychain.message.ChainGrpc
+import nl.tudelft.cs4160.identitychain.Util.Key
+import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
+import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
 import nl.tudelft.cs4160.identitychain.message.ChainService
+import nl.tudelft.cs4160.identitychain.network.PeerItem
+import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.concurrent.TimeUnit
 
 class GrpcTest {
 
     @Test
-    fun testClientAndServer() {
-        //start server
-        ServerBuilder.forPort(8080).addService(ChainServiceServer()).build().start()
+    fun initial_crawl_request_should_return_genesis_block() {
+        val testServerOne = peerAndServerForPort(8080)
+        val testServerTwo = peerAndServerForPort(8081)
 
-        val mChannel = ManagedChannelBuilder.forAddress("localhost", 8080).usePlaintext(true).build();
-        val stub = ChainGrpc.newFutureStub(mChannel)
+        val serverTwoPeerItem = PeerItem("peerBoy", "localhost", 8081)
+        val blocks = testServerOne.server.connectToPeer(serverTwoPeerItem).asSequence().toList()
 
-        val empty = ChainService.Empty.newBuilder().build()
-        val metaBlock: ListenableFuture<ChainService.MetaBlock> = stub.getMetaBlock(empty)
-
-        println(metaBlock.get(2, TimeUnit.SECONDS))
+        assertEquals(1, blocks.size)
+        assertEquals(GENESIS_SEQ, blocks.first().sequenceNumber)
     }
-    class ChainServiceServer : ChainGrpc.ChainImplBase() {
-        override fun getMetaBlock(request: ChainService.Empty, responseObserver: StreamObserver<ChainService.MetaBlock>) {
-            val metaBlock = ChainService.MetaBlock.newBuilder().setMetaData(42).build()
-            responseObserver.onNext(metaBlock)
-            responseObserver.onCompleted()
-        }
+
+    fun peerAndServerForPort(port: Int): TestServer {
+        val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).build()
+        val keyPair = Key.createNewKeyPair()
+        val testStorage = TrustChainMemoryStorage(keyPair)
+        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair)
+
+        ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
+        return TestServer(chainServiceServer, me, testStorage)
     }
+
+    data class TestServer(val server: ChainServiceServer, val peer: ChainService.Peer, val storage: TrustChainMemoryStorage)
+
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import nl.tudelft.cs4160.identitychain.message.MessageProto;
 
-interface TrustChainStorage {
+public interface TrustChainStorage {
     long insertInDB(MessageProto.TrustChainBlock block);
 
     MessageProto.TrustChainBlock getBlock(byte[] pubkey, int seqNumber);

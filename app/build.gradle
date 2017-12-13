@@ -27,6 +27,9 @@ android {
         pickFirst 'META-INF/INDEX.LIST'
         pickFirst 'META-INF/io.netty.versions.properties'
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 
