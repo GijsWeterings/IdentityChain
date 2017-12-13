@@ -15,7 +15,7 @@ import java.util.List;
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock;
 import nl.tudelft.cs4160.identitychain.message.MessageProto;
 
-public class TrustChainDBHelper extends SQLiteOpenHelper {
+public class TrustChainDBHelper extends SQLiteOpenHelper implements TrustChainStorage {
     public static final int DATABASE_VERSION = 1;
     public static final String DATABASE_NAME = "TrustChain.db";
 
@@ -67,6 +67,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @return A long depicting the primary key value of the newly inserted row of the database.
      *          returns -1 as an error indicator.
      */
+    @Override
     public long insertInDB(MessageProto.TrustChainBlock block) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -88,6 +89,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param seqNumber - Int value of the sequence number of the block to be retrieved
      * @return The latest block in the database or null if something went wrong
      */
+    @Override
     public MessageProto.TrustChainBlock getBlock(byte[] pubkey, int seqNumber) {
         SQLiteDatabase dbReadable = getReadableDatabase();
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
@@ -119,6 +121,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param block - The block for which to get the linked block
      * @return The linked block
      */
+    @Override
     public MessageProto.TrustChainBlock getLinkedBlock(MessageProto.TrustChainBlock block) {
         SQLiteDatabase dbReadable = getReadableDatabase();
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
@@ -158,6 +161,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param seqNumber - Sequence number of block of which to find the previous block in the chain
      * @return The previous TrustChainBlock in the chain
      */
+    @Override
     public MessageProto.TrustChainBlock getBlockBefore(byte[] pubkey, int seqNumber){
         SQLiteDatabase dbReadable = getReadableDatabase();
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
@@ -193,6 +197,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param seqNumber - Sequence number of block of which to find the previous block in the chain
      * @return The next TrustChainBlock in the chain
      */
+    @Override
     public MessageProto.TrustChainBlock getBlockAfter(byte[] pubkey, int seqNumber){
         SQLiteDatabase dbReadable = getReadableDatabase();
         String whereClause = TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " = ? AND " +
@@ -225,6 +230,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param pubkey - public key for which to search for blocks
      * @return the latest block in the database associated with the given public key
      */
+    @Override
     public MessageProto.TrustChainBlock getLatestBlock(byte[] pubkey) {
         return getBlock(pubkey,getMaxSeqNum(pubkey));
     }
@@ -234,6 +240,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param pubkey - public key for which to search for blocks
      * @return the maximum sequence number found
      */
+    @Override
     public int getMaxSeqNum(byte[] pubkey) {
         SQLiteDatabase dbReadable = getReadableDatabase();
         int res = -1;
@@ -264,6 +271,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * Retrieves all the blocks inserted in the database.
      * @return a List of all blocks
      */
+    @Override
     public List<MessageProto.TrustChainBlock> getAllBlocks() {
         SQLiteDatabase db = getReadableDatabase();
 
@@ -296,6 +304,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
      * @param limit - the limit of the amount of blocks to return
      * @return list of blocks
      */
+    @Override
     public List<MessageProto.TrustChainBlock> crawl(byte[] pubKey, int seqNum, int limit) throws Exception {
         if(limit > 100) {
             throw new Exception("Limit is too high, don't fetch too much.");
@@ -330,6 +339,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper {
     }
 
     // uses the default limit of 100
+    @Override
     public List<MessageProto.TrustChainBlock> crawl(byte[] pubKey, int seqNum) {
         List<MessageProto.TrustChainBlock> blockList = new ArrayList<>();
         try {
