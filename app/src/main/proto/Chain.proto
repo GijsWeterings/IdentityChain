@@ -28,7 +28,22 @@ message PeerCrawlRequest {
     CrawlRequest request = 2;
 }
 
+message CrawlResponse {
+    Peer peer = 1;
+    repeated TrustChainBlock block = 2;
+}
+
+message Empty {
+
+}
+
+message Key {
+    bytes publicKey = 1;
+}
+
 service Chain {
-    rpc recieveHalfBlock(PeerTrustChainBlock) returns (TrustChainBlock);
+    rpc recieveHalfBlock(PeerTrustChainBlock) returns (PeerTrustChainBlock);
     rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream PeerTrustChainBlock);
+    rpc getPublicKey(Empty) returns (Key);
+    rpc sendLatestBlocks(CrawlResponse) returns (Key);
 }
