@@ -19,7 +19,7 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
             Challenge(s, t)
     }
 
-    fun interactiveVerify(setupRes: setupResult, answer: interactiveResult): Boolean {
+    fun interactiveVerify(setupRes: SetupPublicResult, answer: InteractivePublicResult): Boolean {
         // Step 7: Verifier verifies ALL of these claims.
         // First extract all structs
         val (c, c1, c2, sameCommitment, cPrime, cDPrime, cDPrimeIsSquare, c1Prime, c2Prime, c3Prime,
@@ -48,34 +48,40 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
 
-                if (c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N)) {
-                    println("c1 = c/g^(a-1) mod N failed")
-                    false
-
-                } else if (c2.mod(N) != g.modPow(toBigInt(up + 1), N).times(calculateInverse(c, N)).mod(N)) {
-                    println("c2 = g^(b+1)/c mod N failed")
-                    false
-                } else if (cDPrime.mod(N) != c1Prime.times(c2Prime).times(c3Prime).mod(N)) {
-                    println("c''= c1'c2'c3' mod N failed")
-                    false
-                } else if (c1Prime.modPow(s, N).times(c2Prime).times(c3Prime).mod(N) != g.modPow(x, N).times(h.modPow(u, N)).mod(N)) {
-                    println("c1'^s*c2'*c3' = g^x*h^u mod N failed")
-                    false
-                } else if (c1Prime.times(c2Prime.modPow(t, N)).times(c3Prime).mod(N) != g.modPow(y, N).times(h.modPow(v, N)).mod(N)) {
-                    println("c1'*c2'^t*c3' = g^y*h^v mod N failed")
-                    false
-                } else if (x <= ZERO) {
-                    println("x > 0 failed")
-                    false
-                } else if (y <= ZERO) {
-                    println("y > 0 failed")
-                    false
-                } else {
-                    true // Return true;
+                when {
+                    c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N) -> {
+                        println("c1 = c/g^(a-1) mod N failed")
+                        false
+                    }
+                    c2.mod(N) != g.modPow(toBigInt(up + 1), N).times(calculateInverse(c, N)).mod(N) -> {
+                        println("c2 = g^(b+1)/c mod N failed")
+                        false
+                    }
+                    cDPrime.mod(N) != c1Prime.times(c2Prime).times(c3Prime).mod(N) -> {
+                        println("c''= c1'c2'c3' mod N failed")
+                        false
+                    }
+                    c1Prime.modPow(s, N).times(c2Prime).times(c3Prime).mod(N) != g.modPow(x, N).times(h.modPow(u, N)).mod(N) -> {
+                        println("c1'^s*c2'*c3' = g^x*h^u mod N failed")
+                        false
+                    }
+                    c1Prime.times(c2Prime.modPow(t, N)).times(c3Prime).mod(N) != g.modPow(y, N).times(h.modPow(v, N)).mod(N) -> {
+                        println("c1'*c2'^t*c3' = g^y*h^v mod N failed")
+                        false
+                    }
+                    x <= ZERO -> {
+                        println("x > 0 failed")
+                        false
+                    }
+                    y <= ZERO -> {
+                        println("y > 0 failed")
+                        false
+                    }
+                    else -> true // Return true;
                 }
     }
 
-    private fun verifyTwoCommitments(ver: commitVerification): Boolean {
+    private fun verifyTwoCommitments(ver: CommittedIntegerProof): Boolean {
         Security.insertProviderAt(org.spongycastle.jce.provider.BouncyCastleProvider(), 1)
         val messageDigest = MessageDigest.getInstance("SHA-512")
 
@@ -93,12 +99,12 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
      * The proof that the committed number is a square only holds if the base of the second number
      * is actually the outcome of the first number.
      */
-    private fun verifyIsSquare(ver: commitVerification) : Boolean {
+    private fun verifyIsSquare(ver: IsSquare) : Boolean {
         return ver.g2 == ver.E &&
                 verifyTwoCommitments(ver)
     }
 
-    fun setupVerify(setupRes: setupResult): Boolean {
+    fun setupVerify(setupRes: SetupPublicResult): Boolean {
         val (c, c1, c2, sameCommitment, cPrime, cDPrime, cDPrimeIsSquare, c1Prime, c2Prime, c3Prime,
                 m3IsSquare, g, h, k1) = setupRes
 
@@ -112,7 +118,8 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
                 c2Prime != ZERO &&
                 c3Prime != ZERO &&
                 g != ZERO &&
-                h != ZERO
+                h != ZERO &&
+                k1 != ZERO
 
         if (!isNonZero) {
             println("Some values are zero. That can't happen.")

@@ -8,11 +8,11 @@ import java.security.SecureRandom
 typealias Composite = BigInteger
 typealias Base = BigInteger
 typealias Commitment = BigInteger
-typealias IsSquare = commitVerification
+typealias IsSquare = CommittedIntegerProof
 
-val TWO = BigInteger.valueOf(2)!!
+val TWO : BigInteger = BigInteger.valueOf(2)
 
-data class setupPrivateResult(
+data class SetupPrivateResult(
         var m1: BigInteger = ZERO,
         val m2: BigInteger = ZERO,
         val m3: BigInteger = ZERO,
@@ -21,24 +21,24 @@ data class setupPrivateResult(
         val r3: BigInteger = ZERO
 )
 
-data class setupResult(
+data class SetupPublicResult(
         val c: BigInteger = ZERO,
         val c1: BigInteger = ZERO,
         val c2: BigInteger = ZERO,
-        val sameCommitment: commitVerification = commitVerification(),
+        val sameCommitment: CommittedIntegerProof = CommittedIntegerProof(),
         val cPrime: BigInteger = ZERO,
         val cDPrime: BigInteger = ZERO,
-        val cDPrimeIsSquare: commitVerification = commitVerification(),
+        val cDPrimeIsSquare: IsSquare = IsSquare(),
         val c1Prime: BigInteger = ZERO,
         val c2Prime: BigInteger = ZERO,
         val c3Prime: BigInteger = ZERO,
-        val m3IsSquare: commitVerification = commitVerification(),
+        val m3IsSquare: IsSquare = IsSquare(),
         val g: Base = ZERO,
         val h: Base = ZERO,
         val k1: BigInteger = ZERO
 )
 
-data class interactiveResult(
+data class InteractivePublicResult(
         val x: BigInteger = ZERO,
         val y: BigInteger = ZERO,
         val u: BigInteger = ZERO,
@@ -51,7 +51,7 @@ data class Challenge (
         val t: BigInteger = ZERO
 )
 
-data class commitVerification(
+data class CommittedIntegerProof(
         val g1: Base = ZERO,
         val g2: Base = ZERO,
         val h1: Base = ZERO,
@@ -123,9 +123,12 @@ fun toBigInt(i: Int) = BigInteger.valueOf(i.toLong())
  * @return BigInteger, uniformly distributed between the two bounds, not equal to zero.
  */
 fun generateRandomInterval(lowerBound: BigInteger, upperBound: BigInteger): BigInteger {
+    if (upperBound <= lowerBound) {
+        throw IllegalArgumentException("This is an invalid interval")
+    }
     var res: BigInteger
     do {
-        res = BigInteger(upperBound.bitLength(), SecureRandom())
+        res = BigInteger((upperBound-lowerBound).bitLength(), SecureRandom()) + lowerBound
     } while (res > upperBound || res == ZERO || res < lowerBound)
     return res
 }
