@@ -23,15 +23,13 @@ class RangeProofTrustedParty {
         val v = RangeProofVerifier(N = N, low = a, up = b)
         val (setupPublic, setupPrivate) = p.rangeSetup(this) // Step 1-4
         // The verifier should interactiveVerify everything possible at this point
-        println("a")
         var success = v.setupVerify(setupPublic)
-        println("b")
         if (!success) {
             println("Could not verify setup parameters")
             return false
         }
         println("Successfully generated setup parameters")
-        for (i in 1..10) {
+        for (i in 1..100) {
             println("Generating new interactive challenge")
             // First generate a new challenge
             val challenge = v.requestChallenge(setupPublic.k1) // Step 5

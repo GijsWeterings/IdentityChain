@@ -154,8 +154,6 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
         val F =  g2.modPow(committedNum, N).times(h2.modPow(r2, N)).mod(N)
 
         if (E != y1 || F != y2) {
-            println(E.toString(10))
-            println(y1.toString(10))
             throw ZeroKnowledgeException("The two committments could not could be correctly constructed")
         }
 
@@ -169,7 +167,7 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
 
         val r3 = r1 - (r2 * x)
         if (E != F.modPow(x, N).times(h.modPow(r3, N)).mod(N))
-            println("ERRORR:")
+            throw ZeroKnowledgeException("The prove commited number is square could not be correctly constructed")
         return proveTwoCommittedIntegersAreEqual(committedNum = x, r1 = r2, r2 = r3, g1 = g,
                 h1 = h, g2 = F, h2 = h, y1 = F, y2 = E)
     }
