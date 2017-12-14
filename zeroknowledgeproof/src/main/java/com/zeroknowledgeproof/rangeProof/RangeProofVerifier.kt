@@ -121,16 +121,16 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
         // Then verify the three public commitments
         val commitmentVerified =
                 verifyTwoCommitments(sameCommitment) &&
-                verifyTwoCommitments(cDPrimeIsSquare) &&
-                verifyTwoCommitments(m3IsSquare)
+                        verifyTwoCommitments(cDPrimeIsSquare) &&
+                        verifyTwoCommitments(m3IsSquare)
         if (!commitmentVerified)
             println("One of the public commitments could not be verified")
 
         // Lastly, we can verify three equations
         val eqVerified =
                 c1.mod(N) == (c * calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N) &&
-                c2.mod(N) == (g.modPow(toBigInt(up + 1), N) * calculateInverse(c, N)).mod(N) &&
-                cDPrime.mod(N) == c1Prime.times(c2Prime).times(c3Prime).mod(N)
+                        c2.mod(N) == (g.modPow(toBigInt(up + 1), N) * calculateInverse(c, N)).mod(N) &&
+                        cDPrime.mod(N) == c1Prime.times(c2Prime).times(c3Prime).mod(N)
         if (!eqVerified) {
             println("Could not verify one of the equations")
         }
