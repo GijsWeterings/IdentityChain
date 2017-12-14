@@ -85,7 +85,7 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
         val c1Prime = (g.modPow(m1, N) * h.modPow(r1, N)).mod(N)
         val c2Prime = (g.modPow(m2, N) * h.modPow(r2, N)).mod(N)
         val c3Prime = (cDPrime * calculateInverse(c1Prime * c2Prime, N)).mod(N)
-        val m3IsSquare = proveCommittedNumberIsSquare(m4, r3, g, h, cDPrime)
+        val m3IsSquare = proveCommittedNumberIsSquare(m4, r3, g, h, c3Prime)
 
         println(">STEP 4 FINISHED")
 
@@ -150,8 +150,8 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
         val D1 = eta1 + c * r1
         val D2 = eta2 + c * r2
 
-        val E = (g1.modPow(committedNum, N).times(h1.modPow(r1, N))).mod(N)
-        val F = (g2.modPow(committedNum, N).times(h2.modPow(r2, N))).mod(N)
+        val E =  g1.modPow(committedNum, N).times(h1.modPow(r1, N)).mod(N)
+        val F =  g2.modPow(committedNum, N).times(h2.modPow(r2, N)).mod(N)
 
         if (E != y1 || F != y2) {
             println(E.toString(10))
@@ -165,11 +165,11 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
     fun proveCommittedNumberIsSquare(x: BigInteger, r1: BigInteger, g: Base, h: Base, E: Commitment) : IsSquare {
         val n = BigInteger(1024, rand)
         val r2 = generateRandomInterval(-(TWO.pow(s1)) * n + ONE,TWO.pow(s1) * n - ONE )
-        val F: Commitment = (g.modPow(x, N) * h.modPow(r2, N)).mod(N)
+        val F: Commitment = (g.modPow(x, N).times(h.modPow(r2, N))).mod(N)
+
         val r3 = r1 - (r2 * x)
         if (E != F.modPow(x, N).times(h.modPow(r3, N)).mod(N))
             println("ERRORR:")
-
         return proveTwoCommittedIntegersAreEqual(committedNum = x, r1 = r2, r2 = r3, g1 = g,
                 h1 = h, g2 = F, h2 = h, y1 = F, y2 = E)
     }

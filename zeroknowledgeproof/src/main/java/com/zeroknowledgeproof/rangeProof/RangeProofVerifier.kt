@@ -43,8 +43,8 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
                 // First check whether the three commitments in the original setupResult are equal
                 verifyTwoCommitments(sameCommitment) &&
-                verifyTwoCommitments(cDPrimeIsSquare) &&
-                verifyTwoCommitments(m3IsSquare) &&
+                verifyIsSquare(cDPrimeIsSquare) &&
+                verifyIsSquare(m3IsSquare) &&
 
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
 
