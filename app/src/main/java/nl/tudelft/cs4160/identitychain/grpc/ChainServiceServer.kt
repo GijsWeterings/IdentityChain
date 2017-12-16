@@ -2,6 +2,10 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
+import com.zeroknowledgeproof.rangeProof.RangeProofProver
+import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
+import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
+import com.zeroknowledgeproof.rangeProof.SetupPublicResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
@@ -13,6 +17,7 @@ import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
+import java.math.BigInteger
 import java.security.KeyPair
 import java.util.*
 
@@ -39,7 +44,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             responseObserver.onError(GapInChainException())
         } else {
             val signBlock = signBlock(peer, block)
-            val returnTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(signBlock).build()
+            val returnTrustChainBlock = addPeerToBlock(signBlock)
             responseObserver.onNext(returnTrustChainBlock)
             responseObserver.onCompleted()
         }
@@ -51,6 +56,42 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
     override fun getPublicKey(request: ChainService.Empty, responseObserver: StreamObserver<ChainService.Key>) {
         responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
+    }
+
+    override fun createAgeAttestation(request: ChainService.PeerAgeAttestationRequest, responseObserver: StreamObserver<ChainService.PeerAttestationResponse>) {
+        val (setupPublicResult, setupPrivateResult) = RangeProofTrustedParty().generateProof(request.age, 18, 150)
+        val requestor = request.requestor
+        val attestationBlock = ageAttestationHalfBlock(setupPublicResult, requestor.publicKey.toByteArray()).let(this::addPeerToBlock)
+
+        if (attestationBlock != null) {
+            val completeBlock = registry.findStub(requestor).recieveHalfBlock(attestationBlock)
+            saveBlock(completeBlock)
+            // block creation done return private parameters
+            responseObserver.onNext(asPeerAttestationReponse(setupPrivateResult))
+            responseObserver.onCompleted()
+        } else {
+            responseObserver.onError(AttestationCreationException())
+        }
+    }
+
+    fun asPeerAttestationReponse(setupPrivateResult: SetupPrivateResult): ChainService.PeerAttestationResponse {
+        val (m1, m2, m3, r1, r2, r3) = setupPrivateResult
+        return ChainService.PeerAttestationResponse.newBuilder()
+                .setM1(m1.asByteString())
+                .setM2(m2.asByteString())
+                .setM3(m3.asByteString())
+                .setR1(r1.asByteString())
+                .setR2(r2.asByteString())
+                .setR3(r3.asByteString())
+                .build()
+    }
+
+    fun BigInteger.asByteString(): ByteString = ByteString.copyFrom(this.toByteArray())
+
+    class AttestationCreationException : Exception()
+
+    fun ageAttestationHalfBlock(publicResult: SetupPublicResult, peerKey: ByteArray): MessageProto.TrustChainBlock? {
+        return createNewBlock(publicResult.toString().toByteArray(charset("UTF-8")), peerKey)
     }
 
     private fun createPublicKey() =
@@ -244,13 +285,16 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         val blockList = dbHelper.crawl(myPublicKey, sq)
 
         for (block in blockList) {
-            val peerTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
+            val peerTrustChainBlock = addPeerToBlock(block)
             responseObserver.onNext(peerTrustChainBlock)
         }
         responseObserver.onCompleted()
 
         Log.i(TAG, "Sent " + blockList.size + " blocks")
     }
+
+    private fun addPeerToBlock(block: MessageProto.TrustChainBlock?) =
+            ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
 
     private fun sequenceNumberForCrawl(sq: Int): Int {
         if (sq < 0) {

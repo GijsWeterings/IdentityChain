@@ -3,7 +3,6 @@ package nl.tudelft.cs4160.identitychain.main
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -98,6 +97,8 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         init(serviceFactory)
 
         serviceFactory.initializeDiscoveryServer()
+
+//        createAttestation.setOnClickListener { server. }
     }
 
     private fun initVariables() {

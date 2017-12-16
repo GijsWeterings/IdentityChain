@@ -37,6 +37,23 @@ message Empty {
 
 }
 
+
+message PeerAgeAttestationRequest {
+    Peer requestor = 1;
+    int32 age = 2;
+}
+
+message PeerAttestationResponse {
+    //all of these are big ints but need to be serialized as byte arrays
+    bytes m1 = 1;
+    bytes m2 = 2;
+    bytes m3 = 3;
+    bytes r1 = 4;
+    bytes r2 = 5;
+    bytes r3 = 6;
+}
+
+
 message Key {
     bytes publicKey = 1;
 }
@@ -46,4 +63,5 @@ service Chain {
     rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream PeerTrustChainBlock);
     rpc getPublicKey(Empty) returns (Key);
     rpc sendLatestBlocks(CrawlResponse) returns (Key);
+    rpc createAgeAttestation(PeerAgeAttestationRequest) returns (PeerAttestationResponse);
 }

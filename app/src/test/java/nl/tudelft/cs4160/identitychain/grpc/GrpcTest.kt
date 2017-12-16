@@ -39,6 +39,16 @@ class GrpcTest {
         assertEquals(4, testServerTwo.storage.blocks.size)
     }
 
+    @Test
+    fun create_attestion() {
+        initial_crawl_request_should_return_genesis_block()
+        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setAge(30).setRequestor(testServerOne.peer).build()
+        val stuffies = testServerOne.server.registry.findStub(serverTwoPeerItem.asPeerMessage()).createAgeAttestation(request)
+
+        println(testServerOne.storage.blocks[3])
+
+    }
+
     fun peerAndServerForPort(port: Int): TestServer {
         val keyPair = Key.createNewKeyPair()
         val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
