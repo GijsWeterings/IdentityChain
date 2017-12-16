@@ -44,6 +44,9 @@ protobuf {
         grpc {
             artifact = 'io.grpc:protoc-gen-grpc-java:1.8.0'
         }
+        rxgrpc {
+            artifact = "com.salesforce.servicelibs:rxgrpc:0.7.2:jdk8@jar"
+        }
     }
     generateProtoTasks {
         all().each { task ->
@@ -53,6 +56,7 @@ protobuf {
                     // Options added to --grpc_out
                     option 'lite'
                 }
+                rxgrpc {}
             }
         }
     }
