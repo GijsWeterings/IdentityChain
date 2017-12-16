@@ -36,7 +36,20 @@ data class SetupPublicResult(
         val g: Base,
         val h: Base,
         val k1: BigInteger
-)
+) {
+    fun nonAreZero(): Boolean {
+        return c != ZERO &&
+                c1 != ZERO &&
+                c2 != ZERO &&
+                cPrime != ZERO &&
+                cDPrime != ZERO &&
+                c1Prime != ZERO &&
+                c2Prime != ZERO &&
+                c3Prime != ZERO &&
+                g != ZERO &&
+                h != ZERO
+    }
+}
 
 data class InteractivePublicResult(
         val x: BigInteger,

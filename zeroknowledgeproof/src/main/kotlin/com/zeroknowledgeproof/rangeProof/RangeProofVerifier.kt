@@ -7,8 +7,6 @@ import java.security.MessageDigest
 import java.security.Security
 
 class RangeProofVerifier(private val N: BigInteger, private val low: Int, private val up: Int) {
-    private val TAG = "RangeProofVerifier"
-
     fun requestChallenge(bound: BigInteger): Challenge {
         // Step 5: Generate s,t in Zk1 - {0}
         val s = generateRandomInterval(ONE, bound)
@@ -30,16 +28,7 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
         // Check that nothing is zero
 
-        return c != ZERO &&
-                c1 != ZERO &&
-                c2 != ZERO &&
-                cPrime != ZERO &&
-                cDPrime != ZERO &&
-                c1Prime != ZERO &&
-                c2Prime != ZERO &&
-                c3Prime != ZERO &&
-                g != ZERO &&
-                h != ZERO &&
+        return setupRes.nonAreZero() &&
 
                 // First check whether the three commitments in the original setupResult are equal
                 verifyTwoCommitments(sameCommitment) &&
@@ -47,7 +36,6 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
                 verifyIsSquare(m3IsSquare) &&
 
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
-
                 when {
                     c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N) -> {
                         println("c1 = c/g^(a-1) mod N failed")
