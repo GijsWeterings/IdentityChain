@@ -6,7 +6,6 @@ import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
 import nl.tudelft.cs4160.identitychain.Peer
-import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
 import nl.tudelft.cs4160.identitychain.database.TrustChainStorage
@@ -37,6 +36,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             Log.e(TAG, "Request block could not be validated sufficiently, requested crawler. " + validation.toString())
             // send a crawl request, requesting the last 5 blocks before the received halfblock (if available) of the peer
             sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5))
+            responseObserver.onError(GapInChainException())
         } else {
             val signBlock = signBlock(peer, block)
             val returnTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(signBlock).build()
@@ -45,13 +45,15 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         }
     }
 
+    class GapInChainException : Exception()
+
 
     override fun getPublicKey(request: ChainService.Empty, responseObserver: StreamObserver<ChainService.Key>) {
-        responseObserver.onNext(createPrivateKey())
+        responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
     }
 
-    private fun createPrivateKey() =
+    private fun createPublicKey() =
             ChainService.Key.newBuilder().setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
 
     override fun sendLatestBlocks(request: ChainService.CrawlResponse, responseObserver: StreamObserver<ChainService.Key>) {
@@ -59,7 +61,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             saveBlock(request.peer, trustChainBlock)
         }
 
-        responseObserver.onNext(createPrivateKey())
+        responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
     }
 
