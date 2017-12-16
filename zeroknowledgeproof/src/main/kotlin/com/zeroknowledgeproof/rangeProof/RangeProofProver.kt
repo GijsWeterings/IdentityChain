@@ -35,7 +35,6 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
         //Init
 
         // Generate security parameters
-//        val k1 = BigInteger(2048, rand)
         val k2 = BigInteger(160, rand)
 
         // To generate a generator of order N, we need access to p and q.
