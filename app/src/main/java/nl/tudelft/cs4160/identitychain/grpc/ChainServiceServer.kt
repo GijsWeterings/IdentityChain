@@ -2,13 +2,13 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
-import com.zeroknowledgeproof.rangeProof.RangeProofProver
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
 import com.zeroknowledgeproof.rangeProof.SetupPublicResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
+import io.reactivex.Single
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
@@ -22,10 +22,13 @@ import java.security.KeyPair
 import java.util.*
 
 class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.Peer,
-                         val keyPair: KeyPair, val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
+                         val keyPair: KeyPair,
+                         val uiPrompt: Single<Boolean>,
+                         val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
 
     val myPublicKey = keyPair.public.encoded
+
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
         val validation = saveBlock(request) ?: return
@@ -61,17 +64,32 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
     override fun createAgeAttestation(request: ChainService.PeerAgeAttestationRequest, responseObserver: StreamObserver<ChainService.PeerAttestationResponse>) {
         val (setupPublicResult, setupPrivateResult) = RangeProofTrustedParty().generateProof(request.age, 18, 150)
         val requestor = request.requestor
-        val attestationBlock = ageAttestationHalfBlock(setupPublicResult, requestor.publicKey.toByteArray()).let(this::addPeerToBlock)
 
-        if (attestationBlock != null) {
-            val completeBlock = registry.findStub(requestor).recieveHalfBlock(attestationBlock)
-            saveBlock(completeBlock)
-            // block creation done return private parameters
-            responseObserver.onNext(asPeerAttestationReponse(setupPrivateResult))
-            responseObserver.onCompleted()
-        } else {
-            responseObserver.onError(AttestationCreationException())
+
+        uiPrompt.subscribe { accepted ->
+            if (accepted) {
+                val attestationBlock = ageAttestationHalfBlock(setupPublicResult, requestor.publicKey.toByteArray()).let(this::addPeerToBlock)
+
+                if (attestationBlock != null) {
+                    val completeBlock = registry.findStub(requestor).recieveHalfBlock(attestationBlock)
+                    saveBlock(completeBlock)
+                    // block creation done return private parameters
+                    responseObserver.onNext(asPeerAttestationReponse(setupPrivateResult))
+                    responseObserver.onCompleted()
+                } else {
+                    responseObserver.onError(AttestationCreationException())
+                }
+            } else {
+                responseObserver.onError(AttestationCreationException())
+            }
+
         }
+    }
+
+    fun sendAgeAttestationRequest(age: Int, peerItem: PeerItem): ChainService.PeerAttestationResponse {
+        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setRequestor(me).setAge(age).build()
+
+        return registry.findStub(peerItem.asPeerMessage()).createAgeAttestation(request)
     }
 
     fun asPeerAttestationReponse(setupPrivateResult: SetupPrivateResult): ChainService.PeerAttestationResponse {
@@ -242,7 +260,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if (validation != null && validation.getStatus() !== ValidationResult.ValidationStatus.PARTIAL_NEXT && validation.getStatus() !== ValidationResult.ValidationStatus.VALID) {
+        if (validation.getStatus() !== ValidationResult.ValidationStatus.PARTIAL_NEXT && validation.getStatus() !== ValidationResult.ValidationStatus.VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString())
         } else {
@@ -297,16 +315,16 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
 
     private fun sequenceNumberForCrawl(sq: Int): Int {
-        if (sq < 0) {
+        return if (sq < 0) {
             val lastBlock = dbHelper.getLatestBlock(myPublicKey)
 
             if (lastBlock != null) {
-                return Math.max(TrustChainBlock.GENESIS_SEQ, lastBlock.sequenceNumber + sq + 1)
+                Math.max(TrustChainBlock.GENESIS_SEQ, lastBlock.sequenceNumber + sq + 1)
             } else {
-                return TrustChainBlock.GENESIS_SEQ
+                TrustChainBlock.GENESIS_SEQ
             }
         } else {
-            return sq
+            sq
         }
     }
 
@@ -315,9 +333,9 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             return true
         }
 
-        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage): Pair<ChainServiceServer, Server> {
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: Single<Boolean>): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)

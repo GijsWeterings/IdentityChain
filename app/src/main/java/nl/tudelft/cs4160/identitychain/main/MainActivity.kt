@@ -1,7 +1,9 @@
 package nl.tudelft.cs4160.identitychain.main
 
 import android.app.ActivityManager
+import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +14,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.Peer
@@ -23,6 +26,7 @@ import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
+import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
@@ -98,7 +102,11 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         serviceFactory.initializeDiscoveryServer()
 
-//        createAttestation.setOnClickListener { server. }
+        createAttestation.setOnClickListener {
+            val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
+            val peeritem = adapter.getItem(0).withPort(8080)
+            server.sendAgeAttestationRequest(20,  peeritem)
+        }
     }
 
     private fun initVariables() {
@@ -129,9 +137,30 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         //start listening for messages
         requireNotNull(localIPAddress, { "error could not find local IP" })
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper)
+
+        val alertSingle: Single<Boolean> = attestationPrompt()
+
+
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, alertSingle)
         this.server = server
 
+    }
+
+    private fun attestationPrompt(): Single<Boolean> {
+        val fuckyiou = Single.create<Boolean> { source ->
+            AlertDialog.Builder(this).setMessage("attest for some cool dude")
+                    .setPositiveButton("yes", object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface?, which: Int) {
+                            source.onSuccess(true)
+                        }
+                    })
+                    .setNegativeButton("no", object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface?, which: Int) {
+                            source.onSuccess(false)
+                        }
+                    }).show()
+        }
+        return fuckyiou.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     private fun initKeys(): KeyPair {
