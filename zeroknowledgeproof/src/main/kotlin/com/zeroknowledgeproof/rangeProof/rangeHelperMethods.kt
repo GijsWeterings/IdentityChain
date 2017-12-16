@@ -19,7 +19,24 @@ data class SetupPrivateResult(
         val r1: BigInteger,
         val r2: BigInteger,
         val r3: BigInteger
-)
+) {
+    fun answerUniqueChallenge(challenge: Challenge): InteractivePublicResult {
+        // Step 5: Generate s,t in Zk1 - {0} //
+        // Already generated and passed to us
+
+        val s = challenge.s
+        val t = challenge.t
+
+        // Step 6: NumberProofProver publishes x, y, u, v
+        val x = s * m1 + m2 + m3
+        val y = m1 + t * m2 + m3
+
+        val u = s * r1 + r2 + r3
+        val v = r1 + t * r2 + r3
+
+        return InteractivePublicResult(x = x, y = y, u = u, v = v, challenge = challenge)
+    }
+}
 
 data class SetupPublicResult(
         val c: BigInteger,

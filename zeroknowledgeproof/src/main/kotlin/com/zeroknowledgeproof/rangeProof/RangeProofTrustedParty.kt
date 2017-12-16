@@ -33,7 +33,7 @@ class RangeProofTrustedParty {
             println("Generating new interactive challenge")
             // First generate a new challenge
             val challenge = v.requestChallenge(setupPublic.k1) // Step 5
-            val interactiveAnswer = p.answerUniqueChallenge(setupPrivate, challenge) // Step 6
+            val interactiveAnswer = setupPrivate.answerUniqueChallenge(challenge) // Step 6
             success = v.interactiveVerify(setupPublic, interactiveAnswer)
 
             if (!success) {

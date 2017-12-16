@@ -31,7 +31,6 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
             throw ZeroKnowledgeException("Cannot generate a false proof without factoring large " +
                     "integers \nPlease come back when you can factor large integers.")
         }
-
         /////////////////////////////////////////////
         //Init
 
@@ -99,27 +98,6 @@ class RangeProofProver (private val m: Int, val a: Int, val b: Int, val N: Compo
         // Save the private parameters, that the verifier should NOT obtain
         val privRes = SetupPrivateResult(m1 = m1, m2 = m2, m3 = m3, r1 = r1, r2 = r2, r3 = r3)
         return Pair(pubRes, privRes)
-    }
-
-    fun answerUniqueChallenge(privSetup: SetupPrivateResult, challenge: Challenge): InteractivePublicResult {
-        // Take values from relative structs
-        // private values
-        val (m1, m2, m3, r1, r2, r3) = privSetup
-
-        // Step 5: Generate s,t in Zk1 - {0} //
-        // Already generated and passed to us
-
-        val s = challenge.s
-        val t = challenge.t
-
-        // Step 6: NumberProofProver publishes x, y, u, v
-        val x = s * m1 + m2 + m3
-        val y = m1 + t * m2 + m3
-
-        val u = s * r1 + r2 + r3
-        val v = r1 + t * r2 + r3
-
-        return InteractivePublicResult(x = x, y = y, u = u, v = v, challenge = challenge)
     }
 
     fun proveTwoCommittedIntegersAreEqual(committedNum: BigInteger, r1: BigInteger, r2: BigInteger,
