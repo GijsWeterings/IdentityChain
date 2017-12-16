@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import nl.tudelft.cs4160.identitychain.R
 import kotlinx.android.synthetic.main.peer_view.view.*
+import nl.tudelft.cs4160.identitychain.message.ChainService
 
 class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
     val peers: MutableList<PeerItem> = ArrayList()
@@ -42,4 +43,9 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view), View.OnLon
     }
 }
 
-data class PeerItem(val name: String, val host: String, val port: Int)
+data class PeerItem(val name: String, val host: String, val port: Int) {
+
+    fun withPort(port: Int) = PeerItem(name, host, port)
+
+    fun asPeerMessage() = ChainService.Peer.newBuilder().setHostname(host).setPort(port).build()
+}

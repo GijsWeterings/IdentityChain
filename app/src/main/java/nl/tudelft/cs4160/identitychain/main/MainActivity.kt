@@ -3,6 +3,7 @@ package nl.tudelft.cs4160.identitychain.main
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -20,19 +21,19 @@ import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
-import nl.tudelft.cs4160.identitychain.connection.Communication
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
-import nl.tudelft.cs4160.identitychain.connection.network.NetworkCommunication
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
+import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
+import java.net.NetworkInterface
 import java.security.KeyPair
 
 class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
-    private var communication: Communication? = null
-
+    val kp by lazy(this::initKeys)
+    lateinit private var server: ChainServiceServer
 
     /**
      * Listener for the connection button.
@@ -56,7 +57,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         val payload = payloadValue.text.toString().trim()
         Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
 //      send either a crawl request or a half block
-        communication!!.connectToPeer(peer, payload)
+
+        server.connectToPeer(peeritem.withPort(8080))
+        server.sendBlockToKnownPeer(peeritem.withPort(8080), payload)
     }
 
     internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
@@ -81,7 +84,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     // check if a genesis block is present in database
     val isStartedFirstTime: Boolean
         get() {
-            val genesisBlock = dbHelper.getBlock(kp!!.public.encoded, GENESIS_SEQ)
+            val genesisBlock = dbHelper.getBlock(kp.public.encoded, GENESIS_SEQ)
 
             return genesisBlock == null
         }
@@ -104,16 +107,11 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
 
-
-        //create or load keys
-        initKeys()
-
         if (isStartedFirstTime) {
             val block = TrustChainBlock.createGenesisBlock(kp)
             dbHelper.insertInDB(block)
         }
 
-        communication = NetworkCommunication(dbHelper, kp, this)
 
         connectionButton.setOnClickListener(connectionButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
@@ -129,17 +127,44 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
 
         //start listening for messages
-        communication!!.start()
+        requireNotNull(localIPAddress, { "error could not find local IP" })
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper)
+        this.server = server
 
     }
 
-    private fun initKeys() {
-        kp = Key.loadKeys(applicationContext)
+    private fun initKeys(): KeyPair {
+        val kp = Key.loadKeys(applicationContext)
         if (kp == null) {
-            kp = Key.createAndSaveKeys(applicationContext)
+            val kp = Key.createAndSaveKeys(applicationContext)
             Log.i(TAG, "New keys created")
+            return kp
         }
+        return kp
     }
+
+    /**
+     * Finds the local IP address of this device, loops trough network interfaces in order to find it.
+     * The address that is not a loopback address is the IP of the device.
+     * @return a string representation of the device's IP address
+     */
+    val localIPAddress: String?
+        get() {
+            try {
+                val netInterfaces = NetworkInterface.getNetworkInterfaces()
+                for (netInt in netInterfaces) {
+                    for (addr in netInt.inetAddresses) {
+                        if (addr.isSiteLocalAddress) {
+                            return addr.hostAddress
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            return null
+        }
 
 
     override fun updateLog(msg: String) {
@@ -153,10 +178,5 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
     companion object {
         private val TAG = MainActivity::class.java.toString()
-
-        /**
-         * Key pair of user
-         */
-        internal var kp: KeyPair? = null
     }
 }

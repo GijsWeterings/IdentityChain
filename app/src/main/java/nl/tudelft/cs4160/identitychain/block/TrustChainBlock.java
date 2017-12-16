@@ -17,6 +17,7 @@ import java.util.List;
 import nl.tudelft.cs4160.identitychain.Util.Key;
 import nl.tudelft.cs4160.identitychain.block.ValidationResult.ValidationStatus;
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper;
+import nl.tudelft.cs4160.identitychain.database.TrustChainStorage;
 import nl.tudelft.cs4160.identitychain.message.MessageProto;
 
 import static nl.tudelft.cs4160.identitychain.Peer.bytesToHex;
@@ -58,7 +59,7 @@ public class TrustChainBlock {
      * @param linkpubk - The public key of the linked peer
      * @return a new half block
      */
-    public static MessageProto.TrustChainBlock createBlock(byte[] transaction, TrustChainDBHelper dbHelper,
+    public static MessageProto.TrustChainBlock createBlock(byte[] transaction, TrustChainStorage dbHelper,
                                                          byte[] mypubk, MessageProto.TrustChainBlock linkedBlock,
                                                          byte[] linkpubk) {
         MessageProto.TrustChainBlock latestBlock = dbHelper.getLatestBlock(mypubk);
@@ -133,8 +134,7 @@ public class TrustChainBlock {
      * @param dbHelper - dbHelper which contains the db to check against
      * @return a validation result, containing the actual validation result and a list of errors
      */
-    public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainDBHelper dbHelper) throws Exception {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
+    public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainStorage dbHelper) throws Exception {
         ValidationResult result = new ValidationResult();
         List<String> errors = new ArrayList<>();
 
@@ -202,7 +202,7 @@ public class TrustChainBlock {
         // block in code or getting a block from the database. The wire format is such that it is
         // impossible to hit many of these for blocks that went over the network.
 
-        ValidationResult txValidation = validateTransaction(block, db);
+        ValidationResult txValidation = validateTransaction(block);
         if(txValidation.getStatus() != ValidationStatus.VALID) {
             result.setStatus(txValidation.getStatus());
             for (String error : txValidation.getErrors()) {
@@ -219,9 +219,7 @@ public class TrustChainBlock {
             errors.add("Link sequence number not empty and is prior to genesis");
         }
 
-        //TODO: resolve stupid conversions byte[] => Base64 => byte[]
-        String key = Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT);
-        PublicKey publicKey = Key.loadPublicKey(key);
+        PublicKey publicKey = Key.loadByteKey(block.getPublicKey().toByteArray());
         if(publicKey == null) {
             result.setInvalid();
             errors.add("Public key is not valid");
@@ -356,10 +354,9 @@ public class TrustChainBlock {
      * Validates the transaction of a block, for now a transaction can be anything so no validation
      * method is implemented.
      * @param block - The block containing the to-be-checked transaction.
-     * @param db - Database to validate against
      * @return a VALID validation result
      */
-    public static ValidationResult validateTransaction(MessageProto.TrustChainBlock block, SQLiteDatabase db) {
+    public static ValidationResult validateTransaction(MessageProto.TrustChainBlock block) {
         return new ValidationResult();
     }
 

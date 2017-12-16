@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+import "Message.proto";
+
+package message;
+
+option java_package = "nl.tudelft.cs4160.identitychain.message";
+option java_outer_classname = "ChainService";
+
+message MetaBlock {
+    TrustChainBlock halfBlock = 1;
+    int32 metaData = 2;
+}
+
+message Peer {
+    string hostname = 1;
+    int32 port = 2;
+    bytes publicKey = 3;
+}
+
+message PeerTrustChainBlock {
+    Peer peer = 1;
+    TrustChainBlock block = 2;
+}
+
+message PeerCrawlRequest {
+    Peer peer = 1;
+    CrawlRequest request = 2;
+}
+
+message CrawlResponse {
+    Peer peer = 1;
+    repeated TrustChainBlock block = 2;
+}
+
+message Empty {
+
+}
+
+message Key {
+    bytes publicKey = 1;
+}
+
+service Chain {
+    rpc recieveHalfBlock(PeerTrustChainBlock) returns (PeerTrustChainBlock);
+    rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream PeerTrustChainBlock);
+    rpc getPublicKey(Empty) returns (Key);
+    rpc sendLatestBlocks(CrawlResponse) returns (Key);
+}
