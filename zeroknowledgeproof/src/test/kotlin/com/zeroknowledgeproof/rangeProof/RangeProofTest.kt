@@ -1,6 +1,6 @@
 package com.zeroknowledgeproof.rangeProof
 
-import junit.framework.Assert.assertTrue
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.math.BigInteger
 import java.security.SecureRandom
