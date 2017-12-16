@@ -10,58 +10,58 @@ typealias Base = BigInteger
 typealias Commitment = BigInteger
 typealias IsSquare = CommittedIntegerProof
 
-val TWO : BigInteger = BigInteger.valueOf(2)
+val TWO: BigInteger = BigInteger.valueOf(2)
 
 data class SetupPrivateResult(
-        var m1: BigInteger = ZERO,
-        val m2: BigInteger = ZERO,
-        val m3: BigInteger = ZERO,
-        val r1: BigInteger = ZERO,
-        val r2: BigInteger = ZERO,
-        val r3: BigInteger = ZERO
+        val m1: BigInteger,
+        val m2: BigInteger,
+        val m3: BigInteger,
+        val r1: BigInteger,
+        val r2: BigInteger,
+        val r3: BigInteger
 )
 
 data class SetupPublicResult(
-        val c: BigInteger = ZERO,
-        val c1: BigInteger = ZERO,
-        val c2: BigInteger = ZERO,
-        val sameCommitment: CommittedIntegerProof = CommittedIntegerProof(),
-        val cPrime: BigInteger = ZERO,
-        val cDPrime: BigInteger = ZERO,
-        val cDPrimeIsSquare: IsSquare = IsSquare(),
-        val c1Prime: BigInteger = ZERO,
-        val c2Prime: BigInteger = ZERO,
-        val c3Prime: BigInteger = ZERO,
-        val m3IsSquare: IsSquare = IsSquare(),
-        val g: Base = ZERO,
-        val h: Base = ZERO,
-        val k1: BigInteger = ZERO
+        val c: BigInteger,
+        val c1: BigInteger,
+        val c2: BigInteger,
+        val sameCommitment: CommittedIntegerProof,
+        val cPrime: BigInteger,
+        val cDPrime: BigInteger,
+        val cDPrimeIsSquare: IsSquare,
+        val c1Prime: BigInteger,
+        val c2Prime: BigInteger,
+        val c3Prime: BigInteger,
+        val m3IsSquare: IsSquare,
+        val g: Base,
+        val h: Base,
+        val k1: BigInteger
 )
 
 data class InteractivePublicResult(
-        val x: BigInteger = ZERO,
-        val y: BigInteger = ZERO,
-        val u: BigInteger = ZERO,
-        val v: BigInteger = ZERO,
-        val challenge: Challenge = Challenge()
+        val x: BigInteger,
+        val y: BigInteger,
+        val u: BigInteger,
+        val v: BigInteger,
+        val challenge: Challenge
 )
 
-data class Challenge (
-        val s: BigInteger = ZERO,
-        val t: BigInteger = ZERO
+data class Challenge(
+        val s: BigInteger,
+        val t: BigInteger
 )
 
 data class CommittedIntegerProof(
-        val g1: Base = ZERO,
-        val g2: Base = ZERO,
-        val h1: Base = ZERO,
-        val h2: Base = ZERO,
-        val E: Commitment = ZERO,
-        val F: Commitment = ZERO,
-        val c: BigInteger = ZERO,
-        val D: BigInteger = ZERO,
-        val D1: BigInteger = ZERO,
-        val D2: BigInteger = ZERO
+        val g1: Base,
+        val g2: Base,
+        val h1: Base,
+        val h2: Base,
+        val E: Commitment,
+        val F: Commitment,
+        val c: BigInteger,
+        val D: BigInteger,
+        val D1: BigInteger,
+        val D2: BigInteger
 )
 
 /**
@@ -128,7 +128,7 @@ fun generateRandomInterval(lowerBound: BigInteger, upperBound: BigInteger): BigI
     }
     var res: BigInteger
     do {
-        res = BigInteger((upperBound-lowerBound).bitLength(), SecureRandom()) + lowerBound
+        res = BigInteger((upperBound - lowerBound).bitLength(), SecureRandom()) + lowerBound
     } while (res > upperBound || res == ZERO || res < lowerBound)
     return res
 }
