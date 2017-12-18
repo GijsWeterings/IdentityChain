@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
@@ -26,6 +27,7 @@ import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
+import nl.tudelft.cs4160.identitychain.grpc.asMessage
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
     val kp by lazy(this::initKeys)
     lateinit private var server: ChainServiceServer
+
+    val trustedParty = RangeProofTrustedParty()
+    val zkp = trustedParty.generateProof(30, 18, 100)
 
     /**
      * Listener for the connection button.
@@ -105,7 +110,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         createAttestation.setOnClickListener {
             val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
             val peeritem = adapter.getItem(0).withPort(8080)
-//            server.sendAgeAttestationRequest(20,  peeritem)
+            val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
+            val publicPayLoad = asMessage.toByteArray()
+            server.sendBlockToKnownPeer(peeritem, publicPayLoad)
         }
     }
 
@@ -140,7 +147,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
 
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
         this.server = server
 
     }

@@ -149,7 +149,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                     .setT(challenge.t.asByteString())
                     .build()
 
-
             val challengeReply = registry.findStub(peer).answerChallenge(challengeMessage).asZkp()(challenge.s, challenge.t)
             rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
         }.all { it }
@@ -234,6 +233,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             }
             return null
         } else {
+            //TODO this might cause duplicate exceptions.
             storage.insertInDB(block)
         }
 
@@ -439,9 +439,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     companion object {
 
-        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>): Pair<ChainServiceServer, Server> {
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>, privateStuff: SetupPrivateResult): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, throw RuntimeException())
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)
