@@ -1,8 +1,11 @@
 package nl.tudelft.cs4160.identitychain.grpc
 
 import com.google.protobuf.ByteString
+import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
+import com.zeroknowledgeproof.rangeProof.RangeProofVerifier
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import io.reactivex.Single
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
@@ -14,10 +17,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GrpcTest {
+    val trustedParty = RangeProofTrustedParty()
+    val zkp = trustedParty.generateProof(30, 18, 100)
+
     val testServerOne = peerAndServerForPort(8080)
     val testServerTwo = peerAndServerForPort(8081)
 
     val serverTwoPeerItem = PeerItem("peerBoy", "localhost", 8081)
+    val serverOnePeerItem = PeerItem("peerBoy", "localhost", 8080)
 
     @Test
     fun initial_crawl_request_should_return_genesis_block() {
@@ -39,21 +46,31 @@ class GrpcTest {
         assertEquals(4, testServerTwo.storage.blocks.size)
     }
 
+//    @Test
+//    fun create_attestion() {
+//        initial_crawl_request_should_return_genesis_block()
+//        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setAge(30).setRequestor(testServerOne.peer).build()
+//        val stuffies = testServerOne.server.registry.findStub(serverTwoPeerItem.asPeerMessage()).createAgeAttestation(request)
+//
+//        println(testServerOne.storage.blocks[3])
+//    }
+
     @Test
-    fun create_attestion() {
-        initial_crawl_request_should_return_genesis_block()
-        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setAge(30).setRequestor(testServerOne.peer).build()
-        val stuffies = testServerOne.server.registry.findStub(serverTwoPeerItem.asPeerMessage()).createAgeAttestation(request)
-
-        println(testServerOne.storage.blocks[3])
-
+    fun test_verify() {
+        val publicPayLoad = zkp.first.asMessage().toByteArray()
+        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad)
+        val rangeProofVerifier = RangeProofVerifier(trustedParty.N, 18, 100)
+        val challenge = rangeProofVerifier.requestChallenge(zkp.first.k1)
+        val verifyProofWith = testServerOne.server.verifyProofWith(serverTwoPeerItem, challenge, testServerTwo.peer.publicKey.toByteArray(), 2)
+        val interactiveVerify = rangeProofVerifier.interactiveVerify(zkp.first, verifyProofWith.asZkp()(challenge.s, challenge.t))
+        assertTrue(interactiveVerify)
     }
 
     fun peerAndServerForPort(port: Int): TestServer {
         val keyPair = Key.createNewKeyPair()
         val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
         val testStorage = TrustChainMemoryStorage(keyPair)
-        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair)
+        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, Single.just(false), zkp.second)
 
         val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
         return TestServer(chainServiceServer, me, testStorage, grpcServer)

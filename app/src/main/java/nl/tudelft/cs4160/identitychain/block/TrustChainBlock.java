@@ -131,7 +131,7 @@ public class TrustChainBlock {
      * Validates this block against what is known in the database in 6 steps.
      * Returns the validation result and errors. Any error will result in a false validation.
      * @param block - block that needs to be validated
-     * @param dbHelper - dbHelper which contains the db to check against
+     * @param dbHelper - storage which contains the db to check against
      * @return a validation result, containing the actual validation result and a list of errors
      */
     public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainStorage dbHelper) throws Exception {

@@ -6,7 +6,7 @@ import java.math.BigInteger.ZERO
 import java.security.MessageDigest
 import java.security.Security
 
-class RangeProofVerifier(private val N: BigInteger, private val low: Int, private val up: Int) {
+class RangeProofVerifier(private val N: BigInteger, private val a: Int, private val b: Int) {
     fun requestChallenge(bound: BigInteger): Challenge {
         // Step 5: Generate s,t in Zk1 - {0}
         val s = generateRandomInterval(ONE, bound)
@@ -37,11 +37,11 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
                 when {
-                    c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N) -> {
+                    c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(a - 1), N), N)).mod(N) -> {
                         println("c1 = c/g^(a-1) mod N failed")
                         false
                     }
-                    c2.mod(N) != g.modPow(toBigInt(up + 1), N).times(calculateInverse(c, N)).mod(N) -> {
+                    c2.mod(N) != g.modPow(toBigInt(b + 1), N).times(calculateInverse(c, N)).mod(N) -> {
                         println("c2 = g^(b+1)/c mod N failed")
                         false
                     }
@@ -123,8 +123,8 @@ class RangeProofVerifier(private val N: BigInteger, private val low: Int, privat
 
         // Lastly, we can verify three equations
         val eqVerified =
-                c1.mod(N) == (c * calculateInverse(g.modPow(toBigInt(low - 1), N), N)).mod(N) &&
-                        c2.mod(N) == (g.modPow(toBigInt(up + 1), N) * calculateInverse(c, N)).mod(N) &&
+                c1.mod(N) == (c * calculateInverse(g.modPow(toBigInt(a - 1), N), N)).mod(N) &&
+                        c2.mod(N) == (g.modPow(toBigInt(b + 1), N) * calculateInverse(c, N)).mod(N) &&
                         cDPrime.mod(N) == c1Prime.times(c2Prime).times(c3Prime).mod(N)
         if (!eqVerified) {
             println("Could not verify one of the equations")

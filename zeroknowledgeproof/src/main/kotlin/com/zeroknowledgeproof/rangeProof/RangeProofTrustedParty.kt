@@ -25,7 +25,7 @@ class RangeProofTrustedParty {
 
     fun runInteractiveProver(m: Int, a: Int, b: Int): Boolean {
         val (setupPublic, setupPrivate) = generateProof(m, a, b)
-        val v = RangeProofVerifier(N = N, low = a, up = b)
+        val v = RangeProofVerifier(N = N, a = a, b = b)
         // The verifier should interactiveVerify everything possible at this point
         var success = v.setupVerify(setupPublic)
         if (!success) {

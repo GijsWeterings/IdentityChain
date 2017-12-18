@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         createAttestation.setOnClickListener {
             val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
             val peeritem = adapter.getItem(0).withPort(8080)
-            server.sendAgeAttestationRequest(20,  peeritem)
+//            server.sendAgeAttestationRequest(20,  peeritem)
         }
     }
 
