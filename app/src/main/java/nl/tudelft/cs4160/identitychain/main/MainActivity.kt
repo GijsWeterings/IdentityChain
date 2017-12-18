@@ -3,7 +3,6 @@ package nl.tudelft.cs4160.identitychain.main
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -24,6 +23,7 @@ import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
+import nl.tudelft.cs4160.identitychain.modals.BiometricActivity
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface

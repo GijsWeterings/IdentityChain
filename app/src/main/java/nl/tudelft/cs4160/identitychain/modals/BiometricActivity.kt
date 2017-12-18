@@ -1,4 +1,4 @@
-package nl.tudelft.cs4160.identitychain.main
+package nl.tudelft.cs4160.identitychain.modals
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
