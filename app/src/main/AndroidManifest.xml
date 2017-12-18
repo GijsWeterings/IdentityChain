@@ -16,14 +16,23 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <!-- Splash screen -->
         <activity
-            android:name="nl.tudelft.cs4160.identitychain.main.MainActivity"
-            android:windowSoftInputMode="stateUnchanged">
+            android:name="nl.tudelft.cs4160.identitychain.main.SplashActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <!-- Home screen -->
+        <activity
+            android:name="nl.tudelft.cs4160.identitychain.main.MainActivity"
+            android:windowSoftInputMode="stateUnchanged">
         </activity>
         <activity
             android:name="nl.tudelft.cs4160.identitychain.KeyActivity"
