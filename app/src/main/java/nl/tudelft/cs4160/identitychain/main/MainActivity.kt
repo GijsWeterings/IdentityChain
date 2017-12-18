@@ -67,6 +67,11 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         startActivity(intent)
     }
 
+    internal var testButtonListener: View.OnClickListener = View.OnClickListener {
+        val intent = Intent(this, BiometricActivity::class.java)
+        startActivity(intent)
+    }
+
     internal var resetDatabaseListener: View.OnClickListener = View.OnClickListener {
         if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
             (applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
@@ -114,6 +119,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
 
         connectionButton.setOnClickListener(connectionButtonListener)
+        testButton.setOnClickListener(testButtonListener)
         chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
         resetDatabaseButton.setOnClickListener(resetDatabaseListener)
 

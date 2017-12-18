@@ -29,7 +29,10 @@
     <string name="item_signature">Signature:</string>
     <string name="item_transaction">Transaction:</string>
 
+    <string name="fingerprint_scan">Please scan your fingerprint</string>
+
     <string name="bluetooth_explanation">First pair with a device via the Android bluetooth manager. After the two devices are paired press on the desired device to initiate a connection.</string>
     <string name="bluetooth_button">Bluetooth</string>
+    <string name="FingerprintDeclinedText">Fingerprint declined. Please try again</string>
 
 </resources>
