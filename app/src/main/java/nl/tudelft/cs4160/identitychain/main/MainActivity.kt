@@ -1,17 +1,11 @@
 package nl.tudelft.cs4160.identitychain.main
 
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
-import android.widget.TextView
-import android.widget.Toast
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.Peer
@@ -19,11 +13,9 @@ import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
-import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
-import nl.tudelft.cs4160.identitychain.modals.BiometricActivity
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
@@ -62,23 +54,10 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         server.sendBlockToKnownPeer(peeritem.withPort(8080), payload)
     }
 
-    internal var chainExplorerButtonListener: View.OnClickListener = View.OnClickListener {
-        val intent = Intent(this, ChainExplorerActivity::class.java)
+    internal var debugMenuListener: View.OnLongClickListener = View.OnLongClickListener {
+        val intent = Intent(this, DebugActivity::class.java)
         startActivity(intent)
-    }
-
-    internal var testButtonListener: View.OnClickListener = View.OnClickListener {
-        val intent = Intent(this, BiometricActivity::class.java)
-        startActivity(intent)
-    }
-
-    internal var resetDatabaseListener: View.OnClickListener = View.OnClickListener {
-        if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
-            (applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
-                    .clearApplicationUserData()
-        } else {
-            Toast.makeText(applicationContext, "Requires at least API 19 (KitKat)", Toast.LENGTH_LONG).show()
-        }
+        true
     }
 
     /**
@@ -99,15 +78,15 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         setContentView(R.layout.activity_main)
 
         val serviceFactory = ServiceFactory(this)
-        initVariables()
+//        initVariables()
         init(serviceFactory)
 
         serviceFactory.initializeDiscoveryServer()
     }
 
-    private fun initVariables() {
-        statusText.movementMethod = ScrollingMovementMethod()
-    }
+//    private fun initVariables() {
+//        statusText.movementMethod = ScrollingMovementMethod()
+//    }
 
     private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
@@ -118,10 +97,8 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         }
 
 
-        connectionButton.setOnClickListener(connectionButtonListener)
-        testButton.setOnClickListener(testButtonListener)
-        chainExplorerButton.setOnClickListener(chainExplorerButtonListener)
-        resetDatabaseButton.setOnClickListener(resetDatabaseListener)
+        addClaimButton.setOnClickListener(connectionButtonListener)
+        imageView.setOnLongClickListener(debugMenuListener)
 
         discoveryList.layoutManager = LinearLayoutManager(this)
         val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
@@ -177,8 +154,8 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         //just to be sure run it on the ui thread
         //this is not necessary when this function is called from a AsyncTask
         runOnUiThread {
-            val statusText = findViewById<TextView>(R.id.statusText)
-            statusText.append(msg)
+//            val statusText = findViewById<TextView>(R.id.statusText)
+//            statusText.append(msg)
         }
     }
 

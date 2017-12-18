@@ -44,6 +44,12 @@
         <activity
             android:name="nl.tudelft.cs4160.identitychain.modals.BiometricActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
+
+        <!-- DEBUG -->
+        <activity
+            android:name="nl.tudelft.cs4160.identitychain.main.DebugActivity"
+            android:windowSoftInputMode="stateUnchanged">
+        </activity>
     </application>
 
 </manifest>
