@@ -59,11 +59,8 @@ class GrpcTest {
     fun test_verify() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
         testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad)
-        val rangeProofVerifier = RangeProofVerifier(trustedParty.N, 18, 100)
-        val challenge = rangeProofVerifier.requestChallenge(zkp.first.k1)
-        val verifyProofWith = testServerOne.server.verifyProofWith(serverTwoPeerItem, challenge, testServerTwo.peer.publicKey.toByteArray(), 2)
-        val interactiveVerify = rangeProofVerifier.interactiveVerify(zkp.first, verifyProofWith.asZkp()(challenge.s, challenge.t))
-        assertTrue(interactiveVerify)
+        val verifyProofWith = testServerOne.server.verifyProofWith(serverTwoPeerItem, testServerTwo.peer.publicKey.toByteArray(), 2)
+        assertTrue(verifyProofWith)
     }
 
     fun peerAndServerForPort(port: Int): TestServer {

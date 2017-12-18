@@ -2,10 +2,7 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
-import com.zeroknowledgeproof.rangeProof.Challenge
-import com.zeroknowledgeproof.rangeProof.InteractivePublicResult
-import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
-import com.zeroknowledgeproof.rangeProof.SetupPublicResult
+import com.zeroknowledgeproof.rangeProof.*
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
@@ -18,7 +15,6 @@ import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
-import java.math.BigInteger
 import java.security.KeyPair
 import java.util.*
 
@@ -136,17 +132,26 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun verifyProofWith(peer: PeerItem, challenge: Challenge, publicKey: ByteArray, seqNum: Int): ChainService.ChallengeReply {
+    fun verifyProofWith(peer: PeerItem, publicKey: ByteArray, seqNum: Int): Boolean {
+        val publicResult: SetupPublicResult = this.storage.getBlock(publicKey, seqNum)?.asSetupPublic() ?: throw IllegalArgumentException("No such block present")
+        val rangeProofVerifier = RangeProofVerifier(publicResult.N, 18, 100)
 
-        val challengeMessage = ChainService.Challenge.newBuilder()
-                .setPubKey(ByteString.copyFrom(publicKey))
-                .setSeqNum(seqNum)
-                .setS(challenge.s.asByteString())
-                .setT(challenge.t.asByteString())
-                .build()
+        val resultOfAllProofs = (0..100).map {
+            val challenge = rangeProofVerifier.requestChallenge(publicResult.k1)
+
+            val challengeMessage = ChainService.Challenge.newBuilder()
+                    .setPubKey(ByteString.copyFrom(publicKey))
+                    .setSeqNum(seqNum)
+                    .setS(challenge.s.asByteString())
+                    .setT(challenge.t.asByteString())
+                    .build()
 
 
-        return registry.findStub(peer.asPeerMessage()).answerChallenge(challengeMessage)
+            val challengeReply = registry.findStub(peer.asPeerMessage()).answerChallenge(challengeMessage).asZkp()(challenge.s, challenge.t)
+            rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
+        }.all { it }
+
+        return resultOfAllProofs
     }
 
 
