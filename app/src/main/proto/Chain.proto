@@ -53,6 +53,8 @@ message PublicSetupResult {
     CommittedIntegerProof sameCommitment = 13;
     CommittedIntegerProof cdPrimeIsSquare = 14;
     CommittedIntegerProof m3IsSquare = 15;
+    int32 a = 16;
+    int32 b = 17;
 }
 
 message CommittedIntegerProof {

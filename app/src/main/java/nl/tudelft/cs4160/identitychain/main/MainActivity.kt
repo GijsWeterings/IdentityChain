@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
 //      send either a crawl request or a half block
 
-        server.connectToPeer(peeritem.withPort(8080))
+        server.crawlPeer(peeritem.withPort(8080))
         server.sendBlockToKnownPeer(peeritem.withPort(8080), payload)
     }
 
@@ -138,17 +138,17 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         //start listening for messages
         requireNotNull(localIPAddress, { "error could not find local IP" })
 
-        val alertSingle: Single<Boolean> = attestationPrompt()
 
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, alertSingle)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt)
         this.server = server
 
     }
 
-    private fun attestationPrompt(): Single<Boolean> {
+    private fun attestationPrompt(attestation: ChainService.PublicSetupResult): Single<Boolean> {
         val fuckyiou = Single.create<Boolean> { source ->
-            AlertDialog.Builder(this).setMessage("attest for some cool dude")
+            val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
+            AlertDialog.Builder(this).setMessage(message)
                     .setPositiveButton("yes", object : DialogInterface.OnClickListener {
                         override fun onClick(dialog: DialogInterface?, which: Int) {
                             source.onSuccess(true)

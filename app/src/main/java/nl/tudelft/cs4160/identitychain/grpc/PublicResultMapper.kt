@@ -25,6 +25,8 @@ fun SetupPublicResult.asMessage(): ChainService.PublicSetupResult {
             .setSameCommitment(this.sameCommitment.asMessage())
             .setCdPrimeIsSquare(this.cDPrimeIsSquare.asMessage())
             .setM3IsSquare(this.m3IsSquare.asMessage())
+            .setA(this.a)
+            .setB(this.b)
             .build()
 }
 
@@ -32,7 +34,7 @@ fun ChainService.PublicSetupResult.asZkp(): SetupPublicResult {
     return SetupPublicResult(this.c.asBigInt(), this.c1.asBigInt(), this.c2.asBigInt(),
             this.sameCommitment.asZkp(), this.cPrime.asBigInt(), this.cdPrime.asBigInt(),
             this.cdPrimeIsSquare.asZkp(), this.c1Prime.asBigInt(), this.c2Prime.asBigInt(), this.c3Prime.asBigInt(),
-            this.m3IsSquare.asZkp(), this.g.asBigInt(), this.h.asBigInt(), this.k1.asBigInt(), this.n.asBigInt())
+            this.m3IsSquare.asZkp(), this.g.asBigInt(), this.h.asBigInt(), this.k1.asBigInt(), this.n.asBigInt(), this.a, this.b)
 }
 
 fun CommittedIntegerProof.asMessage(): ChainService.CommittedIntegerProof {
