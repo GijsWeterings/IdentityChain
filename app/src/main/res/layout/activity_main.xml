@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="nl.tudelft.cs4160.identitychain.main.MainActivity">
-    
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="100dp"

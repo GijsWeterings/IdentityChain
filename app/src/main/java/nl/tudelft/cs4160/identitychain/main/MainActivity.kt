@@ -3,7 +3,6 @@ package nl.tudelft.cs4160.identitychain.main
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -16,16 +15,21 @@ import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
+import nl.tudelft.cs4160.identitychain.modals.PeerConnectActivity
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
 import java.security.KeyPair
+
 
 class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     val kp by lazy(this::initKeys)
     lateinit private var server: ChainServiceServer
+
+    var peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
+
 
     /**
      * Listener for the connection button.
@@ -43,8 +47,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
      * the network is not compromised due to not using dispersy.
      */
     internal var connectionButtonListener: View.OnClickListener = View.OnClickListener {
-        val adapter: PeerViewRecyclerAdapter = discoveryList.adapter as PeerViewRecyclerAdapter
-        val peeritem = adapter.getItem(0)
+        val peeritem = peerViewRecyclerAdapter.getItem(0)
         val peer = Peer(null, peeritem.host, peeritem.port)
         val payload = payloadValue.text.toString().trim()
         Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
@@ -52,6 +55,15 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         server.connectToPeer(peeritem.withPort(8080))
         server.sendBlockToKnownPeer(peeritem.withPort(8080), payload)
+    }
+
+    internal var connectToDeviceButtonListener: View.OnClickListener = View.OnClickListener {
+        val dialog = PeerConnectActivity()
+        dialog.discoveryListAdapter = peerViewRecyclerAdapter
+        dialog.retainInstance = true
+        val ft = fragmentManager.beginTransaction()
+        dialog.show(ft, PeerConnectActivity.TAG)
+
     }
 
     internal var debugMenuListener: View.OnLongClickListener = View.OnLongClickListener {
@@ -99,10 +111,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         addClaimButton.setOnClickListener(connectionButtonListener)
         imageView.setOnLongClickListener(debugMenuListener)
-
-        discoveryList.layoutManager = LinearLayoutManager(this)
-        val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
-        discoveryList.adapter = peerViewRecyclerAdapter
+        connectToDeviceButton.setOnClickListener(connectToDeviceButtonListener)
 
         serviceFactory.startPeerDiscovery()
                 .observeOn(AndroidSchedulers.mainThread())
