@@ -267,8 +267,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                 Log.e(TAG, "the proof was faulty not signing that crap")
                 Single.just(false)
             }
-
-
         } catch (e: Exception) {
             Log.e(TAG, "we were asked to sign a block but it was not an attestation")
             Single.just(false)

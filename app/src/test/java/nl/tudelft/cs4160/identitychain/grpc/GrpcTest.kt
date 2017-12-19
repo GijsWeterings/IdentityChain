@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.Assert.assertNotNull
 
 class GrpcTest {
     val trustedParty = RangeProofTrustedParty()
@@ -64,6 +65,13 @@ class GrpcTest {
         val peerWithKey = ChainService.Peer.newBuilder(peer).setPublicKey(testServerTwo.peer.publicKey).build()
         val verifyProofWith = testServerOne.server.verifyExistingBlock(peerWithKey, 2)
         assertTrue(verifyProofWith)
+    }
+
+    @Test
+    fun bidirectional_serialize() {
+        val publicPayLoad = zkp.first.asMessage().toByteArray()
+        val parse = ChainService.PublicSetupResult.parseFrom(publicPayLoad)
+        assertNotNull(parse)
     }
 
     fun peerAndServerForPort(port: Int): TestServer {

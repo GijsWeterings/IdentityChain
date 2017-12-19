@@ -26,6 +26,7 @@ import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
+import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
 import nl.tudelft.cs4160.identitychain.message.ChainService
@@ -147,7 +148,7 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
 
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, TrustChainMemoryStorage(kp), this::attestationPrompt, zkp.second)
         this.server = server
 
     }
