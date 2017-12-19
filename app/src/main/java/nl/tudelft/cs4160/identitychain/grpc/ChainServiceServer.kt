@@ -164,15 +164,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             .setV(this.v.asByteString())
             .build()
 
-
-    fun MessageProto.TrustChainBlock.asSetupPublic(): SetupPublicResult? {
-        try {
-            return ChainService.PublicSetupResult.parseFrom(this.transaction).asZkp()
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
     class NoSuchBlockException : Exception()
 
 
@@ -203,6 +194,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                 return null
             } else {
                 storage.insertInDB(block)
+                Log.i(TAG, "saving complete block")
             }
             return validation
         }
@@ -235,6 +227,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         } else {
             //TODO this might cause duplicate exceptions.
             storage.insertInDB(block)
+            Log.i(TAG, "saving half block maybe duplicate")
         }
 
         val pk = keyPair.public.encoded
@@ -268,6 +261,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                 Single.just(false)
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "we were asked to sign a block but it was not an attestation")
             Single.just(false)
         }
@@ -303,6 +297,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
             val recievedCompleteBlock = peerChannel.recieveHalfBlock(trustChainBlock)
             saveCompleteBlock(recievedCompleteBlock)
+            Log.i(TAG, "saved a block")
             return recievedCompleteBlock
         } else {
             return null
@@ -332,6 +327,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             return null
         } else {
             storage.insertInDB(signedBlock)
+            Log.i(TAG, "saving freshly created block")
             return signedBlock
         }
     }
@@ -445,4 +441,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             return Pair(chainServiceServer, grpcServer)
         }
     }
+}
+
+fun MessageProto.TrustChainBlock.asSetupPublic(): SetupPublicResult? {
+    return ChainService.PublicSetupResult.parseFrom(this.transaction).asZkp()
 }

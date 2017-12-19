@@ -21,7 +21,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper implements TrustChainSt
 
     private final String SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS " + TrustChainDBContract.BlockEntry.TABLE_NAME + " (" +
-            TrustChainDBContract.BlockEntry.COLUMN_NAME_TX + " TEXT NOT NULL," +
+            TrustChainDBContract.BlockEntry.COLUMN_NAME_TX + " BLOB NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY + " TEXT NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER + " INTEGER NOT NULL," +
             TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY + " TEXT NOT NULL," +
@@ -71,7 +71,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper implements TrustChainSt
     public long insertInDB(MessageProto.TrustChainBlock block) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toStringUtf8());
+        values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX, block.getTransaction().toByteArray());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY, Base64.encodeToString(block.getPublicKey().toByteArray(), Base64.DEFAULT));
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_SEQUENCE_NUMBER, block.getSequenceNumber());
         values.put(TrustChainDBContract.BlockEntry.COLUMN_NAME_LINK_PUBLIC_KEY, Base64.encodeToString(block.getLinkPublicKey().toByteArray(), Base64.DEFAULT));
@@ -396,7 +396,7 @@ public class TrustChainDBHelper extends SQLiteOpenHelper implements TrustChainSt
         MessageProto.TrustChainBlock.Builder builder = MessageProto.TrustChainBlock.newBuilder();
 
         while(cursor.moveToNext()) {
-            builder.setTransaction(ByteString.copyFromUtf8(cursor.getString(
+            builder.setTransaction(ByteString.copyFrom(cursor.getBlob(
                     cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_TX))))
                     .setPublicKey(ByteString.copyFrom( Base64.decode(cursor.getString(
                             cursor.getColumnIndex(TrustChainDBContract.BlockEntry.COLUMN_NAME_PUBLIC_KEY)), Base64.DEFAULT)))

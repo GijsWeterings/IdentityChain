@@ -147,8 +147,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         requireNotNull(localIPAddress, { "error could not find local IP" })
 
 
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, TrustChainMemoryStorage(kp), this::attestationPrompt, zkp.second)
+//        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, TrustChainMemoryStorage(kp), this::attestationPrompt, zkp.second)
         this.server = server
 
     }

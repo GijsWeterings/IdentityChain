@@ -134,7 +134,7 @@ public class TrustChainBlock {
      * @param dbHelper - storage which contains the db to check against
      * @return a validation result, containing the actual validation result and a list of errors
      */
-    public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainStorage dbHelper) throws Exception {
+    public static ValidationResult validate(MessageProto.TrustChainBlock block, TrustChainStorage dbHelper) throws ValidationFailedException {
         ValidationResult result = new ValidationResult();
         List<String> errors = new ArrayList<>();
 
@@ -257,7 +257,7 @@ public class TrustChainBlock {
             // have the right block before making a fraud claim.
             if(!dbBlock.getPublicKey().equals(block.getPublicKey()) ||
                     dbBlock.getSequenceNumber() != block.getSequenceNumber()) {
-                throw new Exception("Database returned unexpected block");
+                throw new ValidationFailedException("Database returned unexpected block");
             }
             if(!dbBlock.getLinkPublicKey().equals(block.getLinkPublicKey())) {
                 result.setInvalid();
@@ -295,7 +295,7 @@ public class TrustChainBlock {
             if(!linkBlock.getPublicKey().equals(block.getLinkPublicKey()) ||
                     (linkBlock.getLinkSequenceNumber() != block.getSequenceNumber() &&
                     linkBlock.getSequenceNumber() != block.getLinkSequenceNumber())) {
-                throw new Exception("Database returned unexpected block");
+                throw new ValidationFailedException("Database returned unexpected block");
             }
             if(!block.getPublicKey().equals(linkBlock.getLinkPublicKey())) {
                 result.setInvalid();
@@ -319,7 +319,7 @@ public class TrustChainBlock {
             // Sanity check of the previous block the database gave us
             if(!prevBlock.getPublicKey().equals(block.getPublicKey()) ||
                     prevBlock.getSequenceNumber() >= block.getSequenceNumber()) {
-                throw new Exception("Database returned unexpected block");
+                throw new ValidationFailedException("Database returned unexpected block");
             }
             // If there is no gap, the previous hash should be equal to the hash of prevBlock
             if(prevBlock.getSequenceNumber() == block.getSequenceNumber() - 1 &&
@@ -334,7 +334,7 @@ public class TrustChainBlock {
             // Sanity check of the previous block the database gave us
             if(!nextBlock.getPublicKey().equals(block.getPublicKey()) ||
                     nextBlock.getSequenceNumber() <= block.getSequenceNumber()) {
-                throw new Exception("Database returned unexpected block");
+                throw new ValidationFailedException("Database returned unexpected block");
             }
             // If there is no gap, the previous hash of nextBlock should be equal to the hash of block
             if(nextBlock.getSequenceNumber() == block.getSequenceNumber() + 1 &&
