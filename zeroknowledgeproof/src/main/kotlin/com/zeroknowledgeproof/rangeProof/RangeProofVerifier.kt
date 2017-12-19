@@ -28,13 +28,40 @@ class RangeProofVerifier(private val N: BigInteger, private val a: Int, private 
 
         // Check that nothing is zero
 
-        return setupRes.nonAreZero() &&
+        val isNotZero = setupRes.nonAreZero()
+        if (!isNotZero)
+            println("Some values have the value zero, none of the parameters of the proof should be zero")
 
+        val verifySameCommitment =
                 // First check whether the three commitments in the original setupResult are equal
                 verifyTwoCommitments(sameCommitment) &&
-                verifyIsSquare(cDPrimeIsSquare) &&
-                verifyIsSquare(m3IsSquare) &&
+                        sameCommitment.g1 == g &&
+                        sameCommitment.h1 == h &&
+                        sameCommitment.g2 == c1 &&
+                        sameCommitment.h2 == h &&
+                        sameCommitment.E == c2 &&
+                        sameCommitment.F == cPrime
 
+        if (!verifySameCommitment)
+            println("The EL proof could not be verified")
+
+        val verifyCDPSquare =
+                verifyIsSquare(cDPrimeIsSquare) &&
+                        cDPrimeIsSquare.F == cDPrime &&
+//                cDPrimeIsSquare.g2 == cDPrimeIsSquare.E && // Already being verified
+                        cDPrimeIsSquare.h1 == h &&
+                        cDPrimeIsSquare.h2 == h
+        if (!verifyCDPSquare)
+            println("The first SQR proof could not be verified")
+
+        val verifyM3Square =
+                verifyIsSquare(m3IsSquare) &&
+                        m3IsSquare.F == c3Prime &&
+                        m3IsSquare.g1 == g &&
+                        m3IsSquare.h1 == h &&
+                        m3IsSquare.h2 == h
+
+        val requirementsSatisfied =
                 // If so, verify the seven other requirements. If any of them fails, reject the proof
                 when {
                     c1.mod(N) != c.times(calculateInverse(g.modPow(toBigInt(a - 1), N), N)).mod(N) -> {
@@ -67,6 +94,10 @@ class RangeProofVerifier(private val N: BigInteger, private val a: Int, private 
                     }
                     else -> true // Return true;
                 }
+        if (!verifyM3Square)
+            println("The second SQR proof could not be verified")
+
+        return isNotZero && verifySameCommitment && verifyCDPSquare && verifyM3Square && requirementsSatisfied
     }
 
     private fun verifyTwoCommitments(ver: CommittedIntegerProof): Boolean {
