@@ -41,20 +41,20 @@ class ChainServiceServerTest {
     fun send_random_crap() {
         initial_crawl_request_should_return_genesis_block()
         val payload = "YO dude what up!"
-         testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload)!!
+         testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload).blockingGet()
     }
 
     @Test
     fun create_attestion() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
-        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad)
+        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad).blockingGet()
         println(testServerOne.storage.blocks[3])
     }
 
     @Test
     fun test_verify() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
-        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad)
+        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad).blockingGet()
         val peer = serverTwoPeerItem.asPeerMessage()
         val peerWithKey = ChainService.Peer.newBuilder(peer).setPublicKey(testServerTwo.peer.publicKey).build()
         val verifyProofWith = testServerOne.server.verifyExistingBlock(peerWithKey, 2)

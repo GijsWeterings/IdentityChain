@@ -57,7 +57,7 @@ class MainFragment : Fragment() {
             val peeritem = viewModel.peerSelection.value!!
             val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
             val publicPayLoad = asMessage.toByteArray()
-            server.sendBlockToKnownPeer(peeritem, publicPayLoad)
+            server.sendBlockToKnownPeer(peeritem, publicPayLoad).subscribe()
         }
     }
 

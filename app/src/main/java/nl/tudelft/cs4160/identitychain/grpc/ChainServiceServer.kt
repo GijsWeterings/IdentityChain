@@ -2,13 +2,15 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
-import com.zeroknowledgeproof.rangeProof.*
+import com.zeroknowledgeproof.rangeProof.Challenge
+import com.zeroknowledgeproof.rangeProof.RangeProofVerifier
+import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
+import com.zeroknowledgeproof.rangeProof.SetupPublicResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.reactivex.rxkotlin.toCompletable
 import io.reactivex.schedulers.Schedulers
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
@@ -199,27 +201,32 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         return bufferedCrawledBlocks
     }
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): ChainService.PeerTrustChainBlock? =
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.PeerTrustChainBlock> =
             sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): ChainService.PeerTrustChainBlock? {
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.PeerTrustChainBlock> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
         val crawlResponse = ChainService.CrawlResponse.newBuilder().setPeer(me).addAllBlock(crawledBlocks).build()
         val peerMessage = peer.asPeerMessage()
-        val peerChannel = registry.channelForPeer(peerMessage)
-        val theirPublicKey: ChainService.Key = peerChannel.sendLatestBlocks(crawlResponse)
-        val newBlock = signerValidator.createNewBlock(payload, theirPublicKey.publicKey.toByteArray())
+        val peerChannel = registry.findAsyncStub(peerMessage)
+        val keySingle: Single<ChainService.Key> = peerChannel.sendLatestBlocks(crawlResponse).guavaAsSingle(Schedulers.computation())
 
-        if (newBlock != null) {
-            val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
-            val recievedCompleteBlock = peerChannel.recieveHalfBlock(trustChainBlock)
-            signerValidator.saveCompleteBlock(recievedCompleteBlock)
-            Log.i(TAG, "saved a block")
-            return recievedCompleteBlock
-        } else {
-            return null
+        return keySingle.flatMap { theirPublicKey ->
+            val newBlock = signerValidator.createNewBlock(payload, theirPublicKey.publicKey.toByteArray())
+
+            if (newBlock != null) {
+                val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
+                val recievedCompleteBlock: Single<ChainService.PeerTrustChainBlock> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
+                recievedCompleteBlock.map {
+                    signerValidator.saveCompleteBlock(it)
+                    Log.i(TAG, "saved a block")
+                    it
+                }
+            } else {
+                Single.error(RuntimeException("could not create new block"))
+            }
         }
     }
 
