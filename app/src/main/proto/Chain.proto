@@ -37,13 +37,62 @@ message Empty {
 
 }
 
+message PublicSetupResult {
+    bytes c = 1;
+    bytes c1 = 2;
+    bytes c2 = 3;
+    bytes cPrime = 4;
+    bytes cDPrime = 5;
+    bytes c1Prime = 6;
+    bytes c2Prime = 7;
+    bytes c3Prime = 8;
+    bytes g = 9;
+    bytes h = 10;
+    bytes k1 = 11;
+    bytes n = 12;
+    CommittedIntegerProof sameCommitment = 13;
+    CommittedIntegerProof cdPrimeIsSquare = 14;
+    CommittedIntegerProof m3IsSquare = 15;
+    int32 a = 16;
+    int32 b = 17;
+}
+
+message CommittedIntegerProof {
+    bytes g1 = 1;
+    bytes g2 = 2;
+    bytes h1 = 3;
+    bytes h2 = 4;
+    bytes E = 5;
+    bytes F = 6;
+    bytes c = 7;
+    bytes D = 8;
+    bytes D1 = 9;
+    bytes D2 = 10;
+}
+
 message Key {
     bytes publicKey = 1;
 }
 
+message Challenge {
+    bytes pubKey = 1;
+    int32 seqNum = 2;
+    // actual challenge numbers
+    bytes s = 3;
+    bytes t = 4;
+}
+
+message ChallengeReply {
+    bytes x = 1;
+    bytes y = 2;
+    bytes u = 3;
+    bytes v = 4;
+}
+
 service Chain {
-    rpc recieveHalfBlock(PeerTrustChainBlock) returns (PeerTrustChainBlock);
-    rpc recieveCrawlRequest(PeerCrawlRequest) returns (stream PeerTrustChainBlock);
-    rpc getPublicKey(Empty) returns (Key);
-    rpc sendLatestBlocks(CrawlResponse) returns (Key);
+    rpc recieveHalfBlock (PeerTrustChainBlock) returns (PeerTrustChainBlock);
+    rpc recieveCrawlRequest (PeerCrawlRequest) returns (stream PeerTrustChainBlock);
+    rpc getPublicKey (Empty) returns (Key);
+    rpc sendLatestBlocks (CrawlResponse) returns (Key);
+    rpc answerChallenge (Challenge) returns (ChallengeReply);
 }

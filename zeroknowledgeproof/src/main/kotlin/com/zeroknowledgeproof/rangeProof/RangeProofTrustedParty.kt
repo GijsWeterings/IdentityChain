@@ -18,10 +18,14 @@ class RangeProofTrustedParty {
     private val q = BigInteger(1024, 256, rand) // SECRET
     val N: Composite = p.multiply(q) // Can be used many times
 
-    fun runInteractiveProver(m: Int, a: Int, b: Int) : Boolean {
+    fun generateProof(m: Int, a: Int, b: Int): Pair<SetupPublicResult, SetupPrivateResult> {
         val p = RangeProofProver(m = m, a = a, b = b, N = N)
-        val v = RangeProofVerifier(N = N, low = a, up = b)
-        val (setupPublic, setupPrivate) = p.rangeSetup(this) // Step 1-4
+        return p.rangeSetup(this) // Step 1-4
+    }
+
+    fun runInteractiveProver(m: Int, a: Int, b: Int): Boolean {
+        val (setupPublic, setupPrivate) = generateProof(m, a, b)
+        val v = RangeProofVerifier(N = N, a = a, b = b)
         // The verifier should interactiveVerify everything possible at this point
         var success = v.setupVerify(setupPublic)
         if (!success) {
@@ -55,10 +59,10 @@ class RangeProofTrustedParty {
         var res: Base
         do {
             res = BigInteger(1024, rand)
-        } while ( res % p == ZERO ||
+        } while (res % p == ZERO ||
                 res % q == ZERO ||
                 res.modPow(p, p * q) == ZERO ||
-                res.modPow(q, p * q) == ZERO )
+                res.modPow(q, p * q) == ZERO)
         return res
     }
 }

@@ -52,7 +52,10 @@ data class SetupPublicResult(
         val m3IsSquare: IsSquare,
         val g: Base,
         val h: Base,
-        val k1: BigInteger
+        val k1: BigInteger,
+        val N: BigInteger,
+        val a: Int,
+        val b: Int
 ) {
     fun nonAreZero(): Boolean {
         return c != ZERO &&
