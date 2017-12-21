@@ -5,9 +5,7 @@ import android.net.nsd.NsdServiceInfo
 import java.net.ServerSocket
 import android.net.nsd.NsdManager
 import android.util.Log
-import io.reactivex.Emitter
-import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
+import io.reactivex.*
 import io.reactivex.disposables.Disposables
 
 
@@ -22,17 +20,16 @@ class ServiceFactory(val context: Context) {
         registerService(port)
     }
 
-    fun startPeerDiscovery(): Observable<PeerItem> {
-        return Observable.create {
-
+    fun startPeerDiscovery(): Flowable<PeerItem> {
+        return Flowable.create({
             val resolveListener = initializeResolveListener(it)
 
             val discoveryListener = initializeDiscoveryListener(resolveListener)
             nsdManager.discoverServices(
                     serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
 
-            it.setDisposable(Disposables.fromAction {nsdManager.stopServiceDiscovery(discoveryListener)})
-        }
+            it.setDisposable(Disposables.fromAction { nsdManager.stopServiceDiscovery(discoveryListener) })
+        }, BackpressureStrategy.BUFFER)
     }
 
     fun registerService(port: Int) {
@@ -113,7 +110,7 @@ class ServiceFactory(val context: Context) {
         }
     }
 
-    fun initializeResolveListener(emitter: ObservableEmitter<PeerItem>): NsdManager.ResolveListener {
+    fun initializeResolveListener(emitter: FlowableEmitter<PeerItem>): NsdManager.ResolveListener {
         return object : NsdManager.ResolveListener {
 
             override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
