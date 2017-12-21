@@ -62,7 +62,7 @@ class ChainServiceServerTest {
         val peer = serverTwoPeerItem.asPeerMessage()
         val peerWithKey = ChainService.Peer.newBuilder(peer).setPublicKey(testServerTwo.peer.publicKey).build()
         val verifyProofWith = testServerOne.server.verifyExistingBlock(peerWithKey, 2)
-        assertTrue(verifyProofWith)
+        assertTrue(verifyProofWith.blockingGet())
     }
 
     @Test

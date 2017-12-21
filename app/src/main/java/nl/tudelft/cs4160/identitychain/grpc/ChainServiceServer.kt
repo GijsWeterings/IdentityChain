@@ -6,7 +6,10 @@ import com.zeroknowledgeproof.rangeProof.*
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
+import io.reactivex.Flowable
 import io.reactivex.Single
+import io.reactivex.rxkotlin.toCompletable
+import io.reactivex.schedulers.Schedulers
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
@@ -81,14 +84,14 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun verifyExistingBlock(peer: ChainService.Peer, seqNum: Int): Boolean = storage.getBlock(peer.publicKey.toByteArray(), seqNum)?.let { verifyNewBlock(peer, it) } ?: false
+    fun verifyExistingBlock(peer: ChainService.Peer, seqNum: Int): Single<Boolean> = storage.getBlock(peer.publicKey.toByteArray(), seqNum)?.let { verifyNewBlock(peer, it) } ?: Single.just(false)
 
-    fun verifyNewBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Boolean {
+    fun verifyNewBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
         val publicKey = peer.publicKey.toByteArray()
         val publicResult: SetupPublicResult = block.asSetupPublic() ?: throw IllegalArgumentException("Block did not contain attestation")
         val rangeProofVerifier = RangeProofVerifier(publicResult.N, publicResult.a, publicResult.b)
 
-        val resultOfAllProofs = (0..10).map {
+        val resultOfAllProofs: List<Single<Boolean>> = (0..10).map {
             val challenge = rangeProofVerifier.requestChallenge(publicResult.k1)
 
             val challengeMessage = ChainService.Challenge.newBuilder()
@@ -98,11 +101,13 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                     .setT(challenge.t.asByteString())
                     .build()
 
-            val challengeReply = registry.findStub(peer).answerChallenge(challengeMessage).asZkp()(challenge.s, challenge.t)
-            rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
-        }.all { it }
+            registry.findAsyncStub(peer).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
+                val challengeReply = it.asZkp()(challenge.s, challenge.t)
+                rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
+            }
+        }
 
-        return resultOfAllProofs
+        return Flowable.fromIterable(resultOfAllProofs).flatMapSingle { it }.all { it }
     }
 
     class NoSuchBlockException : Exception()
@@ -159,12 +164,15 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             val setupResult = ChainService.PublicSetupResult.parseFrom(block.transaction)
             val isCorrect = verifyNewBlock(peer, block)
 
-            if (isCorrect) {
-                uiPrompt(setupResult)
-            } else {
-                Log.e(TAG, "the proof was faulty not signing that crap")
-                Single.just(false)
+            isCorrect.flatMap {
+                if (it) {
+                    uiPrompt(setupResult)
+                } else {
+                    Log.e(TAG, "the proof was faulty not signing that crap")
+                    Single.just(false)
+                }
             }
+
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e(TAG, "we were asked to sign a block but it was not an attestation")
@@ -229,7 +237,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         // send the crawl request
         val message = ChainService.PeerCrawlRequest.newBuilder().setPeer(me).setRequest(crawlRequest).build()
-        return registry.findStub(peer).recieveCrawlRequest(message)
+        return registry.findSyncStub(peer).recieveCrawlRequest(message)
     }
 
     override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
