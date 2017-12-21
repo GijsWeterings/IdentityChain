@@ -2,9 +2,11 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import android.util.Log
 import com.google.protobuf.ByteString
+import com.zeroknowledgeproof.rangeProof.*
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
+import io.reactivex.Single
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
@@ -16,14 +18,17 @@ import nl.tudelft.cs4160.identitychain.network.PeerItem
 import java.security.KeyPair
 import java.util.*
 
-class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.Peer,
-                         val keyPair: KeyPair, val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
+class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
+                         val keyPair: KeyPair,
+                         val uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
+                         val private: SetupPrivateResult,
+                         val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
 
     val myPublicKey = keyPair.public.encoded
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
-        val validation = saveBlock(request) ?: return
+        val validation = saveHalfBlock(request) ?: return
         val peer = request.peer
         val block = request.block
         // check if block matches up with its previous block
@@ -39,7 +44,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             responseObserver.onError(GapInChainException())
         } else {
             val signBlock = signBlock(peer, block)
-            val returnTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(signBlock).build()
+            val returnTrustChainBlock = addPeerToBlock(signBlock)
             responseObserver.onNext(returnTrustChainBlock)
             responseObserver.onCompleted()
         }
@@ -53,27 +58,159 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         responseObserver.onCompleted()
     }
 
+//    override fun createAgeAttestation(request: ChainService.PeerAgeAttestationRequest, responseObserver: StreamObserver<ChainService.PeerAttestationResponse>) {
+//        val (setupPublicResult, setupPrivateResult) = RangeProofTrustedParty().generateProof(request.age, 18, 150)
+//        val requestor = request.requestor
+//
+//
+//        uiPrompt.subscribe { accepted ->
+//            if (accepted) {
+//                val attestationBlock = ageAttestationHalfBlock(setupPublicResult, requestor.publicKey.toByteArray()).let(this::addPeerToBlock)
+//
+//                if (attestationBlock != null) {
+//                    val completeBlock = registry.findStub(requestor).recieveHalfBlock(attestationBlock)
+//                    saveHalfBlock(completeBlock)
+//                    // block creation done return private parameters
+//                    responseObserver.onNext(asPeerAttestationReponse(setupPrivateResult))
+//                    responseObserver.onCompleted()
+//                } else {
+//                    responseObserver.onError(AttestationCreationException())
+//                }
+//            } else {
+//                responseObserver.onError(AttestationCreationException())
+//            }
+//
+//        }
+//    }
+//
+//    fun sendAgeAttestationRequest(age: Int, peerItem: PeerItem): ChainService.PeerAttestationResponse {
+//        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setRequestor(me).setAge(age).build()
+//
+//        return registry.findStub(peerItem.asPeerMessage()).createAgeAttestation(request)
+//    }
+//
+//    fun asPeerAttestationReponse(setupPrivateResult: SetupPrivateResult): ChainService.PeerAttestationResponse {
+//        val (m1, m2, m3, r1, r2, r3) = setupPrivateResult
+//        return ChainService.PeerAttestationResponse.newBuilder()
+//                .setM1(m1.asByteString())
+//                .setM2(m2.asByteString())
+//                .setM3(m3.asByteString())
+//                .setR1(r1.asByteString())
+//                .setR2(r2.asByteString())
+//                .setR3(r3.asByteString())
+//                .build()
+//    }
+//    class AttestationCreationException : Exception()
+//
+//
+//
+//    fun ageAttestationHalfBlock(publicResult: SetupPublicResult, peerKey: ByteArray): MessageProto.TrustChainBlock? {
+//        return createNewBlock(publicResult.toString().toByteArray(charset("UTF-8")), peerKey)
+//    }
+
     private fun createPublicKey() =
             ChainService.Key.newBuilder().setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
 
     override fun sendLatestBlocks(request: ChainService.CrawlResponse, responseObserver: StreamObserver<ChainService.Key>) {
         for (trustChainBlock in request.blockList) {
-            saveBlock(request.peer, trustChainBlock)
+            saveCompleteBlock(request.peer, trustChainBlock)
         }
 
         responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
     }
 
-    fun saveBlock(request: ChainService.PeerTrustChainBlock): ValidationResult? = saveBlock(request.peer, request.block)
+    override fun answerChallenge(request: ChainService.Challenge, responseObserver: StreamObserver<ChainService.ChallengeReply>) {
+        val publicResult: SetupPublicResult? = this.storage.getBlock(request.pubKey.toByteArray(), request.seqNum)?.asSetupPublic()
 
-    fun saveBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): ValidationResult? {
+        if (publicResult == null) {
+            responseObserver.onError(NoSuchBlockException())
+        } else {
+            val interactiveResult = private.answerUniqueChallenge(Challenge(request.s.asBigInt(), request.t.asBigInt()))
+            responseObserver.onNext(interactiveResult.asChallengeReply())
+            responseObserver.onCompleted()
+        }
+    }
+
+    fun verifyExistingBlock(peer: ChainService.Peer, seqNum: Int): Boolean = storage.getBlock(peer.publicKey.toByteArray(), seqNum)?.let { verifyNewBlock(peer, it) } ?: false
+
+    fun verifyNewBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Boolean {
+        val publicKey = peer.publicKey.toByteArray()
+        val publicResult: SetupPublicResult = block.asSetupPublic() ?: throw IllegalArgumentException("Block did not contain attestation")
+        val rangeProofVerifier = RangeProofVerifier(publicResult.N, publicResult.a, publicResult.b)
+
+        val resultOfAllProofs = (0..10).map {
+            val challenge = rangeProofVerifier.requestChallenge(publicResult.k1)
+
+            val challengeMessage = ChainService.Challenge.newBuilder()
+                    .setPubKey(ByteString.copyFrom(publicKey))
+                    .setSeqNum(block.sequenceNumber)
+                    .setS(challenge.s.asByteString())
+                    .setT(challenge.t.asByteString())
+                    .build()
+
+            val challengeReply = registry.findStub(peer).answerChallenge(challengeMessage).asZkp()(challenge.s, challenge.t)
+            rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
+        }.all { it }
+
+        return resultOfAllProofs
+    }
+
+
+    fun InteractivePublicResult.asChallengeReply() = ChainService.ChallengeReply.newBuilder()
+            .setX(this.x.asByteString())
+            .setY(this.y.asByteString())
+            .setU(this.u.asByteString())
+            .setV(this.v.asByteString())
+            .build()
+
+    class NoSuchBlockException : Exception()
+
+
+    fun saveCompleteBlock(request: ChainService.PeerTrustChainBlock): ValidationResult? = saveCompleteBlock(request.peer, request.block)
+
+    fun saveCompleteBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): ValidationResult? {
+
+        Log.i(TAG, "Received half block from peer with IP: " + peer.hostname + ":" + peer.port +
+                " and public key: " + Peer.bytesToHex(peer.publicKey.toByteArray()))
+
+        if (block.linkPublicKey != null && block.publicKey != null) {
+
+            val validation: ValidationResult
+            try {
+                validation = TrustChainBlock.validate(block, storage)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return null
+            }
+
+            Log.i(TAG, "Received block validation result " + validation.toString() + "("
+                    + TrustChainBlock.toString(block) + ")")
+
+            if (validation.getStatus() === ValidationResult.ValidationStatus.INVALID) {
+                for (error in validation.getErrors()) {
+                    Log.e(TAG, "Validation error: " + error)
+                }
+                return null
+            } else {
+                storage.insertInDB(block)
+                Log.i(TAG, "saving complete block")
+            }
+            return validation
+        }
+
+        return null
+    }
+
+    fun saveHalfBlock(request: ChainService.PeerTrustChainBlock): ValidationResult? = saveHalfBlock(request.peer, request.block)
+
+    fun saveHalfBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): ValidationResult? {
         Log.i(TAG, "Received half block from peer with IP: " + peer.hostname + ":" + peer.port +
                 " and public key: " + Peer.bytesToHex(peer.publicKey.toByteArray()))
 
         val validation: ValidationResult
         try {
-            validation = TrustChainBlock.validate(block, dbHelper)
+            validation = TrustChainBlock.validate(block, storage)
         } catch (e: Exception) {
             e.printStackTrace()
             return null
@@ -88,21 +225,23 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             }
             return null
         } else {
-            dbHelper.insertInDB(block)
+            //TODO this might cause duplicate exceptions.
+            storage.insertInDB(block)
+            Log.i(TAG, "saving half block maybe duplicate")
         }
 
         val pk = keyPair.public.encoded
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if (block.linkSequenceNumber != TrustChainBlock.UNKNOWN_SEQ ||
                 !Arrays.equals(block.linkPublicKey.toByteArray(), pk) ||
-                null != dbHelper.getBlock(block.linkPublicKey.toByteArray(),
+                null != storage.getBlock(block.linkPublicKey.toByteArray(),
                         block.linkSequenceNumber)) {
             Log.e(TAG, "Received block not addressed to me or already signed by me.")
             return null
         }
 
         // determine if we should sign the block, if not: do nothing
-        if (!shouldSign(block)) {
+        if (!shouldSign(peer, block).blockingGet()) {
             Log.e(TAG, "Will not sign received block.")
             return null
         }
@@ -110,46 +249,68 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         return validation
     }
 
-    fun connectToPeer(peer: PeerItem): List<ChainService.PeerTrustChainBlock> {
+    fun shouldSign(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
+        return try {
+            val setupResult = ChainService.PublicSetupResult.parseFrom(block.transaction)
+            val isCorrect = verifyNewBlock(peer, block)
+
+            if (isCorrect) {
+                uiPrompt(setupResult)
+            } else {
+                Log.e(TAG, "the proof was faulty not signing that crap")
+                Single.just(false)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(TAG, "we were asked to sign a block but it was not an attestation")
+            Single.just(false)
+        }
+    }
+
+    fun crawlPeer(peer: PeerItem): List<ChainService.PeerTrustChainBlock> {
         val connectablePeer = peer.asPeerMessage()
         val crawledBlocks = sendCrawlRequest(connectablePeer, myPublicKey, -5)
 
         val bufferedCrawledBlocks = crawledBlocks.asSequence().toList()
 
         for (crawledBlock in bufferedCrawledBlocks) {
-            saveBlock(crawledBlock)
+            saveCompleteBlock(crawledBlock)
         }
 
         return bufferedCrawledBlocks
     }
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): ChainService.PeerTrustChainBlock? {
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): ChainService.PeerTrustChainBlock? =
+            sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
+
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): ChainService.PeerTrustChainBlock? {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
-        val crawledBlocks = dbHelper.crawl(myPublicKey, sequenceNumberForCrawl)
+        val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
         val crawlResponse = ChainService.CrawlResponse.newBuilder().setPeer(me).addAllBlock(crawledBlocks).build()
         val peerMessage = peer.asPeerMessage()
         val peerChannel = registry.channelForPeer(peerMessage)
         val theirPublicKey: ChainService.Key = peerChannel.sendLatestBlocks(crawlResponse)
-        val newBlock = createNewBlock(payload.toByteArray(charset("UTF-8")), theirPublicKey.publicKey.toByteArray())
+        val newBlock = createNewBlock(payload, theirPublicKey.publicKey.toByteArray())
 
         if (newBlock != null) {
             val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
-            val recieveHalfBlock = peerChannel.recieveHalfBlock(trustChainBlock)
-            saveBlock(recieveHalfBlock)
-            return recieveHalfBlock
+            val recievedCompleteBlock = peerChannel.recieveHalfBlock(trustChainBlock)
+            saveCompleteBlock(recievedCompleteBlock)
+            Log.i(TAG, "saved a block")
+            return recievedCompleteBlock
         } else {
             return null
         }
     }
 
     fun createNewBlock(transaction: ByteArray, peerKey: ByteArray): MessageProto.TrustChainBlock? {
-        val newBlock = TrustChainBlock.createBlock(transaction, dbHelper, myPublicKey, null, peerKey)
+        val newBlock = TrustChainBlock.createBlock(transaction, storage, myPublicKey, null, peerKey)
         val signedBlock = TrustChainBlock.sign(newBlock, keyPair.private)
 
         val validation: ValidationResult?
         try {
-            validation = TrustChainBlock.validate(signedBlock, dbHelper)
+            validation = TrustChainBlock.validate(signedBlock, storage)
         } catch (e: Exception) {
             e.printStackTrace()
             return null
@@ -165,7 +326,8 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
                     + validation.getErrors().toString())
             return null
         } else {
-            dbHelper.insertInDB(signedBlock)
+            storage.insertInDB(signedBlock)
+            Log.i(TAG, "saving freshly created block")
             return signedBlock
         }
     }
@@ -182,7 +344,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
             Log.e(TAG, "signBlock: Block is not a request.")
             return null
         }
-        var block = TrustChainBlock.createBlock(null, dbHelper,
+        var block = TrustChainBlock.createBlock(null, storage,
                 myPublicKey,
                 linkedBlock, peer.publicKey.toByteArray())
 
@@ -190,7 +352,7 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
 
         val validation: ValidationResult?
         try {
-            validation = TrustChainBlock.validate(block, dbHelper)
+            validation = TrustChainBlock.validate(block, storage)
         } catch (e: Exception) {
             e.printStackTrace()
             return null
@@ -201,11 +363,11 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
 
         // only send block if validated correctly
         // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if (validation != null && validation.getStatus() !== ValidationResult.ValidationStatus.PARTIAL_NEXT && validation.getStatus() !== ValidationResult.ValidationStatus.VALID) {
+        if (validation.getStatus() !== ValidationResult.ValidationStatus.PARTIAL_NEXT && validation.getStatus() !== ValidationResult.ValidationStatus.VALID) {
             Log.e(TAG, "Signed block did not validate. Result: " + validation.toString() + ". Errors: "
                     + validation.getErrors().toString())
         } else {
-            dbHelper.insertInDB(block)
+            storage.insertInDB(block)
             return block
         }
         return null
@@ -214,8 +376,8 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
     fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): MutableIterator<ChainService.PeerTrustChainBlock> {
         var sq = seqNum
         if (seqNum == 0) {
-            sq = dbHelper.getBlock(publicKey,
-                    dbHelper.getMaxSeqNum(publicKey))?.sequenceNumber ?: TrustChainBlock.GENESIS_SEQ
+            sq = storage.getBlock(publicKey,
+                    storage.getMaxSeqNum(publicKey))?.sequenceNumber ?: TrustChainBlock.GENESIS_SEQ
         }
 
         if (sq >= 0) {
@@ -241,10 +403,10 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
 
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
-        val blockList = dbHelper.crawl(myPublicKey, sq)
+        val blockList = storage.crawl(myPublicKey, sq)
 
         for (block in blockList) {
-            val peerTrustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
+            val peerTrustChainBlock = addPeerToBlock(block)
             responseObserver.onNext(peerTrustChainBlock)
         }
         responseObserver.onCompleted()
@@ -252,31 +414,35 @@ class ChainServiceServer(val dbHelper: TrustChainStorage, val me: ChainService.P
         Log.i(TAG, "Sent " + blockList.size + " blocks")
     }
 
+    private fun addPeerToBlock(block: MessageProto.TrustChainBlock?) =
+            ChainService.PeerTrustChainBlock.newBuilder().setPeer(me).setBlock(block).build()
+
     private fun sequenceNumberForCrawl(sq: Int): Int {
-        if (sq < 0) {
-            val lastBlock = dbHelper.getLatestBlock(myPublicKey)
+        return if (sq < 0) {
+            val lastBlock = storage.getLatestBlock(myPublicKey)
 
             if (lastBlock != null) {
-                return Math.max(TrustChainBlock.GENESIS_SEQ, lastBlock.sequenceNumber + sq + 1)
+                Math.max(TrustChainBlock.GENESIS_SEQ, lastBlock.sequenceNumber + sq + 1)
             } else {
-                return TrustChainBlock.GENESIS_SEQ
+                TrustChainBlock.GENESIS_SEQ
             }
         } else {
-            return sq
+            sq
         }
     }
 
     companion object {
-        fun shouldSign(block: MessageProto.TrustChainBlock): Boolean {
-            return true
-        }
 
-        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage): Pair<ChainServiceServer, Server> {
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>, privateStuff: SetupPrivateResult): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)
         }
     }
+}
+
+fun MessageProto.TrustChainBlock.asSetupPublic(): SetupPublicResult? {
+    return ChainService.PublicSetupResult.parseFrom(this.transaction).asZkp()
 }

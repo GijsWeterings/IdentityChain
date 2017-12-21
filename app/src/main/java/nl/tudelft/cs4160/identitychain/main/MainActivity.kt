@@ -1,10 +1,15 @@
 package nl.tudelft.cs4160.identitychain.main
 
+
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
+import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.Peer
@@ -15,6 +20,8 @@ import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
+import nl.tudelft.cs4160.identitychain.grpc.asMessage
+import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.modals.PeerConnectActivity
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -29,33 +36,9 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
     lateinit private var server: ChainServiceServer
 
     var peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
+    val trustedParty = RangeProofTrustedParty()
+    val zkp = trustedParty.generateProof(30, 18, 100)
 
-
-    /**
-     * Listener for the connection button.
-     * On click a block is created and send to a peer.
-     * When we encounter an unknown peer, send a crawl request to that peer in order to get its
-     * public key.
-     * Also, when we want to send a block always send our last 5 blocks to the peer so the block
-     * request won't be rejected due to NO_INFO error.
-     *
-     * This is code to simulate dispersy, note that this does not work properly with a busy network,
-     * because the time delay between sending information to the peer and sending the actual
-     * to-be-signed block could cause gaps.
-     *
-     * Also note that whatever goes wrong we will never get a valid full block, so the integrity of
-     * the network is not compromised due to not using dispersy.
-     */
-    internal var connectionButtonListener: View.OnClickListener = View.OnClickListener {
-        val peeritem = peerViewRecyclerAdapter.getItem(0)
-        val peer = Peer(null, peeritem.host, peeritem.port)
-        val payload = payloadValue.text.toString().trim()
-        Log.i(TAG, "Initiating connection to ${peer.ipAddress} with payload $payload")
-//      send either a crawl request or a half block
-
-        server.connectToPeer(peeritem.withPort(8080))
-        server.sendBlockToKnownPeer(peeritem.withPort(8080), payload)
-    }
 
     internal var connectToDeviceButtonListener: View.OnClickListener = View.OnClickListener {
         val dialog = PeerConnectActivity()
@@ -94,6 +77,13 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         init(serviceFactory)
 
         serviceFactory.initializeDiscoveryServer()
+
+        addClaimButton.setOnClickListener {
+            val peeritem = peerViewRecyclerAdapter.getItem(0).withPort(8080)
+            val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
+            val publicPayLoad = asMessage.toByteArray()
+            server.sendBlockToKnownPeer(peeritem, publicPayLoad)
+        }
     }
 
 //    private fun initVariables() {
@@ -107,9 +97,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
             val block = TrustChainBlock.createGenesisBlock(kp)
             dbHelper.insertInDB(block)
         }
-
-
-        addClaimButton.setOnClickListener(connectionButtonListener)
         imageView.setOnLongClickListener(debugMenuListener)
         connectToDeviceButton.setOnClickListener(connectToDeviceButtonListener)
 
@@ -120,9 +107,31 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
         //start listening for messages
         requireNotNull(localIPAddress, { "error could not find local IP" })
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper)
+
+
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
+
+//        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, TrustChainMemoryStorage(kp), this::attestationPrompt, zkp.second)
         this.server = server
 
+    }
+
+    private fun attestationPrompt(attestation: ChainService.PublicSetupResult): Single<Boolean> {
+        val fuckyiou = Single.create<Boolean> { source ->
+            val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
+            AlertDialog.Builder(this).setMessage(message)
+                    .setPositiveButton("yes", object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface?, which: Int) {
+                            source.onSuccess(true)
+                        }
+                    })
+                    .setNegativeButton("no", object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface?, which: Int) {
+                            source.onSuccess(false)
+                        }
+                    }).show()
+        }
+        return fuckyiou.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     private fun initKeys(): KeyPair {

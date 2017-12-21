@@ -32,7 +32,6 @@ android {
     }
 }
 
-
 protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.4.0'
@@ -61,6 +60,9 @@ protobuf {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    //zkp module
+    compile project(":zeroknowledgeproof")
+
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
@@ -71,6 +73,7 @@ dependencies {
     compile 'com.android.support:design:26.1.0'
     compile 'com.android.support:cardview-v7:26.1.0'
     testCompile 'junit:junit:4.12'
+
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     //rx
     compile 'io.reactivex.rxjava2:rxkotlin:2.2.0'

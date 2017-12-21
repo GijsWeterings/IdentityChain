@@ -79,6 +79,7 @@
             android:paddingRight="8dp"
             android:text="Payload" />
 
+
         <EditText
             android:id="@+id/payloadValue"
             android:layout_width="match_parent"
@@ -87,7 +88,6 @@
             android:inputType="text"
             android:text="payload!" />
     </LinearLayout>
-
     <!--<TextView-->
     <!--android:id="@+id/statusText"-->
     <!--android:layout_width="match_parent"-->
