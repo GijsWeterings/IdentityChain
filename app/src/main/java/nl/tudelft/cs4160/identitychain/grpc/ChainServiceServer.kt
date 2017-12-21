@@ -57,57 +57,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
     }
-
-//    override fun createAgeAttestation(request: ChainService.PeerAgeAttestationRequest, responseObserver: StreamObserver<ChainService.PeerAttestationResponse>) {
-//        val (setupPublicResult, setupPrivateResult) = RangeProofTrustedParty().generateProof(request.age, 18, 150)
-//        val requestor = request.requestor
-//
-//
-//        uiPrompt.subscribe { accepted ->
-//            if (accepted) {
-//                val attestationBlock = ageAttestationHalfBlock(setupPublicResult, requestor.publicKey.toByteArray()).let(this::addPeerToBlock)
-//
-//                if (attestationBlock != null) {
-//                    val completeBlock = registry.findStub(requestor).recieveHalfBlock(attestationBlock)
-//                    saveHalfBlock(completeBlock)
-//                    // block creation done return private parameters
-//                    responseObserver.onNext(asPeerAttestationReponse(setupPrivateResult))
-//                    responseObserver.onCompleted()
-//                } else {
-//                    responseObserver.onError(AttestationCreationException())
-//                }
-//            } else {
-//                responseObserver.onError(AttestationCreationException())
-//            }
-//
-//        }
-//    }
-//
-//    fun sendAgeAttestationRequest(age: Int, peerItem: PeerItem): ChainService.PeerAttestationResponse {
-//        val request = ChainService.PeerAgeAttestationRequest.newBuilder().setRequestor(me).setAge(age).build()
-//
-//        return registry.findStub(peerItem.asPeerMessage()).createAgeAttestation(request)
-//    }
-//
-//    fun asPeerAttestationReponse(setupPrivateResult: SetupPrivateResult): ChainService.PeerAttestationResponse {
-//        val (m1, m2, m3, r1, r2, r3) = setupPrivateResult
-//        return ChainService.PeerAttestationResponse.newBuilder()
-//                .setM1(m1.asByteString())
-//                .setM2(m2.asByteString())
-//                .setM3(m3.asByteString())
-//                .setR1(r1.asByteString())
-//                .setR2(r2.asByteString())
-//                .setR3(r3.asByteString())
-//                .build()
-//    }
-//    class AttestationCreationException : Exception()
-//
-//
-//
-//    fun ageAttestationHalfBlock(publicResult: SetupPublicResult, peerKey: ByteArray): MessageProto.TrustChainBlock? {
-//        return createNewBlock(publicResult.toString().toByteArray(charset("UTF-8")), peerKey)
-//    }
-
+    
     private fun createPublicKey() =
             ChainService.Key.newBuilder().setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
 
