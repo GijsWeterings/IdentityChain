@@ -33,7 +33,13 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     val signerValidator = BlockSignerValidator(storage, me, keyPair)
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
-        val validation = saveHalfBlock(request) ?: return
+        val validation = saveHalfBlock(request)
+        if (validation == null) {
+            //TODO make a better exception for this
+            responseObserver.onError(GapInChainException())
+            return
+        }
+
         val peer = request.peer
         val block = request.block
         // check if block matches up with its previous block

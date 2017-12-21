@@ -1,6 +1,7 @@
 package nl.tudelft.cs4160.identitychain.grpc
 
 import com.google.protobuf.ByteString
+import com.google.protobuf.InvalidProtocolBufferException
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.grpc.ServerBuilder
@@ -36,16 +37,11 @@ class ChainServiceServerTest {
         assertTrue(testServerOne.storage.blocks.contains(blocks.first().block))
     }
 
-    @Ignore("this should error since it is now a bad weather test and should not deadlock")
-    @Test
-    fun send_half_block_after_crawl() {
+    @Test(expected = Exception::class)
+    fun send_random_crap() {
         initial_crawl_request_should_return_genesis_block()
         val payload = "YO dude what up!"
-        val sendBlockToKnownPeer = testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload)!!
-        assertEquals(sendBlockToKnownPeer.block.transaction.toStringUtf8(), payload)
-        //both should have 4 blocks genesis + the new block for both chains (*2)
-        assertEquals(4, testServerOne.storage.blocks.size)
-        assertEquals(4, testServerTwo.storage.blocks.size)
+         testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload)!!
     }
 
     @Test
