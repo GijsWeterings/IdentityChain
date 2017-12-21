@@ -15,7 +15,7 @@ import nl.tudelft.cs4160.identitychain.message.ChainService
 
 class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
     private val peers: MutableList<SelectablePeer> = ArrayList()
-    private var selected: SelectablePeer? = null
+    private var previouslySelected: RecyclerViewHolder? = null
     private val clickedItems: PublishSubject<PeerItem> = PublishSubject.create()
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): RecyclerViewHolder {
@@ -32,20 +32,21 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 
         holder.itemView.setOnClickListener {
-            selected?.selected = false
-            selectedPeer.selected = !selectedPeer.selected
-            holder.itemView.isActivated = selectedPeer.selected
+            previouslySelected?.toggleColorForSelection(peers)
+            //if we click the same item twice it should stay disabled
+            if(previouslySelected != holder) {
+                holder.toggleColorForSelection(peers)
+            }
+            previouslySelected = holder
             clickedItems.onNext(selectedPeer.peer)
-
-            view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
         }
     }
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
-        if (selectedPeer.selected) {
-            return ContextCompat.getColor(view.context, R.color.colorPrimary)
+        return if (selectedPeer.selected) {
+            ContextCompat.getColor(view.context, R.color.colorPrimary)
         } else {
-            return Color.TRANSPARENT
+            Color.TRANSPARENT
         }
     }
 
@@ -62,9 +63,25 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
 class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val textview = view.peerName
     val cardView = view.peerCardView
+
+    internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
+        val selectedPeer = peers[this.adapterPosition]
+        selectedPeer.selected = !selectedPeer.selected
+
+        return cardView.setCardBackgroundColor(colorForPeer(selectedPeer))
+    }
+
+    private fun colorForPeer(selectedPeer: SelectablePeer): Int {
+        if (selectedPeer.selected) {
+            return ContextCompat.getColor(cardView.context, R.color.colorPrimary)
+        } else {
+            return Color.TRANSPARENT
+        }
+    }
+
 }
 
-private data class SelectablePeer(var selected: Boolean, val peer: PeerItem)
+internal data class SelectablePeer(var selected: Boolean, val peer: PeerItem)
 
 data class PeerItem(val name: String, val host: String, val port: Int) {
 
