@@ -57,7 +57,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         responseObserver.onNext(createPublicKey())
         responseObserver.onCompleted()
     }
-    
+
     private fun createPublicKey() =
             ChainService.Key.newBuilder().setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
 

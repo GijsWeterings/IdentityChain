@@ -12,12 +12,10 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
-import nl.tudelft.cs4160.identitychain.connection.CommunicationListener
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
@@ -29,7 +27,7 @@ import java.net.NetworkInterface
 import java.security.KeyPair
 
 
-class MainActivity : AppCompatActivity(), CommunicationListener {
+class MainActivity : AppCompatActivity() {
     lateinit internal var dbHelper: TrustChainDBHelper
 
     val kp by lazy(this::initKeys)
@@ -86,9 +84,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
         }
     }
 
-//    private fun initVariables() {
-//        statusText.movementMethod = ScrollingMovementMethod()
-//    }
 
     private fun init(serviceFactory: ServiceFactory) {
         dbHelper = TrustChainDBHelper(this)
@@ -166,16 +161,6 @@ class MainActivity : AppCompatActivity(), CommunicationListener {
 
             return null
         }
-
-
-    override fun updateLog(msg: String) {
-        //just to be sure run it on the ui thread
-        //this is not necessary when this function is called from a AsyncTask
-        runOnUiThread {
-//            val statusText = findViewById<TextView>(R.id.statusText)
-//            statusText.append(msg)
-        }
-    }
 
     companion object {
         private val TAG = MainActivity::class.java.toString()
