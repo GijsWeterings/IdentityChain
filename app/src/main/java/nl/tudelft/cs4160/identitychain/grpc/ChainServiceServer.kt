@@ -53,7 +53,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                 validation.getStatus() === ValidationResult.ValidationStatus.NO_INFO) {
             Log.e(TAG, "Request block could not be validated sufficiently, requested crawler. " + validation.toString())
             // send a crawl request, requesting the last 5 blocks before the received halfblock (if available) of the peer
-            sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5))
+            //TODO get rid of this blocking get
+            sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5)).blockingGet()
             responseObserver.onError(GapInChainException())
         } else {
             val signBlock = signerValidator.signBlock(peer, block)
@@ -109,7 +110,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                     .setT(challenge.t.asByteString())
                     .build()
 
-            registry.findAsyncStub(peer).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
+            registry.findStub(peer).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
                 val challengeReply = it.asZkp()(challenge.s, challenge.t)
                 rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
             }
@@ -188,17 +189,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun crawlPeer(peer: PeerItem): List<ChainService.PeerTrustChainBlock> {
+    fun crawlPeer(peer: PeerItem): Single<ChainService.CrawlResponse> {
         val connectablePeer = peer.asPeerMessage()
-        val crawledBlocks = sendCrawlRequest(connectablePeer, myPublicKey, -5)
-
-        val bufferedCrawledBlocks = crawledBlocks.asSequence().toList()
-
-        for (crawledBlock in bufferedCrawledBlocks) {
-            signerValidator.saveCompleteBlock(crawledBlock)
-        }
-
-        return bufferedCrawledBlocks
+        return sendCrawlRequest(connectablePeer, myPublicKey, -5)
     }
 
     fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.PeerTrustChainBlock> =
@@ -210,7 +203,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         val crawlResponse = ChainService.CrawlResponse.newBuilder().setPeer(me).addAllBlock(crawledBlocks).build()
         val peerMessage = peer.asPeerMessage()
-        val peerChannel = registry.findAsyncStub(peerMessage)
+        val peerChannel = registry.findStub(peerMessage)
         val keySingle: Single<ChainService.Key> = peerChannel.sendLatestBlocks(crawlResponse).guavaAsSingle(Schedulers.computation())
 
         return keySingle.flatMap { theirPublicKey ->
@@ -230,7 +223,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): MutableIterator<ChainService.PeerTrustChainBlock> {
+    fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): Single<ChainService.CrawlResponse> {
         var sq = seqNum
         if (seqNum == 0) {
             sq = storage.getBlock(publicKey,
@@ -250,10 +243,11 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         // send the crawl request
         val message = ChainService.PeerCrawlRequest.newBuilder().setPeer(me).setRequest(crawlRequest).build()
-        return registry.findSyncStub(peer).recieveCrawlRequest(message)
+        //TODO find a better spot for this.
+        return registry.findStub(peer).recieveCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
     }
 
-    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
+    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {
         val sq = sequenceNumberForCrawl(crawlRequest.request.requestedSequenceNumber)
         println("processing crawl request")
         Log.i(TAG, "Received crawl crawlRequest")
@@ -261,11 +255,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         // a negative sequence number indicates that the requesting peer wants an offset of blocks
         // starting with the last block
         val blockList = storage.crawl(myPublicKey, sq)
-
-        for (block in blockList) {
-            val peerTrustChainBlock = addPeerToBlock(block)
-            responseObserver.onNext(peerTrustChainBlock)
-        }
+        val response = ChainService.CrawlResponse.newBuilder().addAllBlock(blockList).setPeer(me).build()
+        responseObserver.onNext(response)
         responseObserver.onCompleted()
 
         Log.i(TAG, "Sent " + blockList.size + " blocks")

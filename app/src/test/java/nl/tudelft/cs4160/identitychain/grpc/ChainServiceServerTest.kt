@@ -30,11 +30,11 @@ class ChainServiceServerTest {
 
     @Test
     fun initial_crawl_request_should_return_genesis_block() {
-        val blocks: List<ChainService.PeerTrustChainBlock> = testServerOne.server.crawlPeer(serverTwoPeerItem)
+        val blocks = testServerOne.server.crawlPeer(serverTwoPeerItem).blockingGet().blockList
 
         assertEquals(1, blocks.size)
-        assertEquals(GENESIS_SEQ, blocks.first().block.sequenceNumber)
-        assertTrue(testServerOne.storage.blocks.contains(blocks.first().block))
+        assertEquals(GENESIS_SEQ, blocks.first().sequenceNumber)
+        assertTrue(testServerOne.storage.blocks.contains(blocks.first()))
     }
 
     @Test(expected = Exception::class)
