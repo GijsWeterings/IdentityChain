@@ -46,7 +46,7 @@ class ChainExplorerActivity : AppCompatActivity() {
         }
 
         blocksList.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-            // Expand the item when it is clicked
+            // Expand the peer when it is clicked
             if (view.expandedItem.visibility == View.GONE) {
                 view.expandedItem.visibility = View.VISIBLE
                 Log.v(TAG, "Item height: " + view.expandedItem.height)

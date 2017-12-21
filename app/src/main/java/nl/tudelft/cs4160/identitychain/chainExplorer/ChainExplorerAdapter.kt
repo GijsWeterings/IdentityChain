@@ -36,7 +36,7 @@ class ChainExplorerAdapter(internal var context: Context, internal var blocksLis
 
 
     /**
-     * Puts the data from a TrustChainBlock object into the item textview.
+     * Puts the data from a TrustChainBlock object into the peer textview.
      *
      * @param position
      * @param convertView
