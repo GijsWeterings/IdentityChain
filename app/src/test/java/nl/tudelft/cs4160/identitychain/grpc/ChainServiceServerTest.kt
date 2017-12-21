@@ -17,7 +17,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.Assert.assertNotNull
 
-class GrpcTest {
+class ChainServiceServerTest {
     val trustedParty = RangeProofTrustedParty()
     val zkp = trustedParty.generateProof(30, 18, 100)
 
@@ -52,8 +52,6 @@ class GrpcTest {
     fun create_attestion() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
         testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad)
-
-
         println(testServerOne.storage.blocks[3])
     }
 
