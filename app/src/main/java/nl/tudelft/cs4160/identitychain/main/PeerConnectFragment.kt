@@ -9,7 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.android.synthetic.main.activity_peer_connect.view.*
+import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
@@ -22,7 +22,7 @@ class PeerConnectFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, parent: ViewGroup?, state: Bundle?): View? {
         super.onCreateView(inflater, parent, state)
 
-        val view = inflater.inflate(R.layout.activity_peer_connect, parent, false)
+        val view = inflater.inflate(R.layout.peer_connect_fragment, parent, false)
         view.discoveryList.layoutManager = LinearLayoutManager(view.context)
         val peerViewRecyclerAdapter = PeerViewRecyclerAdapter()
         view.discoveryList.adapter = peerViewRecyclerAdapter
