@@ -33,7 +33,7 @@ class PeerConnectFragment : Fragment() {
             peerViewRecyclerAdapter.addItem(it!!)
         })
 
-        val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it) })
+        val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it.withPort(8080)) })
         disposables.add(disposable)
 
         return view

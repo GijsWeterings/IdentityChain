@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
@@ -54,10 +55,14 @@ class MainFragment : Fragment() {
         init()
 
         view.addClaimButton.setOnClickListener {
-            val peeritem = viewModel.peerSelection.value!!
-            val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
-            val publicPayLoad = asMessage.toByteArray()
-            server.sendBlockToKnownPeer(peeritem, publicPayLoad).subscribe()
+            val peeritem = viewModel.peerSelection.value
+            if (peeritem == null) {
+                Toast.makeText(activity, "Please select a peer to connect with", Toast.LENGTH_SHORT).show()
+            } else {
+                val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
+                val publicPayLoad = asMessage.toByteArray()
+                server.sendBlockToKnownPeer(peeritem, publicPayLoad).subscribe()
+            }
         }
     }
 
