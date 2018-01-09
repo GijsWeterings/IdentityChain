@@ -6,9 +6,7 @@ import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.LiveDataReactiveStreams
 import android.arch.lifecycle.MutableLiveData
-import android.content.DialogInterface
 import android.util.Log
-import android.widget.Toast
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
@@ -114,16 +112,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val observer = Single.create<Boolean> { source ->
             val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
             AlertDialog.Builder(getApplication()).setMessage(message)
-                    .setPositiveButton("yes", object : DialogInterface.OnClickListener {
-                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                            source.onSuccess(true)
-                        }
-                    })
-                    .setNegativeButton("no", object : DialogInterface.OnClickListener {
-                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                            source.onSuccess(false)
-                        }
-                    }).show()
+                    .setPositiveButton("yes") { _, _ -> source.onSuccess(true) }
+                    .setNegativeButton("no") { _, _ -> source.onSuccess(false) }.show()
         }
         return observer.subscribeOn(AndroidSchedulers.mainThread())
     }
