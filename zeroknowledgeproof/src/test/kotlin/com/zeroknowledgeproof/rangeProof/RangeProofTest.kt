@@ -47,15 +47,4 @@ class RangeProofTest {
             assertTrue(res)
         }
     }
-
-    @Test
-    fun testBezout () {
-        var attempts = 0
-        while (attempts++ < 50) {
-            val n = BigInteger(1024, 1, SecureRandom())
-            val a = BigInteger(1024, SecureRandom())
-            val b = calculateInverse(a, n)
-            assertTrue(b.times(a).mod(n) == BigInteger.ONE)
-        }
-    }
 }
