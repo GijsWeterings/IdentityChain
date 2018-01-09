@@ -40,7 +40,7 @@ class ChainExplorerActivity : AppCompatActivity() {
         dbHelper = TrustChainDBHelper(this)
         val kp = Key.loadKeys(applicationContext)
         try {
-            blocksList.adapter = ChainExplorerAdapter(this, dbHelper.allBlocks, kp!!.public.encoded)
+            blocksList.adapter = ChainExplorerAdapter(dbHelper.allBlocks, kp!!.public.encoded)
         } catch (e: Exception) {
             e.printStackTrace()
         }
