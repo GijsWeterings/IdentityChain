@@ -7,7 +7,7 @@ import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
-
+import io.realm.Realm
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Realm.init(this)
         setContentView(R.layout.activity_main)
 
         viewPager.adapter = object : FragmentPagerAdapter(this.supportFragmentManager) {

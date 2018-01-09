@@ -20,8 +20,10 @@ import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
+import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import java.security.KeyPair
 import java.util.*
+import io.realm.Realm
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
                          keyPair: KeyPair,
@@ -34,7 +36,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     val signerValidator = BlockSignerValidator(storage, keyPair)
 
-    override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
+    val attestationRequestRepository = AttestationRequestRepository(Realm.getDefaultInstance())
+
+    override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
         val validation = saveHalfBlock(request)
         if (validation == null) {
             //TODO make a better exception for this
@@ -44,6 +48,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         val peer = request.peer
         val block = request.block
+        val hisPk = peer.publicKey.toByteArray()
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
         // the gap and delay the method until the gap is filled.
@@ -57,9 +62,16 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5)).blockingGet()
             responseObserver.onError(GapInChainException())
         } else {
-            val signBlock = signerValidator.signBlock(peer, block)
-            val returnTrustChainBlock = addPeerToBlock(signBlock)
-            responseObserver.onNext(returnTrustChainBlock)
+            val zkpBytes = request.block.transaction
+            try {
+                val zkp = ChainService.PublicSetupResult.parseFrom(zkpBytes)
+                attestationRequestRepository.saveAttestationRequest(hisPk, zkp)
+            } catch(e: Exception) {
+                e.printStackTrace()
+            }
+//            val signBlock = signerValidator.signBlock(peer, block)
+//            val returnTrustChainBlock = addPeerToBlock(signBlock)
+//            responseObserver.onNext(returnTrustChainBlock)
             responseObserver.onCompleted()
         }
     }
