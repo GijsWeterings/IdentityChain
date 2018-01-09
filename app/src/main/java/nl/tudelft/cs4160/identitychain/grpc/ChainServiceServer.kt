@@ -211,10 +211,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             if (newBlock != null) {
                 val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
                 val recievedCompleteBlock: Single<ChainService.PeerTrustChainBlock> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
-                recievedCompleteBlock.map {
+                recievedCompleteBlock.doOnSuccess {
                     signerValidator.saveCompleteBlock(it)
                     Log.i(TAG, "saved a block")
-                    it
                 }
             } else {
                 Single.error(RuntimeException("could not create new block"))
