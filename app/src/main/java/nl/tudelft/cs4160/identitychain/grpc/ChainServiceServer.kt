@@ -24,15 +24,15 @@ import java.security.KeyPair
 import java.util.*
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
-                         val keyPair: KeyPair,
+                         keyPair: KeyPair,
                          val uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
                          val private: SetupPrivateResult,
                          val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
 
-    val myPublicKey = keyPair.public.encoded
+    val myPublicKey = me.publicKey.toByteArray()
 
-    val signerValidator = BlockSignerValidator(storage, me, keyPair)
+    val signerValidator = BlockSignerValidator(storage, keyPair)
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
         val validation = saveHalfBlock(request)
@@ -149,10 +149,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             Log.i(TAG, "saving half block maybe duplicate")
         }
 
-        val pk = keyPair.public.encoded
         // check if addressed to me and if we did not sign it already, if so: do nothing.
         if (block.linkSequenceNumber != TrustChainBlock.UNKNOWN_SEQ ||
-                !Arrays.equals(block.linkPublicKey.toByteArray(), pk) ||
+                !Arrays.equals(block.linkPublicKey.toByteArray(), myPublicKey) ||
                 null != storage.getBlock(block.linkPublicKey.toByteArray(),
                         block.linkSequenceNumber)) {
             Log.e(TAG, "Received block not addressed to me or already signed by me.")

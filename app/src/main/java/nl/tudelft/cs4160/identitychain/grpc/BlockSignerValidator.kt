@@ -11,8 +11,7 @@ import nl.tudelft.cs4160.identitychain.message.MessageProto
 import java.security.KeyPair
 import java.util.*
 
-class BlockSignerValidator(val storage: TrustChainStorage, val me: ChainService.Peer,
-                           val keyPair: KeyPair) {
+class BlockSignerValidator(val storage: TrustChainStorage, val keyPair: KeyPair) {
     val myPublicKey = keyPair.public.encoded
 
     fun signBlock(peer: ChainService.Peer, linkedBlock: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock? {
