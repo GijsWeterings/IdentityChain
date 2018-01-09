@@ -17,7 +17,6 @@ class BlockSignerValidator(val storage: TrustChainStorage, val me: ChainService.
 
     fun signBlock(peer: ChainService.Peer, linkedBlock: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock? {
         // do nothing if linked block is not addressed to me
-        val myPublicKey = me.publicKey.toByteArray()
         if (!Arrays.equals(linkedBlock.linkPublicKey.toByteArray(), myPublicKey)) {
             Log.e(TAG, "signBlock: Linked block not addressed to me.")
             return null
@@ -33,11 +32,25 @@ class BlockSignerValidator(val storage: TrustChainStorage, val me: ChainService.
 
         block = TrustChainBlock.sign(block, keyPair.private)
 
+        return validateAndSaveBlock(block, storage)
+
+    }
+
+
+    fun createNewBlock(transaction: ByteArray, peerKey: ByteArray): MessageProto.TrustChainBlock? {
+        val newBlock = TrustChainBlock.createBlock(transaction, storage, myPublicKey, null, peerKey)
+        val signedBlock = TrustChainBlock.sign(newBlock, keyPair.private)
+
+        return validateAndSaveBlock(signedBlock, storage)
+    }
+
+    fun validateAndSaveBlock(block: MessageProto.TrustChainBlock, storgage: TrustChainStorage): MessageProto.TrustChainBlock? {
         val validation: ValidationResult?
         try {
             validation = TrustChainBlock.validate(block, storage)
         } catch (e: Exception) {
             e.printStackTrace()
+            Log.e(TAG, "Block validation failed unexpectedly")
             return null
         }
 
@@ -54,35 +67,6 @@ class BlockSignerValidator(val storage: TrustChainStorage, val me: ChainService.
             return block
         }
         return null
-    }
-
-
-    fun createNewBlock(transaction: ByteArray, peerKey: ByteArray): MessageProto.TrustChainBlock? {
-        val newBlock = TrustChainBlock.createBlock(transaction, storage, myPublicKey, null, peerKey)
-        val signedBlock = TrustChainBlock.sign(newBlock, keyPair.private)
-
-        val validation: ValidationResult?
-        try {
-            validation = TrustChainBlock.validate(signedBlock, storage)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        }
-
-        Log.i(TAG, "Signed signedBlock to " + Peer.bytesToHex(signedBlock.linkPublicKey.toByteArray()) +
-                ", validation result: " + validation!!.toString())
-
-        // only send signedBlock if validated correctly
-        // If you want to test the sending of blocks and don't care whether or not blocks are valid, remove the next check.
-        if (validation.getStatus() !== ValidationResult.ValidationStatus.PARTIAL_NEXT && validation.getStatus() !== ValidationResult.ValidationStatus.VALID) {
-            Log.e(TAG, "Signed signedBlock did not validate. Result: " + validation.toString() + ". Errors: "
-                    + validation.getErrors().toString())
-            return null
-        } else {
-            storage.insertInDB(signedBlock)
-            Log.i(TAG, "saving freshly created block")
-            return signedBlock
-        }
     }
 
     fun saveCompleteBlock(request: ChainService.PeerTrustChainBlock): ValidationResult? = saveCompleteBlock(request.peer, request.block)

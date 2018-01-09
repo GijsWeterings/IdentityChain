@@ -111,7 +111,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
 
     private fun attestationPrompt(attestation: ChainService.PublicSetupResult): Single<Boolean> {
-        val fuckyiou = Single.create<Boolean> { source ->
+        val observer = Single.create<Boolean> { source ->
             val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
             AlertDialog.Builder(getApplication()).setMessage(message)
                     .setPositiveButton("yes", object : DialogInterface.OnClickListener {
@@ -125,7 +125,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         }
                     }).show()
         }
-        return fuckyiou.subscribeOn(AndroidSchedulers.mainThread())
+        return observer.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     fun createClaim(): Single<ChainService.PeerTrustChainBlock>? {
