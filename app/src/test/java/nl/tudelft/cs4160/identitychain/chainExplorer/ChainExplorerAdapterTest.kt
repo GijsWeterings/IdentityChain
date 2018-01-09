@@ -11,7 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 
 class ChainExplorerAdapterTest {
-    private val adapter = ChainExplorerAdapter(null!!, null!!, ByteArray(0))
+    private val adapter = ChainExplorerAdapter(emptyList(), ByteArray(0))
 
     @Test
     fun find_peer_in_list() {

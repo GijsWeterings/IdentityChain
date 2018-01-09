@@ -18,7 +18,7 @@ import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.Peer.bytesToHex
 import kotlinx.android.synthetic.main.item_trustchainblock.view.*
 
-class ChainExplorerAdapter(internal var context: Context, internal var blocksList: List<MessageProto.TrustChainBlock>, myPubKey: ByteArray) : BaseAdapter() {
+class ChainExplorerAdapter(internal var blocksList: List<MessageProto.TrustChainBlock>, myPubKey: ByteArray) : BaseAdapter() {
     internal var peerList = HashMap<ByteString, String>()
 
     init {
@@ -36,7 +36,7 @@ class ChainExplorerAdapter(internal var context: Context, internal var blocksLis
 
 
     /**
-     * Puts the data from a TrustChainBlock object into the item textview.
+     * Puts the data from a TrustChainBlock object into the peer textview.
      *
      * @param position
      * @param convertView
@@ -44,7 +44,7 @@ class ChainExplorerAdapter(internal var context: Context, internal var blocksLis
      * @return
      */
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val inflatedView = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_trustchainblock,
+        val inflatedView = convertView ?: LayoutInflater.from(parent.context).inflate(R.layout.item_trustchainblock,
                 parent, false)
 
         val block = getItem(position)

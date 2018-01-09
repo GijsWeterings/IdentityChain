@@ -91,7 +91,7 @@ message ChallengeReply {
 
 service Chain {
     rpc recieveHalfBlock (PeerTrustChainBlock) returns (PeerTrustChainBlock);
-    rpc recieveCrawlRequest (PeerCrawlRequest) returns (stream PeerTrustChainBlock);
+    rpc recieveCrawlRequest (PeerCrawlRequest) returns (CrawlResponse);
     rpc getPublicKey (Empty) returns (Key);
     rpc sendLatestBlocks (CrawlResponse) returns (Key);
     rpc answerChallenge (Challenge) returns (ChallengeReply);

@@ -62,6 +62,13 @@ fun ChainService.ChallengeReply.asZkp(): (BigInteger, BigInteger) -> Interactive
     InteractivePublicResult(this.x.asBigInt(), this.y.asBigInt(), this.u.asBigInt(), this.v.asBigInt(), Challenge(s, t))
 }
 
+fun InteractivePublicResult.asChallengeReply() = ChainService.ChallengeReply.newBuilder()
+        .setX(this.x.asByteString())
+        .setY(this.y.asByteString())
+        .setU(this.u.asByteString())
+        .setV(this.v.asByteString())
+        .build()
+
 fun BigInteger.asByteString(): ByteString = ByteString.copyFrom(this.toByteArray())
 
 fun ByteString.asBigInt() = BigInteger(this.toByteArray())

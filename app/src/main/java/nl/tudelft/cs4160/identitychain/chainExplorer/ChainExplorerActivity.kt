@@ -40,13 +40,13 @@ class ChainExplorerActivity : AppCompatActivity() {
         dbHelper = TrustChainDBHelper(this)
         val kp = Key.loadKeys(applicationContext)
         try {
-            blocksList.adapter = ChainExplorerAdapter(this, dbHelper.allBlocks, kp!!.public.encoded)
+            blocksList.adapter = ChainExplorerAdapter(dbHelper.allBlocks, kp!!.public.encoded)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
         blocksList.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-            // Expand the item when it is clicked
+            // Expand the peer when it is clicked
             if (view.expandedItem.visibility == View.GONE) {
                 view.expandedItem.visibility = View.VISIBLE
                 Log.v(TAG, "Item height: " + view.expandedItem.height)
