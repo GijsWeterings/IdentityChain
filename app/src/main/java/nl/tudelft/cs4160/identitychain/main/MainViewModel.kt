@@ -11,8 +11,11 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
+import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
+import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
@@ -55,7 +58,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
+        val realm = Realm.getDefaultInstance()
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second, RealmAttestationRequestRepository(realm))
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -118,7 +122,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return observer.subscribeOn(AndroidSchedulers.mainThread())
     }
 
-    fun createClaim(): Single<ChainService.PeerTrustChainBlock>? {
+    fun createClaim(): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
         val publicPayLoad = asMessage.toByteArray()

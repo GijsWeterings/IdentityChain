@@ -23,20 +23,17 @@ import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import java.security.KeyPair
 import java.util.*
-import io.realm.Realm
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
                          keyPair: KeyPair,
                          val uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
                          val private: SetupPrivateResult,
+                         val attestationRequestRepository: AttestationRequestRepository,
                          val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
-
     val myPublicKey = me.publicKey.toByteArray()
-
     val signerValidator = BlockSignerValidator(storage, keyPair)
-
-    val attestationRequestRepository = AttestationRequestRepository(Realm.getDefaultInstance())
+    val empty = ChainService.Empty.getDefaultInstance()
 
     override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
         val validation = saveHalfBlock(request)
@@ -71,7 +68,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             }
 //            val signBlock = signerValidator.signBlock(peer, block)
 //            val returnTrustChainBlock = addPeerToBlock(signBlock)
-//            responseObserver.onNext(returnTrustChainBlock)
+            responseObserver.onNext(empty)
             responseObserver.onCompleted()
         }
     }
@@ -205,10 +202,10 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         return sendCrawlRequest(connectablePeer, myPublicKey, -5)
     }
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.PeerTrustChainBlock> =
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.Empty> =
             sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.PeerTrustChainBlock> {
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.Empty> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
@@ -222,11 +219,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
             if (newBlock != null) {
                 val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
-                val recievedCompleteBlock: Single<ChainService.PeerTrustChainBlock> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
-                recievedCompleteBlock.doOnSuccess {
-                    signerValidator.saveCompleteBlock(it)
-                    Log.i(TAG, "saved a block")
-                }
+                val recievedCompleteBlock: Single<ChainService.Empty> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
+                recievedCompleteBlock
             } else {
                 Single.error(RuntimeException("could not create new block"))
             }
@@ -291,9 +285,11 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     companion object {
 
-        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>, privateStuff: SetupPrivateResult): Pair<ChainServiceServer, Server> {
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage,
+                         uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
+                         privateStuff: SetupPrivateResult, attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff, attestationRequestRepository )
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)

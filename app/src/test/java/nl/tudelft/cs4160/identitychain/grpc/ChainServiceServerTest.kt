@@ -8,6 +8,7 @@ import io.grpc.ServerBuilder
 import io.reactivex.Single
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
+import nl.tudelft.cs4160.identitychain.database.FakeRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.network.PeerItem
@@ -41,7 +42,7 @@ class ChainServiceServerTest {
     fun send_random_crap() {
         initial_crawl_request_should_return_genesis_block()
         val payload = "YO dude what up!"
-         testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload).blockingGet()
+        testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload).blockingGet()
     }
 
     @Test
@@ -72,7 +73,7 @@ class ChainServiceServerTest {
         val keyPair = Key.createNewKeyPair()
         val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
         val testStorage = TrustChainMemoryStorage(keyPair)
-        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, { Single.just(true) }, zkp.second)
+        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, { Single.just(true) }, zkp.second, FakeRepository())
 
         val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
         return TestServer(chainServiceServer, me, testStorage, grpcServer)
