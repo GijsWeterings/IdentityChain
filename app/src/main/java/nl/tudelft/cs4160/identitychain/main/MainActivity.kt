@@ -4,6 +4,7 @@ package nl.tudelft.cs4160.identitychain.main
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentPagerAdapter
+import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
@@ -24,6 +25,8 @@ class MainActivity : AppCompatActivity() {
             override fun getCount(): Int = fragments.size
         }
 
+        viewPager.addOnPageChangeListener(TitleListener(viewPager, this::setTitle))
+
         bottomNavigationBar.setOnNavigationItemSelectedListener {
             when (it.itemId) {
                 R.id.peers -> viewPager.setCurrentItem(0, true)
@@ -36,4 +39,22 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+}
+
+class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit) : ViewPager.OnPageChangeListener {
+    override fun onPageScrollStateChanged(state: Int) {
+
+    }
+
+    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+
+    }
+
+    override fun onPageSelected(position: Int) {
+        val title = when (viewPager.currentItem) {
+            2 -> "Attestation Requests"
+            else -> "IdentityChain"
+        }
+        setTitle(title)
+    }
 }

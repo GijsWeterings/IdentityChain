@@ -2,7 +2,9 @@ package nl.tudelft.cs4160.identitychain.attestation
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,17 +14,25 @@ import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
-import org.jetbrains.anko.AnkoComponent
-import org.jetbrains.anko.AnkoContext
+import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.recyclerview.v7.recyclerView
-import org.jetbrains.anko.textView
-import org.jetbrains.anko.verticalLayout
 import kotlin.properties.Delegates
 
 
 class AttestationFragment : Fragment() {
     val realm = Realm.getDefaultInstance()
+
+    init {
+        val byteArray = ByteArray(5) { it.toByte() }
+        val request = AttestationRequest().apply {
+            zkp = byteArray
+            this.publicKey = byteArray
+        }
+        realm.executeTransaction {
+            it.copyToRealm(listOf(request, request, request))
+        }
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -38,9 +48,14 @@ class AttestationUI(
     override fun createView(ui: AnkoContext<AttestationFragment>): View {
         return with(ui) {
             verticalLayout {
+                gravity = Gravity.CENTER_HORIZONTAL
                 recyclerView {
+                    layoutManager = LinearLayoutManager(ui.ctx)
                     this.adapter = attestationAdapter
+                }.lparams(width = matchParent, height = matchParent) {
+                    gravity = Gravity.CENTER_HORIZONTAL
                 }
+
             }
         }
     }
@@ -52,15 +67,28 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
         var publicKeyTextView: TextView by Delegates.notNull()
         val view = with(parent.context) {
             cardView {
-                textView {
-                    text = "Attestation"
+                lparams(width = matchParent) {
+                    bottomMargin = dip(4)
+                    gravity = Gravity.CENTER_HORIZONTAL
                 }
+                verticalLayout {
+                    textView {
+                        text = "Attestation"
+                    }
 
-                textView {
-                    text = "what up glibb gloobs"
+                    textView {
+                        text = "what up glibb globs"
+                    }
+
+                    publicKeyTextView = textView()
+                    linearLayout {
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        button("ok").lparams {
+                            horizontalMargin = dip(24)
+                        }
+                        button("not ok")
+                    }
                 }
-
-                publicKeyTextView = textView()
             }
         }
 

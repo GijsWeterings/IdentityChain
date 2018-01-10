@@ -14,4 +14,11 @@
         android:icon="@drawable/logo"
         android:title="connecting"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/attestationRequest"
+        android:enabled="true"
+        android:icon="@drawable/logo"
+        android:title="requests"
+        app:showAsAction="ifRoom" />
+
 </menu>
