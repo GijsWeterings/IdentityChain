@@ -26,7 +26,6 @@ import java.util.*
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
                          keyPair: KeyPair,
-                         val uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
                          val private: SetupPrivateResult,
                          val attestationRequestRepository: AttestationRequestRepository,
                          val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
@@ -162,24 +161,22 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         return validation
     }
 
-    fun shouldSign(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
-        return try {
-            val setupResult = ChainService.PublicSetupResult.parseFrom(block.transaction)
-            val isCorrect = verifyNewBlock(peer, block)
+    override fun sendSignedBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
+        saveHalfBlock(request)
 
-            isCorrect.flatMap {
-                if (it) {
-                    uiPrompt(setupResult)
-                } else {
-                    Log.e(TAG, "the proof was faulty not signing that crap")
-                    Single.just(false)
-                }
+        responseObserver.onNext(empty)
+        responseObserver.onCompleted()
+    }
+
+    fun signAttestationRequest(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<ChainService.Empty> {
+        return verifyNewBlock(peer, block).flatMap {
+            if (it) {
+                signerValidator.signBlock(peer, block)?.let {
+                    registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation())
+                } ?: Single.error<ChainService.Empty>(RuntimeException("problems signing the block"))
+            } else {
+                Single.error<ChainService.Empty>(RuntimeException("Attestation contained a fake proof"))
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "we were asked to sign a block but it was not an attestation")
-            Single.just(false)
         }
     }
 
@@ -272,10 +269,10 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     companion object {
 
         fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage,
-                         uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
-                         privateStuff: SetupPrivateResult, attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
+                         privateStuff: SetupPrivateResult,
+                         attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff, attestationRequestRepository)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, privateStuff, attestationRequestRepository)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)

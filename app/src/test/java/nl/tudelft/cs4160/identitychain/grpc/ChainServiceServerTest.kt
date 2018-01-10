@@ -69,7 +69,7 @@ class ChainServiceServerTest {
         val keyPair = Key.createNewKeyPair()
         val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
         val testStorage = TrustChainMemoryStorage(keyPair)
-        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, { Single.just(true) }, zkp.second, FakeRepository())
+        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, zkp.second, FakeRepository())
 
         val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
         return TestServer(chainServiceServer, me, testStorage, grpcServer)

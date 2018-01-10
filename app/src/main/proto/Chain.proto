@@ -95,4 +95,5 @@ service Chain {
     rpc getPublicKey (Empty) returns (Key);
     rpc sendLatestBlocks (CrawlResponse) returns (Key);
     rpc answerChallenge (Challenge) returns (ChallengeReply);
+    rpc sendSignedBlock(PeerTrustChainBlock) returns (Empty);
 }

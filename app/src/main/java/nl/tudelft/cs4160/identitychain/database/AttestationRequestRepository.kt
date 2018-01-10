@@ -26,7 +26,7 @@ class FakeRepository : AttestationRequestRepository {
 }
 
 open class AttestationRequest : RealmObject() {
-    var zkp: ByteArray = ByteArray(0)
+    var block: ByteArray = ByteArray(0)
     var peer: Peer? = Peer()
 
     fun publicKey() = peer?.publicKey
@@ -42,7 +42,8 @@ open class AttestationRequest : RealmObject() {
 
             return AttestationRequest().apply {
                 //verify that the transaction is indeed a public result, but store it as bytes.
-                zkp = ChainService.PublicSetupResult.parseFrom(block.block.transaction).toByteArray()
+                ChainService.PublicSetupResult.parseFrom(block.block.transaction)
+                this.block = block.toByteArray()
                 peer = realmPeer
             }
 

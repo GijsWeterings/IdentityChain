@@ -31,7 +31,7 @@ class AttestationFragment : Fragment() {
     init {
         val byteArray = ByteArray(5) { it.toByte() }
         val request = AttestationRequest().apply {
-            zkp = byteArray
+            block = byteArray
             this.peer?.publicKey = byteArray
         }
         realm.executeTransaction {

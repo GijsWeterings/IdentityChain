@@ -11,16 +11,15 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
-import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
 import nl.tudelft.cs4160.identitychain.message.ChainService
+import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
@@ -33,8 +32,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val allPeers: LiveData<PeerItem> = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery())
     val peerSelection: LiveData<PeerItem> = selectedPeer
 
-    private lateinit var grpc: Server
-    lateinit private var server: ChainServiceServer
+    private val grpc: Server
+    private val server: ChainServiceServer
     private val dbHelper: TrustChainDBHelper = TrustChainDBHelper(app)
 
     val trustedParty = RangeProofTrustedParty()
@@ -59,7 +58,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second, RealmAttestationRequestRepository())
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, RealmAttestationRequestRepository())
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -129,8 +128,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return peeritem?.let { server.sendBlockToKnownPeer(it, publicPayLoad) }
     }
 
-    fun startVerificationAndSigning(request: AttestationRequest) {
-//        server.
+    fun startVerificationAndSigning(request: AttestationRequest): LiveData<ChainService.Empty> {
+        val block = ChainService.PeerTrustChainBlock.parseFrom(request.block)
+        return LiveDataReactiveStreams.fromPublisher(server.signAttestationRequest(block.peer, block.block)
+                .observeOn(AndroidSchedulers.mainThread()).toFlowable())
     }
 
     override fun onCleared() {
