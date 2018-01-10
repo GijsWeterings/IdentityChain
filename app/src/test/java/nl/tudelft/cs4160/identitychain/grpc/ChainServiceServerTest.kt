@@ -1,7 +1,6 @@
 package nl.tudelft.cs4160.identitychain.grpc
 
 import com.google.protobuf.ByteString
-import com.google.protobuf.InvalidProtocolBufferException
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.grpc.ServerBuilder
@@ -13,11 +12,8 @@ import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.network.PeerItem
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Ignore
+import org.junit.Assert.*
 import org.junit.Test
-import org.junit.Assert.assertNotNull
 
 class ChainServiceServerTest {
     val trustedParty = RangeProofTrustedParty()

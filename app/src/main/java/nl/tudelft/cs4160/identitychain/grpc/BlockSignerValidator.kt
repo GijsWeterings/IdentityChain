@@ -31,7 +31,7 @@ class BlockSignerValidator(val storage: TrustChainStorage, val keyPair: KeyPair)
 
         block = TrustChainBlock.sign(block, keyPair.private)
 
-        return validateAndSaveBlock(block, storage)
+        return validateAndSaveBlock(block)
 
     }
 
@@ -40,10 +40,10 @@ class BlockSignerValidator(val storage: TrustChainStorage, val keyPair: KeyPair)
         val newBlock = TrustChainBlock.createBlock(transaction, storage, myPublicKey, null, peerKey)
         val signedBlock = TrustChainBlock.sign(newBlock, keyPair.private)
 
-        return validateAndSaveBlock(signedBlock, storage)
+        return validateAndSaveBlock(signedBlock)
     }
 
-    fun validateAndSaveBlock(block: MessageProto.TrustChainBlock, storgage: TrustChainStorage): MessageProto.TrustChainBlock? {
+    fun validateAndSaveBlock(block: MessageProto.TrustChainBlock): MessageProto.TrustChainBlock? {
         val validation: ValidationResult?
         try {
             validation = TrustChainBlock.validate(block, storage)
