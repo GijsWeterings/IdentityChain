@@ -5,19 +5,16 @@ import io.realm.RealmObject
 import nl.tudelft.cs4160.identitychain.message.ChainService
 
 interface AttestationRequestRepository {
-    fun saveAttestationRequest(publicKey: ByteArray, zkp: ChainService.PublicSetupResult)
+    fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock)
 }
 
-class RealmAttestationRequestRepository() : AttestationRequestRepository {
+class RealmAttestationRequestRepository : AttestationRequestRepository {
 
-    override fun saveAttestationRequest(publicKey: ByteArray, zkp: ChainService.PublicSetupResult) {
+    override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
         val realm = Realm.getDefaultInstance()
-        val serializedZkp = zkp.toByteArray()
 
         realm.executeTransaction {
-            val request = realm.createObject(AttestationRequest::class.java)
-            request.publicKey = publicKey
-            request.zkp = serializedZkp
+            it.copyToRealm(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
         }
 
         realm.close()
@@ -25,11 +22,42 @@ class RealmAttestationRequestRepository() : AttestationRequestRepository {
 }
 
 class FakeRepository : AttestationRequestRepository {
-    override fun saveAttestationRequest(publicKey: ByteArray, zkp: ChainService.PublicSetupResult) {}
-
+    override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {}
 }
 
-open class AttestationRequest() : RealmObject() {
-    var publicKey: ByteArray = ByteArray(0)
+open class AttestationRequest : RealmObject() {
     var zkp: ByteArray = ByteArray(0)
+    var peer: Peer? = Peer()
+
+    fun publicKey() = peer?.publicKey
+
+    companion object {
+        fun fromHalfBlock(block: ChainService.PeerTrustChainBlock): AttestationRequest {
+            val realmPeer = Peer().apply {
+                val peer = block.peer
+                hostName = peer.hostname
+                port = peer.port
+                publicKey = peer.publicKey.toByteArray()
+            }
+
+            return AttestationRequest().apply {
+                //verify that the transaction is indeed a public result, but store it as bytes.
+                zkp = ChainService.PublicSetupResult.parseFrom(block.block.transaction).toByteArray()
+                peer = realmPeer
+            }
+
+        }
+    }
+}
+
+open class Peer() : RealmObject() {
+    var hostName: String = ""
+    var port: Int = 0
+    var publicKey: ByteArray = ByteArray(0)
+
+    companion object {
+        fun fromProtoPeer(peer: ChainService.Peer) {
+
+        }
+    }
 }

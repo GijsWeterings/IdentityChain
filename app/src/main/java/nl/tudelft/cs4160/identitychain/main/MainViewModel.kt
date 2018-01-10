@@ -14,6 +14,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
+import nl.tudelft.cs4160.identitychain.database.AttestationRequest
 import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
@@ -126,6 +127,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
         val publicPayLoad = asMessage.toByteArray()
         return peeritem?.let { server.sendBlockToKnownPeer(it, publicPayLoad) }
+    }
+
+    fun startVerificationAndSigning(request: AttestationRequest) {
+
     }
 
     override fun onCleared() {

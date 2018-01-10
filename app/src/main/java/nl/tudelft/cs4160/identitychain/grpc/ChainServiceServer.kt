@@ -45,7 +45,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         val peer = request.peer
         val block = request.block
-        val hisPk = peer.publicKey.toByteArray()
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
         // the gap and delay the method until the gap is filled.
@@ -59,13 +58,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5)).blockingGet()
             responseObserver.onError(GapInChainException())
         } else {
-            val zkpBytes = request.block.transaction
-            try {
-                val zkp = ChainService.PublicSetupResult.parseFrom(zkpBytes)
-                attestationRequestRepository.saveAttestationRequest(hisPk, zkp)
-            } catch(e: Exception) {
-                e.printStackTrace()
-            }
+            attestationRequestRepository.saveAttestationRequest(request)
+
             responseObserver.onNext(empty)
             responseObserver.onCompleted()
         }
@@ -281,7 +275,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                          uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
                          privateStuff: SetupPrivateResult, attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff, attestationRequestRepository )
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff, attestationRequestRepository)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)
