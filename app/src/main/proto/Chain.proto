@@ -90,8 +90,8 @@ message ChallengeReply {
 }
 
 service Chain {
-    rpc recieveHalfBlock (PeerTrustChainBlock) returns (Empty);
-    rpc recieveCrawlRequest (PeerCrawlRequest) returns (CrawlResponse);
+    rpc sendAttestationRequest (PeerTrustChainBlock) returns (Empty);
+    rpc sendCrawlRequest (PeerCrawlRequest) returns (CrawlResponse);
     rpc getPublicKey (Empty) returns (Key);
     rpc sendLatestBlocks (CrawlResponse) returns (Key);
     rpc answerChallenge (Challenge) returns (ChallengeReply);

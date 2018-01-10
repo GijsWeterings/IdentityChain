@@ -35,7 +35,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     val signerValidator = BlockSignerValidator(storage, keyPair)
     val empty = ChainService.Empty.getDefaultInstance()
 
-    override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
+    override fun sendAttestationRequest(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
         val validation = saveHalfBlock(request)
         if (validation == null) {
             //TODO make a better exception for this
@@ -205,7 +205,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
             if (newBlock != null) {
                 val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
-                val recievedCompleteBlock: Single<ChainService.Empty> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
+                val recievedCompleteBlock: Single<ChainService.Empty> = peerChannel.sendAttestationRequest(trustChainBlock).guavaAsSingle(Schedulers.computation())
                 recievedCompleteBlock
             } else {
                 Single.error(RuntimeException("could not create new block"))
@@ -234,10 +234,10 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         // send the crawl request
         val message = ChainService.PeerCrawlRequest.newBuilder().setPeer(me).setRequest(crawlRequest).build()
         //TODO find a better spot for this.
-        return registry.findStub(peer).recieveCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
+        return registry.findStub(peer).sendCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
     }
 
-    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {
+    override fun sendCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {
         val sq = sequenceNumberForCrawl(crawlRequest.request.requestedSequenceNumber)
         println("processing crawl request")
         Log.i(TAG, "Received crawl crawlRequest")

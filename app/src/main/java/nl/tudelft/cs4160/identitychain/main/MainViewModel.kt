@@ -130,7 +130,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun startVerificationAndSigning(request: AttestationRequest) {
-
+//        server.
     }
 
     override fun onCleared() {
