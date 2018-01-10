@@ -8,10 +8,11 @@ import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
 import io.realm.Realm
+import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
 
 class MainActivity : AppCompatActivity() {
 
-    val fragments = listOf(PeerConnectFragment(), MainFragment())
+    val fragments = listOf(PeerConnectFragment(), MainFragment(), AttestationFragment())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
