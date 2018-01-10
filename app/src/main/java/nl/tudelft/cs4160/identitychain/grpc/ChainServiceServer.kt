@@ -66,8 +66,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             } catch(e: Exception) {
                 e.printStackTrace()
             }
-//            val signBlock = signerValidator.signBlock(peer, block)
-//            val returnTrustChainBlock = addPeerToBlock(signBlock)
             responseObserver.onNext(empty)
             responseObserver.onCompleted()
         }
@@ -164,12 +162,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                 null != storage.getBlock(block.linkPublicKey.toByteArray(),
                         block.linkSequenceNumber)) {
             Log.e(TAG, "Received block not addressed to me or already signed by me.")
-            return null
-        }
-
-        // determine if we should sign the block, if not: do nothing
-        if (!shouldSign(peer, block).blockingGet()) {
-            Log.e(TAG, "Will not sign received block.")
             return null
         }
 
