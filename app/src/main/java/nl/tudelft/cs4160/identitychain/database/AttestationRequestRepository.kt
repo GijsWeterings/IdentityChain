@@ -8,16 +8,19 @@ interface AttestationRequestRepository {
     fun saveAttestationRequest(publicKey: ByteArray, zkp: ChainService.PublicSetupResult)
 }
 
-class RealmAttestationRequestRepository(val realm: Realm) : AttestationRequestRepository {
+class RealmAttestationRequestRepository() : AttestationRequestRepository {
 
     override fun saveAttestationRequest(publicKey: ByteArray, zkp: ChainService.PublicSetupResult) {
+        val realm = Realm.getDefaultInstance()
         val serializedZkp = zkp.toByteArray()
-        val request = realm.createObject(AttestationRequest::class.java)
 
         realm.executeTransaction {
+            val request = realm.createObject(AttestationRequest::class.java)
             request.publicKey = publicKey
             request.zkp = serializedZkp
         }
+
+        realm.close()
     }
 }
 

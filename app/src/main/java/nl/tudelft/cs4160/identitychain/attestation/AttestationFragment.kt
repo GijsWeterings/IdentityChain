@@ -22,19 +22,7 @@ import kotlin.properties.Delegates
 
 class AttestationFragment : Fragment() {
     val realm = Realm.getDefaultInstance()
-
-    init {
-        val byteArray = ByteArray(5) { it.toByte() }
-        val request = AttestationRequest().apply {
-            zkp = byteArray
-            this.publicKey = byteArray
-        }
-        realm.executeTransaction {
-            it.copyToRealm(listOf(request, request, request))
-        }
-    }
-
-
+    
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val attestationAdapter = AttestationAdapter(realm.where(AttestationRequest::class.java).findAll(), true)
         return AttestationUI(attestationAdapter).createView(AnkoContext.Companion.create(context, this))

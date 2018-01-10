@@ -58,8 +58,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val realm = Realm.getDefaultInstance()
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second, RealmAttestationRequestRepository(realm))
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second, RealmAttestationRequestRepository())
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
