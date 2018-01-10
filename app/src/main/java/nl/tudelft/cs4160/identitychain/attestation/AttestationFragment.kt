@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import io.realm.OrderedRealmCollection
 import io.realm.Realm
@@ -24,7 +26,7 @@ class AttestationFragment : Fragment() {
     val realm = Realm.getDefaultInstance()
     
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val attestationAdapter = AttestationAdapter(realm.where(AttestationRequest::class.java).findAll(), true)
+        val attestationAdapter = AttestationAdapter(realm.where(AttestationRequest::class.java).findAll(), true, realm)
         return AttestationUI(attestationAdapter).createView(AnkoContext.Companion.create(context, this))
     }
 }
@@ -49,10 +51,12 @@ class AttestationUI(
     }
 }
 
-class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, update: Boolean)
+class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, update: Boolean, val realm: Realm)
     : RealmRecyclerViewAdapter<AttestationRequest, AttestationViewHolder>(data, update) {
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AttestationViewHolder {
         var publicKeyTextView: TextView by Delegates.notNull()
+        var rejectButton: Button by Delegates.notNull()
         val view = with(parent.context) {
             cardView {
                 lparams(width = matchParent) {
@@ -74,21 +78,34 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                         button("ok").lparams {
                             horizontalMargin = dip(24)
                         }
-                        button("not ok")
+                        rejectButton = button("not ok")
                     }
                 }
             }
         }
 
-        return AttestationViewHolder(view, publicKeyTextView)
+        return AttestationViewHolder(view, publicKeyTextView, rejectButton)
     }
+
+    private val TAG: String = "Attestation Recycler"
 
     override fun onBindViewHolder(holder: AttestationViewHolder, position: Int) {
         val item = getItem(position)
         holder.publicKey.text = Peer.bytesToHex(item?.publicKey)
+        holder.rejectButton.setOnClickListener {
+            realm.executeTransaction {
+                //the position in the argument can become out to date if items in the middle of the list are removed
+                //then this view holder doesn't rebind and the position become bullshit
+                val upToDatePosition = holder.adapterPosition
+                Log.i(TAG, "deleteting at position $upToDatePosition")
+                Log.i(TAG, "data has length: ${data?.size}")
+
+                data?.deleteFromRealm(upToDatePosition)
+            }
+        }
     }
 
 }
 
-class AttestationViewHolder(view: View, val publicKey: TextView) : RecyclerView.ViewHolder(view) {}
+class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: Button) : RecyclerView.ViewHolder(view)
 
