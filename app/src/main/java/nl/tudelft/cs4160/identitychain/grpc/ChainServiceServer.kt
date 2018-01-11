@@ -171,10 +171,12 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     fun signAttestationRequest(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<ChainService.Empty> {
         return verifyNewBlock(peer, block).flatMap {
             if (it) {
+                Log.i(TAG, "verification successful")
                 signerValidator.signBlock(peer, block)?.let {
                     registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation())
                 } ?: Single.error<ChainService.Empty>(RuntimeException("problems signing the block"))
             } else {
+                Log.i(TAG, "verification failed")
                 Single.error<ChainService.Empty>(RuntimeException("Attestation contained a fake proof"))
             }
         }

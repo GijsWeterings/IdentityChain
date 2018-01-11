@@ -22,7 +22,10 @@ class RealmAttestationRequestRepository : AttestationRequestRepository {
 }
 
 class FakeRepository : AttestationRequestRepository {
-    override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {}
+    val attestationRequests = ArrayList<AttestationRequest>()
+    override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
+        attestationRequests.add(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
+    }
 }
 
 open class AttestationRequest : RealmObject() {

@@ -1,6 +1,5 @@
 package nl.tudelft.cs4160.identitychain.main
 
-import android.app.AlertDialog
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
@@ -19,7 +18,6 @@ import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
 import java.net.NetworkInterface
@@ -111,16 +109,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    private fun attestationPrompt(attestation: ChainService.PublicSetupResult): Single<Boolean> {
-        val observer = Single.create<Boolean> { source ->
-            val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
-            AlertDialog.Builder(getApplication()).setMessage(message)
-                    .setPositiveButton("yes") { _, _ -> source.onSuccess(true) }
-                    .setNegativeButton("no") { _, _ -> source.onSuccess(false) }.show()
-        }
-        return observer.subscribeOn(AndroidSchedulers.mainThread())
-    }
-
     fun createClaim(): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
@@ -129,9 +117,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun startVerificationAndSigning(request: AttestationRequest): LiveData<ChainService.Empty> {
+        Log.i(TAG,"starting verification process")
         val block = ChainService.PeerTrustChainBlock.parseFrom(request.block)
-        return LiveDataReactiveStreams.fromPublisher(server.signAttestationRequest(block.peer, block.block)
-                .observeOn(AndroidSchedulers.mainThread()).toFlowable())
+        server.signAttestationRequest(block.peer, block.block)
+                .observeOn(AndroidSchedulers.mainThread()).subscribe()
+        return MutableLiveData()
     }
 
     override fun onCleared() {
