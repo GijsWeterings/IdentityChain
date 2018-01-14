@@ -1,6 +1,8 @@
 package nl.tudelft.cs4160.identitychain.attestation
 
 import android.arch.lifecycle.ViewModelProviders
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
@@ -10,12 +12,14 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import io.realm.OrderedRealmCollection
 import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
 import nl.tudelft.cs4160.identitychain.Peer
+import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
 import nl.tudelft.cs4160.identitychain.main.MainViewModel
 import org.jetbrains.anko.*
@@ -64,7 +68,6 @@ class AttestationUI(
                 }.lparams(width = matchParent, height = matchParent) {
                     gravity = Gravity.CENTER_HORIZONTAL
                 }
-
             }
         }
     }
@@ -75,17 +78,17 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AttestationViewHolder {
         var publicKeyTextView: TextView by Delegates.notNull()
-        var rejectButton: Button by Delegates.notNull()
-        var verifyAttestationButton: Button by Delegates.notNull()
+        var rejectButton: ImageButton by Delegates.notNull()
+        var verifyAttestationButton: ImageButton by Delegates.notNull()
         val view = with(parent.context) {
             cardView {
                 lparams(width = matchParent) {
                     bottomMargin = dip(4)
-                    gravity = Gravity.CENTER_HORIZONTAL
                 }
+
                 verticalLayout {
-                    textView {
-                        text = "Attestation"
+                    textView("Attestation") {
+                        typeface = Typeface.DEFAULT_BOLD
                     }
 
                     textView {
@@ -93,13 +96,19 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                     }
 
                     publicKeyTextView = textView()
-                    linearLayout {
-                        gravity = Gravity.CENTER_HORIZONTAL
-                        verifyAttestationButton = button("ok").lparams {
-                            horizontalMargin = dip(24)
-                        }
-                        rejectButton = button("not ok")
-                    }
+                }
+                linearLayout {
+                    gravity = Gravity.END
+                    val imageSize = 60
+                    verifyAttestationButton = imageButton(R.drawable.ic_check_circle_black_24dp) {
+                        backgroundColor = Color.TRANSPARENT
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                    }.lparams(dip(imageSize), dip(imageSize))
+
+                    rejectButton = imageButton(R.drawable.ic_cancel_black_24dp) {
+                        backgroundColor = Color.TRANSPARENT
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                    }.lparams(dip(imageSize), dip(imageSize))
                 }
             }
         }
@@ -111,7 +120,8 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
 
     override fun onBindViewHolder(holder: AttestationViewHolder, position: Int) {
         val item = getItem(position)
-        holder.publicKey.text = item?.publicKey()?.let(Peer::bytesToHex) ?: ""
+        val keyAsText = item?.publicKey()?.let(Peer::bytesToHex) ?: ""
+        holder.publicKey.text = keyAsText.take(20)
         holder.rejectButton.setOnClickListener {
             realm.executeTransaction {
                 //the position in the argument can become out to date if items in the middle of the list are removed
@@ -132,5 +142,5 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
 
 }
 
-class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: Button, val verifyAttestationButton: Button) : RecyclerView.ViewHolder(view)
+class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: ImageButton, val verifyAttestationButton: ImageButton) : RecyclerView.ViewHolder(view)
 
