@@ -1,5 +1,7 @@
 package nl.tudelft.cs4160.identitychain.modals
 
+import android.app.KeyguardManager
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_biometric.*
@@ -11,21 +13,25 @@ import android.os.CancellationSignal
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.View
+import nl.tudelft.cs4160.identitychain.main.MainActivity
 
 
 internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
 
     private var cancellationSignal: CancellationSignal? = null
+    lateinit var keyguardManager : KeyguardManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_biometric)
         val wrapper = ContextThemeWrapper(this, R.style.FingerprintDefaultScene)
         changeTheme(wrapper.theme)
+        keyguardManager = getSystemService(KeyguardManager::class.java)
 
-        // TODO: Remove this, only used for demo purposes
-        this.fingerprintText.setOnClickListener(this)
-
+        //If no fingerprint scanner is found on the device skip it for now
+        if(!keyguardManager.isKeyguardSecure){
+            loadApplication()
+        }
     }
 
     private fun changeTheme(theme: Theme) {
@@ -35,8 +41,8 @@ internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
 
     fun startListening() {
         val fingerprintMgr = getSystemService(FingerprintManager::class.java)
-
         fingerprintMgr.authenticate(null, cancellationSignal, 0, fingerCallback, null)
+
     }
 
 
@@ -45,6 +51,7 @@ internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
             it.cancel()
         }
         cancellationSignal = null
+
     }
 
 
@@ -64,7 +71,8 @@ internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
             true -> {
                 Log.d(TAG, "Fingerprint accepted")
                 theme.applyStyle(R.style.FingerprintAcceptedScene, false)
-                fingerprintText.text = ""
+                fingerprintText.text = "Loading application"
+                loadApplication()
             }
             else -> {
                 Log.d(TAG, "Fingerprint declined")
@@ -74,6 +82,13 @@ internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         changeTheme(theme)
+    }
+
+    fun loadApplication() {
+        val i = Intent(this, MainActivity::class.java)
+        startActivity(i)
+        //Finish this activity
+        finish()
     }
 
     companion object {
@@ -101,12 +116,17 @@ internal class BiometricActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onResume() {
         super.onResume()
-        this.startListening()
+        if (keyguardManager.isKeyguardSecure) {
+            this.startListening()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        this.stopListening()
+        if (keyguardManager.isKeyguardSecure) {
+
+            this.stopListening()
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.modals.BiometricActivity
 
 
 class SplashActivity: AppCompatActivity() {
@@ -17,10 +18,8 @@ class SplashActivity: AppCompatActivity() {
 
         Handler().postDelayed(Runnable {
             // This method will be executed once the timer is over
-            // Start your app main activity
-            val i = Intent(this, MainActivity::class.java)
-            startActivity(i)
-
+            val biosensor = Intent(this, BiometricActivity::class.java)
+            startActivity(biosensor)
             // close this activity
             finish()
         }, SPLASH_TIME_OUT)
