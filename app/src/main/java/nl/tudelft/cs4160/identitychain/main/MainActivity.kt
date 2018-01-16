@@ -1,6 +1,8 @@
 package nl.tudelft.cs4160.identitychain.main
 
 
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.Fragment
@@ -10,10 +12,15 @@ import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
+import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment
+import nl.tudelft.cs4160.identitychain.modals.MainActivityAuthenticated
 
 class MainActivity : AppCompatActivity() {
 
     val fragments = listOf(PeerConnectFragment(), MainFragment(), AttestationFragment())
+
+    val auth = BiometricAuthenticationFragment()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +43,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewPager.setCurrentItem(0, false)
+
+        val authenticationViewModel = ViewModelProviders.of(this)[MainActivityAuthenticated::class.java]
+        if (!supportFragmentManager.fragments.contains(auth) && !authenticationViewModel.authenticated) {
+            auth.show(supportFragmentManager, "authenticator")
+            auth.isCancelable = false
+        }
     }
 }
 

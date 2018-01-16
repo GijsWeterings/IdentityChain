@@ -39,7 +39,7 @@
         </activity>
         <activity android:name="nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity" />
         <activity
-            android:name="nl.tudelft.cs4160.identitychain.modals.BiometricActivity"
+            android:name="nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment"
             android:theme="@style/AppTheme.NoActionBar"/>
 
         <!-- MODALS -->

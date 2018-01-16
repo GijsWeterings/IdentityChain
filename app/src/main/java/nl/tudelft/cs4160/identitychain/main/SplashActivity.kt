@@ -17,16 +17,14 @@ class SplashActivity: AppCompatActivity() {
 
         Handler().postDelayed(Runnable {
             // This method will be executed once the timer is over
-            // Start your app main activity
             val i = Intent(this, MainActivity::class.java)
             startActivity(i)
-
             // close this activity
             finish()
         }, SPLASH_TIME_OUT)
     }
 
     companion object {
-        private val SPLASH_TIME_OUT: Long = 3000
+        private val SPLASH_TIME_OUT: Long = 1000
     }
 }

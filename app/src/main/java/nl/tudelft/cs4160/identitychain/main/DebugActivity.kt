@@ -11,8 +11,7 @@ import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_debug.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity
-import nl.tudelft.cs4160.identitychain.modals.BiometricActivity
-import org.spongycastle.asn1.x509.qualified.BiometricData
+import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment
 
 class DebugActivity(): AppCompatActivity() {
 
@@ -22,7 +21,7 @@ class DebugActivity(): AppCompatActivity() {
     }
 
     internal var fingerprintButtonListener: View.OnClickListener = View.OnClickListener {
-        val intent = Intent(this, BiometricActivity::class.java)
+        val intent = Intent(this, BiometricAuthenticationFragment::class.java)
         startActivity(intent)
     }
 
