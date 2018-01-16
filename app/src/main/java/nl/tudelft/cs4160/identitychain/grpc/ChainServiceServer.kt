@@ -168,16 +168,16 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         responseObserver.onCompleted()
     }
 
-    fun signAttestationRequest(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<ChainService.Empty> {
-        return verifyNewBlock(peer, block).flatMap {
-            if (it) {
+    fun signAttestationRequest(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
+        return verifyNewBlock(peer, block).flatMap { zkpValid ->
+            if (zkpValid) {
                 Log.i(TAG, "verification successful")
                 signerValidator.signBlock(peer, block)?.let {
-                    registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation())
-                } ?: Single.error<ChainService.Empty>(RuntimeException("problems signing the block"))
+                    registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation()).map { zkpValid }
+                } ?: Single.error<Boolean>(RuntimeException("problems signing the block"))
             } else {
                 Log.i(TAG, "verification failed")
-                Single.error<ChainService.Empty>(RuntimeException("Attestation contained a fake proof"))
+                Single.error<Boolean>(RuntimeException("Attestation contained a fake proof"))
             }
         }
     }

@@ -10,6 +10,7 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
@@ -36,9 +37,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val trustedParty = RangeProofTrustedParty()
     val zkp = trustedParty.generateProof(30, 18, 100)
+    val attestationRequestRepository = RealmAttestationRequestRepository()
 
     val kp by lazy(this::initKeys)
-
 
     fun select(peer: PeerItem) {
         selectedPeer.value = peer
@@ -56,7 +57,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, RealmAttestationRequestRepository())
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, attestationRequestRepository)
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -116,12 +117,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return peeritem?.let { server.sendBlockToKnownPeer(it, publicPayLoad) }
     }
 
-    fun startVerificationAndSigning(request: AttestationRequest): LiveData<ChainService.Empty> {
+    fun startVerificationAndSigning(request: AttestationRequest) {
         Log.i(TAG,"starting verification process")
         val block = ChainService.PeerTrustChainBlock.parseFrom(request.block)
+        val delete: (Boolean) -> Unit = {
+            if (it) {
+                attestationRequestRepository.deleteAttestationRequest(request)
+            }
+        }
         server.signAttestationRequest(block.peer, block.block)
-                .observeOn(AndroidSchedulers.mainThread()).subscribe()
-        return MutableLiveData()
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
+
     }
 
     override fun onCleared() {

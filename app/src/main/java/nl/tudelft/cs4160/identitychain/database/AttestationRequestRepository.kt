@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.identitychain.database
 
 import io.realm.Realm
 import io.realm.RealmObject
+import io.realm.kotlin.delete
 import nl.tudelft.cs4160.identitychain.message.ChainService
 
 interface AttestationRequestRepository {
@@ -15,6 +16,15 @@ class RealmAttestationRequestRepository : AttestationRequestRepository {
 
         realm.executeTransaction {
             it.copyToRealm(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
+        }
+
+        realm.close()
+    }
+
+    fun deleteAttestationRequest(request: AttestationRequest) {
+        val realm = Realm.getDefaultInstance()
+        realm.executeTransaction {
+            request.deleteFromRealm()
         }
 
         realm.close()
