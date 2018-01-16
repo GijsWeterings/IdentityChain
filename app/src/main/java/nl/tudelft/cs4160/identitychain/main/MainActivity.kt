@@ -8,7 +8,6 @@ import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
-import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
 
 class MainActivity : AppCompatActivity() {
@@ -37,8 +36,6 @@ class MainActivity : AppCompatActivity() {
 
         viewPager.setCurrentItem(0, false)
     }
-
-
 }
 
 class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit) : ViewPager.OnPageChangeListener {

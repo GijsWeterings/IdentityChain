@@ -79,9 +79,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                         typeface = Typeface.DEFAULT_BOLD
                     }
 
-                    textView {
-                        text = "what up glibb globs"
-                    }
+                    textView("Age greater than 18")
 
                     publicKeyTextView = textView()
                 }
