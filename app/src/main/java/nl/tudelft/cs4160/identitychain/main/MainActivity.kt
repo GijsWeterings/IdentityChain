@@ -9,16 +9,19 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
 import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
     val fragments = listOf(PeerConnectFragment(), MainFragment(), AttestationFragment())
 
     val auth = BiometricAuthenticationFragment()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,15 +48,18 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         auth.show(supportFragmentManager, "authenticator")
+        auth.setCancelable(false)
 
-
-        auth.foo(getSystemService(KeyguardManager::class.java), getSystemService(FingerprintManager::class.java)).subscribe {
-            if (it) {
-                auth.dismiss()
-            } else {
-                finish()
-            }
-        }
+        auth.getFingerprintStream(getSystemService(KeyguardManager::class.java), getSystemService(FingerprintManager::class.java))
+                .delay(500, TimeUnit.MILLISECONDS)
+                .subscribe {
+                    if (it) {
+                        auth.dismiss()
+                    } else {
+                        Log.d("MAIN","No valid fingerprint, closing application")
+                        finish()
+                    }
+                }
     }
 }
 
