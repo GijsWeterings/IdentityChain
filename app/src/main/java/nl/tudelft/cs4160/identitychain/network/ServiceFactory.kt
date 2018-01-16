@@ -21,14 +21,14 @@ class ServiceFactory(val context: Context) {
     }
 
     fun startPeerDiscovery(): Flowable<PeerItem> {
-        return Flowable.create({
-            val resolveListener = initializeResolveListener(it)
+        return Flowable.create({ em ->
+            val resolveListener = {initializeResolveListener(em) }
 
             val discoveryListener = initializeDiscoveryListener(resolveListener)
             nsdManager.discoverServices(
                     serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
 
-            it.setDisposable(Disposables.fromAction { nsdManager.stopServiceDiscovery(discoveryListener) })
+            em.setDisposable(Disposables.fromAction { nsdManager.stopServiceDiscovery(discoveryListener) })
         }, BackpressureStrategy.BUFFER)
     }
 
@@ -66,7 +66,7 @@ class ServiceFactory(val context: Context) {
         }
     }
 
-    fun initializeDiscoveryListener(listener: NsdManager.ResolveListener): NsdManager.DiscoveryListener {
+    fun initializeDiscoveryListener(listener: () -> NsdManager.ResolveListener): NsdManager.DiscoveryListener {
 
         // Instantiate a new DiscoveryListener
         return object : NsdManager.DiscoveryListener {
@@ -84,7 +84,7 @@ class ServiceFactory(val context: Context) {
                 } else if (service.serviceName == serviceInfo.serviceName) {
                     Log.d(TAG, "Same machine: " + serviceInfo.serviceName)
                 } else if (service.serviceName.contains(serviceName)) {
-                    nsdManager.resolveService(service, listener)
+                    nsdManager.resolveService(service, listener())
                 }
             }
 
