@@ -84,6 +84,8 @@ class ServiceFactory(val context: Context) {
                 } else if (service.serviceName == serviceInfo.serviceName) {
                     Log.d(TAG, "Same machine: " + serviceInfo.serviceName)
                 } else if (service.serviceName.contains(serviceName)) {
+                    Log.i(TAG, "listener callback!!" +
+                            "")
                     nsdManager.resolveService(service, listener())
                 }
             }
