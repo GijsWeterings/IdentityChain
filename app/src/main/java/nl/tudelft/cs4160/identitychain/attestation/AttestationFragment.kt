@@ -31,18 +31,6 @@ import kotlin.properties.Delegates
 class AttestationFragment : Fragment() {
     val realm = Realm.getDefaultInstance()
     lateinit var viewModel: MainViewModel
-
-    init {
-        val byteArray = ByteArray(5) { it.toByte() }
-        val request = AttestationRequest().apply {
-            block = byteArray
-            this.peer?.publicKey = byteArray
-        }
-        realm.executeTransaction {
-            it.copyToRealm(listOf(request, request, request))
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
