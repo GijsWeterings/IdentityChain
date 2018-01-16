@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
             when (it.itemId) {
                 R.id.peers -> viewPager.setCurrentItem(0, true)
                 R.id.connect -> viewPager.setCurrentItem(1, true)
+                R.id.attestationRequest -> viewPager.setCurrentItem(2, true)
             }
             true
         }
