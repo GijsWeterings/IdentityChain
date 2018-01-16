@@ -1,20 +1,19 @@
 package nl.tudelft.cs4160.identitychain.main
 
 
-import android.app.KeyguardManager
-import android.hardware.fingerprint.FingerprintManager
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
 import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment
-import java.util.concurrent.TimeUnit
+import nl.tudelft.cs4160.identitychain.modals.MainActivityAuthenticated
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,22 +43,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewPager.setCurrentItem(0, false)
-    }
-    override fun onStart() {
-        super.onStart()
-        auth.show(supportFragmentManager, "authenticator")
-        auth.setCancelable(false)
 
-        auth.getFingerprintStream(getSystemService(KeyguardManager::class.java), getSystemService(FingerprintManager::class.java))
-                .delay(500, TimeUnit.MILLISECONDS)
-                .subscribe {
-                    if (it) {
-                        auth.dismiss()
-                    } else {
-                        Log.d("MAIN","No valid fingerprint, closing application")
-                        finish()
-                    }
-                }
+        val authenticationViewModel = ViewModelProviders.of(this)[MainActivityAuthenticated::class.java]
+        if (!supportFragmentManager.fragments.contains(auth) && !authenticationViewModel.authenticated) {
+            auth.show(supportFragmentManager, "authenticator")
+            auth.isCancelable = false
+        }
     }
 }
 
