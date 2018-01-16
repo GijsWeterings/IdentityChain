@@ -100,12 +100,12 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                 linearLayout {
                     gravity = Gravity.END
                     val imageSize = 60
-                    verifyAttestationButton = imageButton(R.drawable.ic_check_circle_black_24dp) {
+                    verifyAttestationButton = imageButton(R.drawable.ic_check_circle_24dp) {
                         backgroundColor = Color.TRANSPARENT
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }.lparams(dip(imageSize), dip(imageSize))
 
-                    rejectButton = imageButton(R.drawable.ic_cancel_black_24dp) {
+                    rejectButton = imageButton(R.drawable.ic_cancel_24dp) {
                         backgroundColor = Color.TRANSPARENT
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }.lparams(dip(imageSize), dip(imageSize))
