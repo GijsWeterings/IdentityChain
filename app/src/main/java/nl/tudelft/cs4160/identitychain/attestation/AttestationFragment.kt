@@ -117,10 +117,9 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                 val upToDatePosition = holder.adapterPosition
                 Log.i(TAG, "deleteting at position $upToDatePosition")
                 Log.i(TAG, "data has length: ${data?.size}")
-                try {
+
+                if( upToDatePosition != -1) {
                     data?.deleteFromRealm(upToDatePosition)
-                } catch(e : IndexOutOfBoundsException) {
-                    //ignore the double click error.
                 }
             }
         }
