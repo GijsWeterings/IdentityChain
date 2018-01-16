@@ -5,19 +5,19 @@
     <item
         android:id="@+id/peers"
         android:enabled="true"
-        android:icon="@drawable/logo"
+        android:icon="@drawable/ic_tap_and_play_white_24px"
         android:title="peers"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/connect"
         android:enabled="true"
-        android:icon="@drawable/logo"
-        android:title="connecting"
+        android:icon="@drawable/ic_account_circle_white_24px"
+        android:title="profile"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/attestationRequest"
         android:enabled="true"
-        android:icon="@drawable/logo"
+        android:icon="@drawable/ic_explore_white_24px"
         android:title="requests"
         app:showAsAction="ifRoom" />
 
