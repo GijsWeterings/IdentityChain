@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.identitychain.main
 
 
 import android.os.Bundle
+import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
             override fun getCount(): Int = fragments.size
         }
 
-        viewPager.addOnPageChangeListener(TitleListener(viewPager, this::setTitle))
+        viewPager.addOnPageChangeListener(TitleListener(viewPager, this::setTitle, bottomNavigationBar))
 
         bottomNavigationBar.setOnNavigationItemSelectedListener {
             when (it.itemId) {
@@ -38,7 +39,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit) : ViewPager.OnPageChangeListener {
+class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit, val bottomNavigationBar: BottomNavigationView) : ViewPager.OnPageChangeListener {
     override fun onPageScrollStateChanged(state: Int) {
 
     }
@@ -53,5 +54,16 @@ class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit) : 
             else -> "IdentityChain"
         }
         setTitle(title)
+        highlighSelectedItem(position)
+    }
+
+    fun highlighSelectedItem(position: Int) {
+        val id = when (position) {
+            0 -> R.id.peers
+            1 -> R.id.connect
+            2 -> R.id.attestationRequest
+            else -> R.id.peers
+        }
+        bottomNavigationBar.selectedItemId = id
     }
 }
