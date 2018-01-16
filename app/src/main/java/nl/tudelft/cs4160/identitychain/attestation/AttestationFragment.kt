@@ -78,28 +78,28 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                     textView("Attestation") {
                         typeface = Typeface.DEFAULT_BOLD
                     }
-
                     textView("Age greater than 18")
 
                     publicKeyTextView = textView()
                 }
+
                 linearLayout {
                     gravity = Gravity.END
                     val imageSize = 60
-                    verifyAttestationButton = imageButton(R.drawable.ic_check_circle_24dp) {
-                        backgroundColor = Color.TRANSPARENT
-                        scaleType = ImageView.ScaleType.FIT_CENTER
-                    }.lparams(dip(imageSize), dip(imageSize))
-
-                    rejectButton = imageButton(R.drawable.ic_cancel_24dp) {
-                        backgroundColor = Color.TRANSPARENT
-                        scaleType = ImageView.ScaleType.FIT_CENTER
-                    }.lparams(dip(imageSize), dip(imageSize))
+                    verifyAttestationButton = confirmationButton(imageSize, R.drawable.ic_check_circle_24dp)
+                    rejectButton = confirmationButton(imageSize, R.drawable.ic_cancel_24dp)
                 }
             }
         }
 
         return AttestationViewHolder(view, publicKeyTextView, rejectButton, verifyAttestationButton)
+    }
+
+    private fun @AnkoViewDslMarker _LinearLayout.confirmationButton(imageSize: Int, resource: Int): ImageButton {
+        return imageButton(resource) {
+            backgroundColor = Color.TRANSPARENT
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }.lparams(dip(imageSize), dip(imageSize))
     }
 
     private val TAG: String = "Attestation Recycler"
@@ -116,7 +116,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                 Log.i(TAG, "deleteting at position $upToDatePosition")
                 Log.i(TAG, "data has length: ${data?.size}")
 
-                if( upToDatePosition != -1) {
+                if (upToDatePosition != -1) {
                     data?.deleteFromRealm(upToDatePosition)
                 }
             }
