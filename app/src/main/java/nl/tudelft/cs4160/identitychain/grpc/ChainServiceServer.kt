@@ -20,21 +20,21 @@ import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.network.PeerItem
+import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import java.security.KeyPair
 import java.util.*
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
                          keyPair: KeyPair,
-                         val uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>,
                          val private: SetupPrivateResult,
+                         val attestationRequestRepository: AttestationRequestRepository,
                          val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
-
     val myPublicKey = me.publicKey.toByteArray()
-
     val signerValidator = BlockSignerValidator(storage, keyPair)
+    val empty = ChainService.Empty.getDefaultInstance()
 
-    override fun recieveHalfBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.PeerTrustChainBlock>) {
+    override fun sendAttestationRequest(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
         val validation = saveHalfBlock(request)
         if (validation == null) {
             //TODO make a better exception for this
@@ -57,9 +57,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             sendCrawlRequest(peer, block.publicKey.toByteArray(), Math.max(TrustChainBlock.GENESIS_SEQ, block.sequenceNumber - 5)).blockingGet()
             responseObserver.onError(GapInChainException())
         } else {
-            val signBlock = signerValidator.signBlock(peer, block)
-            val returnTrustChainBlock = addPeerToBlock(signBlock)
-            responseObserver.onNext(returnTrustChainBlock)
+            attestationRequestRepository.saveAttestationRequest(request)
+
+            responseObserver.onNext(empty)
             responseObserver.onCompleted()
         }
     }
@@ -158,33 +158,27 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             return null
         }
 
-        // determine if we should sign the block, if not: do nothing
-        if (!shouldSign(peer, block).blockingGet()) {
-            Log.e(TAG, "Will not sign received block.")
-            return null
-        }
-
         return validation
     }
 
-    fun shouldSign(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
-        return try {
-            val setupResult = ChainService.PublicSetupResult.parseFrom(block.transaction)
-            val isCorrect = verifyNewBlock(peer, block)
+    override fun sendSignedBlock(request: ChainService.PeerTrustChainBlock, responseObserver: StreamObserver<ChainService.Empty>) {
+        saveHalfBlock(request)
 
-            isCorrect.flatMap {
-                if (it) {
-                    uiPrompt(setupResult)
-                } else {
-                    Log.e(TAG, "the proof was faulty not signing that crap")
-                    Single.just(false)
-                }
+        responseObserver.onNext(empty)
+        responseObserver.onCompleted()
+    }
+
+    fun signAttestationRequest(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
+        return verifyNewBlock(peer, block).flatMap { zkpValid ->
+            if (zkpValid) {
+                Log.i(TAG, "verification successful")
+                signerValidator.signBlock(peer, block)?.let {
+                    registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation()).map { zkpValid }
+                } ?: Single.error<Boolean>(RuntimeException("problems signing the block"))
+            } else {
+                Log.i(TAG, "verification failed")
+                Single.error<Boolean>(RuntimeException("Attestation contained a fake proof"))
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "we were asked to sign a block but it was not an attestation")
-            Single.just(false)
         }
     }
 
@@ -193,10 +187,10 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         return sendCrawlRequest(connectablePeer, myPublicKey, -5)
     }
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.PeerTrustChainBlock> =
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.Empty> =
             sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.PeerTrustChainBlock> {
+    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.Empty> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
@@ -210,12 +204,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
             if (newBlock != null) {
                 val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
-                val recievedCompleteBlock: Single<ChainService.PeerTrustChainBlock> = peerChannel.recieveHalfBlock(trustChainBlock).guavaAsSingle(Schedulers.computation())
-                recievedCompleteBlock.map {
-                    signerValidator.saveCompleteBlock(it)
-                    Log.i(TAG, "saved a block")
-                    it
-                }
+                val recievedCompleteBlock: Single<ChainService.Empty> = peerChannel.sendAttestationRequest(trustChainBlock).guavaAsSingle(Schedulers.computation())
+                recievedCompleteBlock
             } else {
                 Single.error(RuntimeException("could not create new block"))
             }
@@ -243,10 +233,10 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         // send the crawl request
         val message = ChainService.PeerCrawlRequest.newBuilder().setPeer(me).setRequest(crawlRequest).build()
         //TODO find a better spot for this.
-        return registry.findStub(peer).recieveCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
+        return registry.findStub(peer).sendCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
     }
 
-    override fun recieveCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {
+    override fun sendCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {
         val sq = sequenceNumberForCrawl(crawlRequest.request.requestedSequenceNumber)
         println("processing crawl request")
         Log.i(TAG, "Received crawl crawlRequest")
@@ -280,9 +270,11 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     companion object {
 
-        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage, uiPrompt: (ChainService.PublicSetupResult) -> Single<Boolean>, privateStuff: SetupPrivateResult): Pair<ChainServiceServer, Server> {
+        fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage,
+                         privateStuff: SetupPrivateResult,
+                         attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, uiPrompt, privateStuff)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, privateStuff, attestationRequestRepository)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)

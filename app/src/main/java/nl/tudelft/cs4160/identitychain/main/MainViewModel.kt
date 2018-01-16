@@ -1,6 +1,5 @@
 package nl.tudelft.cs4160.identitychain.main
 
-import android.app.AlertDialog
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
@@ -11,8 +10,11 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
+import nl.tudelft.cs4160.identitychain.database.AttestationRequest
+import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
@@ -29,15 +31,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val allPeers: LiveData<PeerItem> = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery())
     val peerSelection: LiveData<PeerItem> = selectedPeer
 
-    private lateinit var grpc: Server
-    lateinit private var server: ChainServiceServer
+    private val grpc: Server
+    private val server: ChainServiceServer
     private val dbHelper: TrustChainDBHelper = TrustChainDBHelper(app)
 
     val trustedParty = RangeProofTrustedParty()
     val zkp = trustedParty.generateProof(30, 18, 100)
+    val attestationRequestRepository = RealmAttestationRequestRepository()
 
     val kp by lazy(this::initKeys)
-
 
     fun select(peer: PeerItem) {
         selectedPeer.value = peer
@@ -55,7 +57,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, this::attestationPrompt, zkp.second)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, attestationRequestRepository)
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -108,21 +110,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    private fun attestationPrompt(attestation: ChainService.PublicSetupResult): Single<Boolean> {
-        val observer = Single.create<Boolean> { source ->
-            val message = "attest for some cool dude that his _ is between ${attestation.a} - ${attestation.b}"
-            AlertDialog.Builder(getApplication()).setMessage(message)
-                    .setPositiveButton("yes") { _, _ -> source.onSuccess(true) }
-                    .setNegativeButton("no") { _, _ -> source.onSuccess(false) }.show()
-        }
-        return observer.subscribeOn(AndroidSchedulers.mainThread())
-    }
-
-    fun createClaim(): Single<ChainService.PeerTrustChainBlock>? {
+    fun createClaim(): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
         val publicPayLoad = asMessage.toByteArray()
         return peeritem?.let { server.sendBlockToKnownPeer(it, publicPayLoad) }
+    }
+
+    fun startVerificationAndSigning(request: AttestationRequest) {
+        Log.i(TAG,"starting verification process")
+        val block = ChainService.PeerTrustChainBlock.parseFrom(request.block)
+        val delete: (Boolean) -> Unit = {
+            if (it) {
+                attestationRequestRepository.deleteAttestationRequest(request)
+            }
+        }
+        server.signAttestationRequest(block.peer, block.block)
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
+
     }
 
     override fun onCleared() {

@@ -18,8 +18,8 @@
         android:id="@+id/bottomNavigationBar"
         app:layout_constraintBottom_toBottomOf="parent"
         android:background="@color/colorPrimaryDark"
-        app:itemIconTint="@color/colorAccent"
-        app:itemTextColor="@color/colorWhite"
+        app:itemIconTint="@drawable/bottom_bar_selector"
+        app:itemTextColor="@drawable/bottom_bar_selector"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:menu="@menu/bottom_navigation_main"/>
