@@ -39,7 +39,6 @@ class BiometricAuthenticationFragment : DialogFragment() {
         changeTheme(wrapper.theme)
 
         biometricAuthenticationViewModel.authenticated.observe(this, Observer<Boolean> { authenticated ->
-            Log.i("CoolGuy", "totally got called")
             if (authenticated == true) {
                 this.dismiss()
                 //save the auth state in the MainAuthViewmodel so we only show this once.
@@ -56,7 +55,6 @@ class BiometricAuthenticationFragment : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-
         // the content
         val root = RelativeLayout(activity)
         root.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
