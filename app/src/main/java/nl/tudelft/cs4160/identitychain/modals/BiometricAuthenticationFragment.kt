@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.CancellationSignal
 import android.support.v4.app.DialogFragment
 import android.support.v4.content.res.ResourcesCompat
+import android.support.v4.hardware.fingerprint.FingerprintManagerCompat
 import android.util.Log
 import android.view.*
 import android.widget.RelativeLayout
@@ -22,6 +23,7 @@ import io.reactivex.ObservableEmitter
 import io.reactivex.disposables.Disposables
 import kotlinx.android.synthetic.main.activity_biometric.*
 import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment.Companion.TAG
 
 
 class BiometricAuthenticationFragment : DialogFragment() {
@@ -95,7 +97,6 @@ class BiometricAuthenticationFragment : DialogFragment() {
 }
 
 class BiometricAuthenticationViewModel(application: Application) : AndroidViewModel(application) {
-    private val keyguardManager = application.getSystemService(KeyguardManager::class.java)
     private val fingerprintManager = application.getSystemService(FingerprintManager::class.java)
     private val sharedAuthenication = skipIfNoFingerPrintScanner().share()
 
@@ -126,7 +127,8 @@ class BiometricAuthenticationViewModel(application: Application) : AndroidViewMo
      * A second for the main activity dismissing the fragment
      */
     private fun skipIfNoFingerPrintScanner() = Flowable.defer {
-        if (!deviceHasFingerPrintScanner(keyguardManager)) {
+        if (!deviceHasFingerPrintScanner()) {
+            Log.i(TAG, "no finger print scanner detected")
             Flowable.just(true)
         } else {
             fingerPrintAuthenticate().toFlowable(BackpressureStrategy.BUFFER)
@@ -145,7 +147,7 @@ class BiometricAuthenticationViewModel(application: Application) : AndroidViewMo
         }
     }
 
-    private fun deviceHasFingerPrintScanner(keyguardManager: KeyguardManager) = keyguardManager.isKeyguardSecure
+    private fun deviceHasFingerPrintScanner() = fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
 }
 
 class AuthListener(val em: ObservableEmitter<Boolean>) : FingerprintManager.AuthenticationCallback() {
