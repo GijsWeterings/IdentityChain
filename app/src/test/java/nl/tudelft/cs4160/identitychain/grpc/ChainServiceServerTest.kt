@@ -9,7 +9,7 @@ import nl.tudelft.cs4160.identitychain.block.TrustChainBlock.GENESIS_SEQ
 import nl.tudelft.cs4160.identitychain.database.FakeRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainMemoryStorage
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import nl.tudelft.cs4160.identitychain.network.PeerItem
+import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Ignore
@@ -22,8 +22,8 @@ class ChainServiceServerTest {
     val testServerOne = peerAndServerForPort(8080)
     val testServerTwo = peerAndServerForPort(8081)
 
-    val serverTwoPeerItem = PeerItem("peerBoy", "localhost", 8081)
-    val serverOnePeerItem = PeerItem("peerBoy", "localhost", 8080)
+    val serverTwoPeerItem = PeerConnectionInformation("peerBoy", "localhost", 8081)
+    val serverOnePeerItem = PeerConnectionInformation("peerBoy", "localhost", 8080)
 
     @Test
     fun initial_crawl_request_should_return_genesis_block() {

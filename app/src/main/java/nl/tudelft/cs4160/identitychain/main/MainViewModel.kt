@@ -10,7 +10,6 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
@@ -19,17 +18,19 @@ import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import nl.tudelft.cs4160.identitychain.network.PeerItem
+import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
+import nl.tudelft.cs4160.identitychain.peers.DiscoveredPeer
+import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 import java.net.NetworkInterface
 import java.security.KeyPair
 
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
-    private val selectedPeer: MutableLiveData<PeerItem> = MutableLiveData()
+    private val selectedPeer: MutableLiveData<KeyedPeer> = MutableLiveData()
     val serviceFactory = initializeServiceFactory()
-    val allPeers: LiveData<PeerItem> = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery())
-    val peerSelection: LiveData<PeerItem> = selectedPeer
+    val peerSelection: LiveData<KeyedPeer> = selectedPeer
+    val keyedPeers: LiveData<KeyedPeer>
 
     private val grpc: Server
     private val server: ChainServiceServer
@@ -41,7 +42,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val kp by lazy(this::initKeys)
 
-    fun select(peer: PeerItem) {
+    fun select(peer: KeyedPeer) {
         selectedPeer.value = peer
     }
 
@@ -61,7 +62,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
-
+        keyedPeers = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer))
     }
 
     /**
@@ -114,11 +115,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val peeritem = peerSelection.value
         val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
         val publicPayLoad = asMessage.toByteArray()
-        return peeritem?.let { server.sendBlockToKnownPeer(it, publicPayLoad) }
+        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad) }
     }
 
     fun startVerificationAndSigning(request: AttestationRequest) {
-        Log.i(TAG,"starting verification process")
+        Log.i(TAG, "starting verification process")
         val block = ChainService.PeerTrustChainBlock.parseFrom(request.block)
         val delete: (Boolean) -> Unit = {
             if (it) {

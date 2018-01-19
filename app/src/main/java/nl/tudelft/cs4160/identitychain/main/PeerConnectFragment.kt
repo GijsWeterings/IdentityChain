@@ -11,8 +11,8 @@ import android.view.ViewGroup
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.R
-import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
+import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 
 
 class PeerConnectFragment : Fragment() {
@@ -29,11 +29,11 @@ class PeerConnectFragment : Fragment() {
 
         viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
 
-        viewModel.allPeers.observe(this, Observer<PeerItem> {
+        viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
             peerViewRecyclerAdapter.addItem(it!!)
         })
 
-        val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it.withPort(8080)) })
+        val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it) })
         disposables.add(disposable)
 
         return view
