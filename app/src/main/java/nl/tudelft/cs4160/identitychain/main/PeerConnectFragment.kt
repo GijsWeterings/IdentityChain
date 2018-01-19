@@ -1,6 +1,7 @@
 package nl.tudelft.cs4160.identitychain.main
 
 import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -13,10 +14,12 @@ import android.view.ViewGroup
 import android.widget.EditText
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.realm.Realm
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
+import nl.tudelft.cs4160.identitychain.peers.PeerContact
 import org.jetbrains.anko.customView
 import org.jetbrains.anko.editText
 import org.jetbrains.anko.noButton
@@ -27,17 +30,20 @@ import kotlin.properties.Delegates
 
 class PeerConnectFragment : Fragment() {
     lateinit var viewModel: MainViewModel
+    lateinit var peerViewModel: PeerConnectViewModel
     val disposables = CompositeDisposable()
 
     override fun onCreateView(inflater: LayoutInflater, parent: ViewGroup?, state: Bundle?): View? {
         super.onCreateView(inflater, parent, state)
 
+        viewModel = ViewModelProviders.of(activity)[MainViewModel::class.java]
+        peerViewModel = ViewModelProviders.of(this)[PeerConnectViewModel::class.java]
+
         val view = inflater.inflate(R.layout.peer_connect_fragment, parent, false)
         view.discoveryList.layoutManager = LinearLayoutManager(view.context)
-        val peerViewRecyclerAdapter = PeerViewRecyclerAdapter(createNameDialog())
+        val peerViewRecyclerAdapter = PeerViewRecyclerAdapter(createNameDialog(), peerViewModel)
         view.discoveryList.adapter = peerViewRecyclerAdapter
 
-        viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
 
         viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
             peerViewRecyclerAdapter.addItem(it!!)
@@ -53,13 +59,15 @@ class PeerConnectFragment : Fragment() {
         alert("Name this peer") {
             var name: EditText by Delegates.notNull()
             customView {
-                name = editText("") {
+                name = editText {
                     hint = "name"
                 }
             }
 
             noButton { em.onError(RuntimeException("cancelled")) }
-            yesButton { em.onSuccess(name.text.toString()) }
+            yesButton {
+                em.onSuccess(name.text.toString())
+            }
         }.show()
     }
 
@@ -70,5 +78,20 @@ class PeerConnectFragment : Fragment() {
 
     companion object {
         val TAG = "PeerConnectFragment"
+    }
+}
+
+class PeerConnectViewModel : ViewModel() {
+    val realm: Realm = Realm.getDefaultInstance()
+
+    fun saveName(name: String, key: ByteArray) {
+        realm.executeTransaction {
+            val peerContact = PeerContact(name, key)
+            it.copyToRealm(peerContact)
+        }
+    }
+
+    override fun onCleared() {
+        realm.close()
     }
 }

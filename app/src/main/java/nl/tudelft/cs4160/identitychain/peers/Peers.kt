@@ -11,6 +11,7 @@ import java.util.*
 data class PeerConnectionInformation(val host: String) {
     val port: Int = 8080
 }
+
 fun ChainService.Peer.toPeerConnectionInformation() = PeerConnectionInformation(this.hostname)
 
 /**
@@ -24,7 +25,7 @@ data class DiscoveredPeer(val connectionInformation: PeerConnectionInformation, 
  *
  * The public key is used to persistently represent the identity of the peer.
  */
-class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray) {
+class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray, val name: String) {
     val port: Int = 8080
 
     val host: String
@@ -38,4 +39,4 @@ class KeyedPeer(val connectionInformation: PeerConnectionInformation, val public
 }
 
 
-fun addKeyToPeer(peerItem: DiscoveredPeer, publicKey: ByteArray) = with(peerItem) { KeyedPeer(peerItem.connectionInformation, publicKey) }
+fun addKeyToPeer(peerItem: DiscoveredPeer, publicKey: ByteArray) = with(peerItem) { KeyedPeer(peerItem.connectionInformation, publicKey, peerItem.name) }

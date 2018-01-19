@@ -13,9 +13,10 @@ import io.reactivex.subjects.PublishSubject
 import kotlinx.android.synthetic.main.peer_view.view.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.main.PeerConnectViewModel
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 
-class PeerViewRecyclerAdapter(val nameDialog: Single<String>) : RecyclerView.Adapter<RecyclerViewHolder>() {
+class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: PeerConnectViewModel) : RecyclerView.Adapter<RecyclerViewHolder>() {
     private val peers: MutableList<SelectablePeer> = ArrayList()
     private var previouslySelected: RecyclerViewHolder? = null
     private val clickedItems: PublishSubject<KeyedPeer> = PublishSubject.create()
@@ -29,7 +30,9 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>) : RecyclerView.Ada
 
     override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) {
         val selectedPeer = peers[position]
-        holder.textview.text = Peer.bytesToHex(selectedPeer.peer.publicKey)
+        val publicKey = selectedPeer.peer.publicKey
+        holder.name.text = selectedPeer.peer.name
+        holder.publicKey.text = Peer.bytesToHex(publicKey).take(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 
@@ -44,10 +47,16 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>) : RecyclerView.Ada
         }
 
         holder.itemView.setOnLongClickListener {
-            nameDialog.subscribe()
+            nameDialog.subscribe({
+                viewModel.saveName(it, publicKey)
+                holder.name.text = it
+            }, {
+                //on cancel do nothing
+            })
             true
         }
     }
+
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
         return if (selectedPeer.selected) {
@@ -68,7 +77,8 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>) : RecyclerView.Ada
 }
 
 class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    val textview = view.peerName
+    val name = view.peerName
+    val publicKey = view.publicKey
     val cardView = view.peerCardView
 
     internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
