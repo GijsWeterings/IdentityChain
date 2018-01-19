@@ -1,17 +1,12 @@
 package nl.tudelft.cs4160.identitychain.network
 
-import android.content.Context
 import android.graphics.Color
 import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.widget.AlertDialogLayout
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
@@ -19,8 +14,6 @@ import kotlinx.android.synthetic.main.peer_view.view.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
-import org.jetbrains.anko.InputConstraints
-import org.jetbrains.anko.editText
 
 class PeerViewRecyclerAdapter(val nameDialog: Single<String>) : RecyclerView.Adapter<RecyclerViewHolder>() {
     private val peers: MutableList<SelectablePeer> = ArrayList()

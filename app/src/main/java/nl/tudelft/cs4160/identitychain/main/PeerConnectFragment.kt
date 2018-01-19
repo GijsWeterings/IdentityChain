@@ -17,6 +17,12 @@ import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
+import org.jetbrains.anko.customView
+import org.jetbrains.anko.editText
+import org.jetbrains.anko.noButton
+import org.jetbrains.anko.support.v4.alert
+import org.jetbrains.anko.yesButton
+import kotlin.properties.Delegates
 
 
 class PeerConnectFragment : Fragment() {
@@ -43,24 +49,18 @@ class PeerConnectFragment : Fragment() {
         return view
     }
 
-    fun createNameDialog(): Single<String> {
-        return Single.create<String> {
-            val input = EditText(this.activity)
-            input.inputType = InputType.TYPE_CLASS_TEXT
+    fun createNameDialog(): Single<String> = Single.create<String> { em ->
+        alert("Name this peer") {
+            var name: EditText by Delegates.notNull()
+            customView {
+                name = editText("") {
+                    hint = "name"
+                }
+            }
 
-
-            AlertDialog.Builder(this.activity)
-                    .setTitle("Enter contact id")
-                    .setMessage("hi")
-//                    .setView(input)
-//                    .setPositiveButton("Name Key")  { _, _ ->
-//                        it.onSuccess(input.text.toString())
-//                    }
-//                    .setNegativeButton("Cancel") {dialog, _ ->
-//                        dialog.cancel()
-//                        it.onError(RuntimeException("Cancel"))}
-                    .show()
-        }
+            noButton { em.onError(RuntimeException("cancelled")) }
+            yesButton { em.onSuccess(name.text.toString()) }
+        }.show()
     }
 
     override fun onDestroyView() {

@@ -99,6 +99,7 @@ dependencies {
     compile "org.jetbrains.anko:anko-appcompat-v7:0.10.4"
     compile "org.jetbrains.anko:anko-cardview-v7:0.10.4"
     compile "org.jetbrains.anko:anko-recyclerview-v7:0.10.4"
+    compile "org.jetbrains.anko:anko-commons:0.10.4"
 }
 repositories {
     mavenCentral()
