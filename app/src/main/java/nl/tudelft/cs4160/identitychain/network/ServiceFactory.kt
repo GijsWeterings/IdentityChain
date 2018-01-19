@@ -8,6 +8,7 @@ import io.reactivex.*
 import io.reactivex.disposables.Disposables
 import nl.tudelft.cs4160.identitychain.peers.DiscoveredPeer
 import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
+import java.util.concurrent.ThreadLocalRandom
 
 
 class ServiceFactory(val context: Context) {
@@ -39,6 +40,7 @@ class ServiceFactory(val context: Context) {
         // This is checked and corrected in the RegistrationListener::onServiceRegistered method.
         serviceInfo.serviceName = serviceName
         serviceInfo.serviceType = serviceType
+        serviceInfo.host
         serviceInfo.port = port
 
         nsdManager.registerService(
@@ -49,6 +51,7 @@ class ServiceFactory(val context: Context) {
         return object : NsdManager.RegistrationListener {
 
             override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {
+                Log.i(TAG, "we registered as $NsdServiceInfo")
                 // Update serviceName to deal with conflicts.
                 serviceInfo.serviceName = NsdServiceInfo.serviceName
             }

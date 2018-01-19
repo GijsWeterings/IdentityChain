@@ -2,7 +2,6 @@ package nl.tudelft.cs4160.identitychain.modals
 
 import android.app.Application
 import android.app.Dialog
-import android.app.KeyguardManager
 import android.arch.lifecycle.*
 import android.content.res.Resources.Theme
 import android.graphics.Color
@@ -12,7 +11,6 @@ import android.os.Bundle
 import android.os.CancellationSignal
 import android.support.v4.app.DialogFragment
 import android.support.v4.content.res.ResourcesCompat
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat
 import android.util.Log
 import android.view.*
 import android.widget.RelativeLayout
@@ -106,8 +104,6 @@ class BiometricAuthenticationViewModel(application: Application) : AndroidViewMo
 
     private fun provideTries(authenticationEvents: Flowable<Boolean>) = Flowable.defer {
         var count = 0
-        Log.i("viewmodel", "anyone calling this?")
-
         authenticationEvents.skipWhile {
             val skip = if (count > 4) {
                 false

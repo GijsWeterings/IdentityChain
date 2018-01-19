@@ -21,6 +21,7 @@ import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.peers.*
+import java.security.Key
 import java.security.KeyPair
 import java.util.*
 
@@ -69,6 +70,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     fun keyForPeer(peer: DiscoveredPeer): Single<KeyedPeer> = this.registry.findStub(peer.connectionInformation)
             .getPublicKey(empty).guavaAsSingle(Schedulers.computation())
             .map { addKeyToPeer(peer, it.publicKey.toByteArray()) }
+            .onErrorResumeNext { Single.never<KeyedPeer>() }
 
 
     override fun getPublicKey(request: ChainService.Empty, responseObserver: StreamObserver<ChainService.Key>) {

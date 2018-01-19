@@ -17,14 +17,14 @@ fun ChainService.Peer.toPeerConnectionInformation() = PeerConnectionInformation(
  * A peer that has just been discovered through @see nl.tudelft.cs4160.identitychain.network.ServiceFactory
  * This holds on to the discovery name in case no name has been associated yet.
  */
-class DiscoveredPeer(val connectionInformation: PeerConnectionInformation, val name: String)
+data class DiscoveredPeer(val connectionInformation: PeerConnectionInformation, val name: String)
 
 /**
  * A peer whose public key has been resolved through an rpc request.
  *
  * The public key is used to persistently represent the identity of the peer.
  */
-data class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray) {
+class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray) {
     val port: Int = 8080
 
     val host: String
@@ -35,24 +35,6 @@ data class KeyedPeer(val connectionInformation: PeerConnectionInformation, val p
             .setPort(port)
             .setPublicKey(ByteString.copyFrom(publicKey))
             .build()
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as KeyedPeer
-
-        if (connectionInformation != other.connectionInformation) return false
-        if (!Arrays.equals(publicKey, other.publicKey)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = connectionInformation.hashCode()
-        result = 31 * result + Arrays.hashCode(publicKey)
-        return result
-    }
 }
 
 
