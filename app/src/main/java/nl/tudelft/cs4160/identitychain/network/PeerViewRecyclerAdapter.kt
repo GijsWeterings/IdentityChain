@@ -31,7 +31,9 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
     override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) {
         val selectedPeer = peers[position]
         val publicKey = selectedPeer.peer.publicKey
-        holder.name.text = displayName(selectedPeer)
+        val contactName = viewModel.nameForPublicKey(publicKey)
+
+        holder.name.text = contactName ?: selectedPeer.peer.name
         holder.publicKey.text = Peer.bytesToHex(publicKey).take(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
@@ -46,18 +48,19 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
             clickedItems.onNext(selectedPeer.peer)
         }
 
-        holder.itemView.setOnLongClickListener {
-            nameDialog.subscribe({
-                viewModel.saveName(it, publicKey)
-                holder.name.text = it
-            }, {
-                //on cancel do nothing
-            })
-            true
+        //contact hasn't been named yet
+        if (contactName == null) {
+            holder.itemView.setOnLongClickListener {
+                nameDialog.subscribe({
+                    viewModel.saveName(it, publicKey)
+                    holder.name.text = it
+                }, {
+                    //on cancel do nothing
+                })
+                true
+            }
         }
     }
-
-    private fun displayName(peer: SelectablePeer) = viewModel.nameForPublicKey(peer.peer.publicKey) ?: peer.peer.name
 
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
