@@ -6,7 +6,7 @@ import java.util.*
 
 /**
  * The minimal amount of information required to start a grpc connection to a peer.
- * The port, for now hard coded since every grpc server runs on 8001
+ * The port, for now hard coded since every grpc server runs on 8080
  */
 data class PeerConnectionInformation(val host: String) {
     val port: Int = 8080
