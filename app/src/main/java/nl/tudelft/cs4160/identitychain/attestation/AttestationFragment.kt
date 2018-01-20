@@ -22,6 +22,7 @@ import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
 import nl.tudelft.cs4160.identitychain.main.MainViewModel
+import nl.tudelft.cs4160.identitychain.peers.nameForContact
 import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.recyclerview.v7.recyclerView
@@ -68,6 +69,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
         var publicKeyTextView: TextView by Delegates.notNull()
         var rejectButton: ImageButton by Delegates.notNull()
         var verifyAttestationButton: ImageButton by Delegates.notNull()
+        var nameTextView: TextView by Delegates.notNull()
         val view = with(parent.context) {
             cardView {
                 lparams(width = matchParent) {
@@ -75,6 +77,13 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                 }
 
                 verticalLayout {
+                    linearLayout {
+                        textView("Requestor:").lparams {
+                            rightPadding = dip(16)
+                        }
+                       nameTextView = textView()
+
+                    }
                     textView("Attestation") {
                         typeface = Typeface.DEFAULT_BOLD
                     }
@@ -92,7 +101,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
             }
         }
 
-        return AttestationViewHolder(view, publicKeyTextView, rejectButton, verifyAttestationButton)
+        return AttestationViewHolder(view, publicKeyTextView, rejectButton, verifyAttestationButton, nameTextView)
     }
 
     private fun @AnkoViewDslMarker _LinearLayout.confirmationButton(imageSize: Int, resource: Int): ImageButton {
@@ -106,29 +115,38 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
 
     override fun onBindViewHolder(holder: AttestationViewHolder, position: Int) {
         val item = getItem(position)
-        val keyAsText = item?.publicKey()?.let(Peer::bytesToHex) ?: ""
-        holder.publicKey.text = keyAsText.take(20)
-        holder.rejectButton.setOnClickListener {
-            realm.executeTransaction {
-                //the position in the argument can become out to date if items in the middle of the list are removed
-                //then this view holder doesn't rebind and the position become bullshit
-                val upToDatePosition = holder.adapterPosition
-                Log.i(TAG, "deleteting at position $upToDatePosition")
-                Log.i(TAG, "data has length: ${data?.size}")
 
-                if (upToDatePosition != -1) {
-                    data?.deleteFromRealm(upToDatePosition)
+        if(item != null) {
+            val keyAsText = Peer.bytesToHex(item.publicKey())
+            holder.name.text = nameForContact(realm, item.publicKey()) ?: "Unknown peer"
+
+            holder.publicKey.text = keyAsText.take(20)
+
+            holder.rejectButton.setOnClickListener {
+                realm.executeTransaction {
+                    //the position in the argument can become out to date if items in the middle of the list are removed
+                    //then this view holder doesn't rebind and the position become bullshit
+                    val upToDatePosition = holder.adapterPosition
+                    Log.i(TAG, "deleteting at position $upToDatePosition")
+                    Log.i(TAG, "data has length: ${data?.size}")
+
+                    if (upToDatePosition != -1) {
+                        data?.deleteFromRealm(upToDatePosition)
+                    }
                 }
             }
-        }
 
-        holder.verifyAttestationButton.setOnClickListener {
-            val attestationRequest = getItem(holder.adapterPosition)
-            attestationRequest?.let(viewModel::startVerificationAndSigning)
+            holder.verifyAttestationButton.setOnClickListener {
+                val attestationRequest = getItem(holder.adapterPosition)
+                attestationRequest?.let(viewModel::startVerificationAndSigning)
+            }
         }
     }
 
 }
 
-class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: ImageButton, val verifyAttestationButton: ImageButton) : RecyclerView.ViewHolder(view)
+class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: ImageButton,
+                            val verifyAttestationButton: ImageButton, val name: TextView) : RecyclerView.ViewHolder(view)
+
+
 

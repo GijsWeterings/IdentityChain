@@ -16,10 +16,12 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.realm.Realm
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
+import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 import nl.tudelft.cs4160.identitychain.peers.PeerContact
+import nl.tudelft.cs4160.identitychain.peers.nameForContact
 import org.jetbrains.anko.customView
 import org.jetbrains.anko.editText
 import org.jetbrains.anko.noButton
@@ -91,9 +93,7 @@ class PeerConnectViewModel : ViewModel() {
         }
     }
 
-    fun nameForPublicKey(publicKey: ByteArray): String? = realm.where(PeerContact::class.java)
-            .equalTo("pk", publicKey)
-            .findFirst()?.name
+    fun nameForPublicKey(publicKey: ByteArray): String? = nameForContact(realm, publicKey)
 
     override fun onCleared() {
         realm.close()

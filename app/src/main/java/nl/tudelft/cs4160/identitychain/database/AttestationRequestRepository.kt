@@ -40,9 +40,9 @@ class FakeRepository : AttestationRequestRepository {
 
 open class AttestationRequest : RealmObject() {
     var block: ByteArray = ByteArray(0)
-    var peer: Peer? = Peer()
+    var peer: Peer = Peer()
 
-    fun publicKey() = peer?.publicKey
+    fun publicKey() = peer.publicKey
 
     companion object {
         fun fromHalfBlock(block: ChainService.PeerTrustChainBlock): AttestationRequest {
