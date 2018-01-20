@@ -81,7 +81,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                         textView("Requestor:").lparams {
                             rightPadding = dip(16)
                         }
-                       nameTextView = textView()
+                        nameTextView = textView()
 
                     }
                     textView("Attestation") {
@@ -116,9 +116,9 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
     override fun onBindViewHolder(holder: AttestationViewHolder, position: Int) {
         val item = getItem(position)
 
-        if(item != null) {
+        if (item != null) {
             val keyAsText = Peer.bytesToHex(item.publicKey())
-            holder.name.text = nameForContact(realm, item.publicKey()) ?: "Unknown peer"
+            holder.name.text = item.publicKey()?.let { nameForContact(realm, it) } ?: "Unknown peer"
 
             holder.publicKey.text = keyAsText.take(20)
 
