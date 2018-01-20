@@ -31,7 +31,7 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
     override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) {
         val selectedPeer = peers[position]
         val publicKey = selectedPeer.peer.publicKey
-        holder.name.text = selectedPeer.peer.name
+        holder.name.text = displayName(selectedPeer)
         holder.publicKey.text = Peer.bytesToHex(publicKey).take(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
@@ -56,6 +56,8 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
             true
         }
     }
+
+    private fun displayName(peer: SelectablePeer) = viewModel.nameForPublicKey(peer.peer.publicKey) ?: peer.peer.name
 
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
@@ -95,7 +97,6 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             return Color.TRANSPARENT
         }
     }
-
 }
 
 internal data class SelectablePeer(var selected: Boolean, val peer: KeyedPeer)

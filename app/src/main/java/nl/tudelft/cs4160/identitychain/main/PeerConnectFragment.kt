@@ -91,6 +91,10 @@ class PeerConnectViewModel : ViewModel() {
         }
     }
 
+    fun nameForPublicKey(publicKey: ByteArray): String? = realm.where(PeerContact::class.java)
+            .equalTo("pk", publicKey)
+            .findFirst()?.name
+
     override fun onCleared() {
         realm.close()
     }
