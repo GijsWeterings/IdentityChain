@@ -77,18 +77,18 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                 }
 
                 verticalLayout {
-                    linearLayout {
-                        textView("Requestor:").lparams {
-                            rightPadding = dip(16)
-                        }
-                        nameTextView = textView()
-
-                    }
                     textView("Attestation") {
                         typeface = Typeface.DEFAULT_BOLD
                     }
-                    textView("Age greater than 18")
 
+                    linearLayout {
+                        textView("From:").lparams {
+                            rightMargin = dip(2)
+                        }
+                        nameTextView = textView()
+                    }
+
+                    textView("Age greater than 18")
                     publicKeyTextView = textView()
                 }
 

@@ -35,15 +35,9 @@
         <!-- Home screen -->
         <activity
             android:name="nl.tudelft.cs4160.identitychain.main.MainActivity"
-            android:windowSoftInputMode="stateUnchanged">
+            android:windowSoftInputMode="adjustNothing">
         </activity>
         <activity android:name="nl.tudelft.cs4160.identitychain.chainExplorer.ChainExplorerActivity" />
-        <activity
-            android:name="nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment"
-            android:theme="@style/AppTheme.NoActionBar"/>
-
-        <!-- MODALS -->
-        PeerConnectActivity
 
         <!-- DEBUG -->
         <activity
