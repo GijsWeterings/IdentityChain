@@ -3,14 +3,15 @@ package nl.tudelft.cs4160.identitychain.grpc
 import io.grpc.ManagedChannelBuilder
 import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
+import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
 import java.util.concurrent.ConcurrentHashMap
 
 class ChainClientRegistry {
-    private val registryAsync: ConcurrentHashMap<ChainService.Peer, ChainGrpc.ChainFutureStub> = ConcurrentHashMap()
-    fun findStub(peer: ChainService.Peer) = registryAsync.getOrPut(peer) { channelForPeer(peer) }
+    private val registryAsync: ConcurrentHashMap<PeerConnectionInformation, ChainGrpc.ChainFutureStub> = ConcurrentHashMap()
+    fun findStub(peer: PeerConnectionInformation) = registryAsync.getOrPut(peer) { channelForPeer(peer) }
 
-    private fun channelForPeer(peer: ChainService.Peer): ChainGrpc.ChainFutureStub {
-        val channel = ManagedChannelBuilder.forAddress(peer.hostname, peer.port).usePlaintext(true).build();
+    private fun channelForPeer(peer: PeerConnectionInformation): ChainGrpc.ChainFutureStub {
+        val channel = ManagedChannelBuilder.forAddress(peer.host, peer.port).usePlaintext(true).build();
         return ChainGrpc.newFutureStub(channel)
     }
 

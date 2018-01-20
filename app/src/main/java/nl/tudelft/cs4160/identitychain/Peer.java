@@ -1,49 +1,6 @@
 package nl.tudelft.cs4160.identitychain;
 
 public class Peer {
-    private byte[] publicKey;
-    private String ipAddress;
-    private int port;
-
-    public Peer(byte[] pubKey, String ip, int port) {
-        this.publicKey = pubKey;
-        this.ipAddress = ip;
-        this.port = port;
-
-    }
-
-    public byte[] getPublicKey() {
-        return publicKey;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-
-    public void setPublicKey(byte[] publicKey) {
-        this.publicKey = publicKey;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-
-    public String toString() {
-        String res = "<Peer: [";
-        res += publicKey + ":" + port + ",PubKey: " + bytesToHex(publicKey) + "]>";
-        return res;
-    }
-
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     public static String bytesToHex(byte[] bytes) {

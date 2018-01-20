@@ -36,7 +36,7 @@ class ChainExplorerAdapter(internal var blocksList: List<MessageProto.TrustChain
 
 
     /**
-     * Puts the data from a TrustChainBlock object into the peer textview.
+     * Puts the data from a TrustChainBlock object into the peer name.
      *
      * @param position
      * @param convertView

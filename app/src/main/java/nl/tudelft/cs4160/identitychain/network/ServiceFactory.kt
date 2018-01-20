@@ -2,11 +2,13 @@ package nl.tudelft.cs4160.identitychain.network
 
 import android.content.Context
 import android.net.nsd.NsdServiceInfo
-import java.net.ServerSocket
 import android.net.nsd.NsdManager
 import android.util.Log
 import io.reactivex.*
 import io.reactivex.disposables.Disposables
+import nl.tudelft.cs4160.identitychain.peers.DiscoveredPeer
+import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
+import java.util.concurrent.ThreadLocalRandom
 
 
 class ServiceFactory(val context: Context) {
@@ -20,8 +22,8 @@ class ServiceFactory(val context: Context) {
         registerService(port)
     }
 
-    fun startPeerDiscovery(): Flowable<PeerItem> {
-        val create = Flowable.create<PeerItem>({ em ->
+    fun startPeerDiscovery(): Flowable<DiscoveredPeer> {
+        val create = Flowable.create<DiscoveredPeer>({ em ->
             val resolveListener = { initializeResolveListener(em) }
 
             val discoveryListener = initializeDiscoveryListener(resolveListener)
@@ -38,6 +40,7 @@ class ServiceFactory(val context: Context) {
         // This is checked and corrected in the RegistrationListener::onServiceRegistered method.
         serviceInfo.serviceName = serviceName
         serviceInfo.serviceType = serviceType
+        serviceInfo.host
         serviceInfo.port = port
 
         nsdManager.registerService(
@@ -48,6 +51,7 @@ class ServiceFactory(val context: Context) {
         return object : NsdManager.RegistrationListener {
 
             override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {
+                Log.i(TAG, "we registered as $NsdServiceInfo")
                 // Update serviceName to deal with conflicts.
                 serviceInfo.serviceName = NsdServiceInfo.serviceName
             }
@@ -112,7 +116,7 @@ class ServiceFactory(val context: Context) {
         }
     }
 
-    fun initializeResolveListener(emitter: FlowableEmitter<PeerItem>): NsdManager.ResolveListener {
+    fun initializeResolveListener(emitter: FlowableEmitter<DiscoveredPeer>): NsdManager.ResolveListener {
         return object : NsdManager.ResolveListener {
 
             override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
@@ -128,7 +132,7 @@ class ServiceFactory(val context: Context) {
                     return
                 }
 
-                emitter.onNext(PeerItem(info.serviceName, info.host.hostAddress, info.port))
+                emitter.onNext(DiscoveredPeer(PeerConnectionInformation(info.host.hostAddress), info.serviceName))
             }
         }
     }

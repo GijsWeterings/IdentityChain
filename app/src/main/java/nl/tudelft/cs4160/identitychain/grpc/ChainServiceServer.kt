@@ -19,8 +19,9 @@ import nl.tudelft.cs4160.identitychain.database.TrustChainStorage
 import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
-import nl.tudelft.cs4160.identitychain.network.PeerItem
 import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
+import nl.tudelft.cs4160.identitychain.peers.*
+import java.security.Key
 import java.security.KeyPair
 import java.util.*
 
@@ -42,7 +43,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             return
         }
 
-        val peer = request.peer
+        val peer = request.peer.toPeerConnectionInformation()
         val block = request.block
         // check if block matches up with its previous block
         // At this point gaps cannot be tolerated. If we detect a gap we send crawl requests to fill
@@ -65,6 +66,11 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     }
 
     class GapInChainException : Exception()
+
+    fun keyForPeer(peer: DiscoveredPeer): Single<KeyedPeer> = this.registry.findStub(peer.connectionInformation)
+            .getPublicKey(empty).guavaAsSingle(Schedulers.computation())
+            .map { addKeyToPeer(peer, it.publicKey.toByteArray()) }
+            .onErrorResumeNext { Single.never<KeyedPeer>() }
 
 
     override fun getPublicKey(request: ChainService.Empty, responseObserver: StreamObserver<ChainService.Key>) {
@@ -110,7 +116,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
                     .setT(challenge.t.asByteString())
                     .build()
 
-            registry.findStub(peer).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
+            registry.findStub(peer.toPeerConnectionInformation()).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
                 val challengeReply = it.asZkp()(challenge.s, challenge.t)
                 rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
             }
@@ -173,7 +179,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             if (zkpValid) {
                 Log.i(TAG, "verification successful")
                 signerValidator.signBlock(peer, block)?.let {
-                    registry.findStub(peer).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation()).map { zkpValid }
+                    registry.findStub(peer.toPeerConnectionInformation()).sendSignedBlock(addPeerToBlock(it)).guavaAsSingle(Schedulers.computation()).map { zkpValid }
                 } ?: Single.error<Boolean>(RuntimeException("problems signing the block"))
             } else {
                 Log.i(TAG, "verification failed")
@@ -182,21 +188,19 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun crawlPeer(peer: PeerItem): Single<ChainService.CrawlResponse> {
-        val connectablePeer = peer.asPeerMessage()
-        return sendCrawlRequest(connectablePeer, myPublicKey, -5)
+    fun crawlPeer(peer: PeerConnectionInformation): Single<ChainService.CrawlResponse> {
+        return sendCrawlRequest(peer, myPublicKey, -5)
     }
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: String): Single<ChainService.Empty> =
+    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: String): Single<ChainService.Empty> =
             sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerItem, payload: ByteArray): Single<ChainService.Empty> {
+    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: ByteArray): Single<ChainService.Empty> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
         val crawlResponse = ChainService.CrawlResponse.newBuilder().setPeer(me).addAllBlock(crawledBlocks).build()
-        val peerMessage = peer.asPeerMessage()
-        val peerChannel = registry.findStub(peerMessage)
+        val peerChannel = registry.findStub(peer)
         val keySingle: Single<ChainService.Key> = peerChannel.sendLatestBlocks(crawlResponse).guavaAsSingle(Schedulers.computation())
 
         return keySingle.flatMap { theirPublicKey ->
@@ -212,7 +216,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun sendCrawlRequest(peer: ChainService.Peer, publicKey: ByteArray, seqNum: Int): Single<ChainService.CrawlResponse> {
+    fun sendCrawlRequest(peer: PeerConnectionInformation, publicKey: ByteArray, seqNum: Int): Single<ChainService.CrawlResponse> {
         var sq = seqNum
         if (seqNum == 0) {
             sq = storage.getBlock(publicKey,
@@ -233,7 +237,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         // send the crawl request
         val message = ChainService.PeerCrawlRequest.newBuilder().setPeer(me).setRequest(crawlRequest).build()
         //TODO find a better spot for this.
-        return registry.findStub(peer).sendCrawlRequest(message).guavaAsSingle(Schedulers.computation()).doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
+        return registry.findStub(peer).sendCrawlRequest(message).guavaAsSingle(Schedulers.computation())
+                .doOnSuccess { crawlResponse -> crawlResponse.blockList.forEach { signerValidator.saveCompleteBlock(crawlResponse.peer, it) } }
     }
 
     override fun sendCrawlRequest(crawlRequest: ChainService.PeerCrawlRequest, responseObserver: StreamObserver<ChainService.CrawlResponse>) {

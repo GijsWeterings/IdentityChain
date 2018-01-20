@@ -8,15 +8,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.reactivex.BackpressureStrategy
+import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
-import nl.tudelft.cs4160.identitychain.R
 import kotlinx.android.synthetic.main.peer_view.view.*
-import nl.tudelft.cs4160.identitychain.message.ChainService
+import nl.tudelft.cs4160.identitychain.Peer
+import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.main.PeerConnectViewModel
+import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 
-class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
+class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: PeerConnectViewModel) : RecyclerView.Adapter<RecyclerViewHolder>() {
     private val peers: MutableList<SelectablePeer> = ArrayList()
     private var previouslySelected: RecyclerViewHolder? = null
-    private val clickedItems: PublishSubject<PeerItem> = PublishSubject.create()
+    private val clickedItems: PublishSubject<KeyedPeer> = PublishSubject.create()
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): RecyclerViewHolder {
         val view = LayoutInflater.from(parent?.context).inflate(R.layout.peer_view, parent, false)
@@ -27,20 +30,38 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
 
     override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) {
         val selectedPeer = peers[position]
-        holder.textview.text = selectedPeer.peer.name
+        val publicKey = selectedPeer.peer.publicKey
+        val contactName = viewModel.nameForPublicKey(publicKey)
+
+        holder.name.text = contactName ?: selectedPeer.peer.name
+        holder.publicKey.text = Peer.bytesToHex(publicKey).take(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 
         holder.itemView.setOnClickListener {
             previouslySelected?.toggleColorForSelection(peers)
             //if we click the same item twice it should stay disabled
-            if(previouslySelected != holder) {
+            if (previouslySelected != holder) {
                 holder.toggleColorForSelection(peers)
             }
             previouslySelected = holder
             clickedItems.onNext(selectedPeer.peer)
         }
+
+        //contact hasn't been named yet
+        if (contactName == null) {
+            holder.itemView.setOnLongClickListener {
+                nameDialog.subscribe({
+                    viewModel.saveName(it, publicKey)
+                    holder.name.text = it
+                }, {
+                    //on cancel do nothing
+                })
+                true
+            }
+        }
     }
+
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
         return if (selectedPeer.selected) {
@@ -50,7 +71,7 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
         }
     }
 
-    fun addItem(item: PeerItem) {
+    fun addItem(item: KeyedPeer) {
         peers.add(SelectablePeer(false, item))
         val size = peers.size
 
@@ -61,7 +82,8 @@ class PeerViewRecyclerAdapter : RecyclerView.Adapter<RecyclerViewHolder>() {
 }
 
 class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    val textview = view.peerName
+    val name = view.peerName
+    val publicKey = view.publicKey
     val cardView = view.peerCardView
 
     internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
@@ -78,14 +100,7 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             return Color.TRANSPARENT
         }
     }
-
 }
 
-internal data class SelectablePeer(var selected: Boolean, val peer: PeerItem)
+internal data class SelectablePeer(var selected: Boolean, val peer: KeyedPeer)
 
-data class PeerItem(val name: String, val host: String, val port: Int) {
-
-    fun withPort(port: Int) = PeerItem(name, host, port)
-
-    fun asPeerMessage() = ChainService.Peer.newBuilder().setHostname(host).setPort(port).build()
-}
