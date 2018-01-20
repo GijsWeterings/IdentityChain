@@ -10,9 +10,11 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
+import nl.tudelft.cs4160.identitychain.database.PrivateProof
 import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
@@ -36,8 +38,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val server: ChainServiceServer
     private val dbHelper: TrustChainDBHelper = TrustChainDBHelper(app)
 
+    val realm = Realm.getDefaultInstance()
+
     val trustedParty = RangeProofTrustedParty()
-    val zkp = trustedParty.generateProof(30, 18, 100)
     val attestationRequestRepository = RealmAttestationRequestRepository()
 
     val kp by lazy(this::initKeys)
@@ -111,11 +114,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    fun createClaim(): Single<ChainService.Empty>? {
+    fun createClaim(a: Int, b: Int, m: Int): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
-        val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
+        val (public, private) = trustedParty.generateProof(m, a, b)
+        val saveWithId: (Int) -> Unit = { seq_no ->
+            realm.executeTransaction {
+                it.copyToRealm(PrivateProof.fromPrivateResult(private, seq_no))
+            }
+        }
+        val asMessage: ChainService.PublicSetupResult = public.asMessage()
         val publicPayLoad = asMessage.toByteArray()
-        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad) }
+        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, saveWithId) }
     }
 
     fun startVerificationAndSigning(request: AttestationRequest) {
@@ -133,6 +142,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         grpc.shutdownNow()
+        realm.close()
     }
 
     companion object {

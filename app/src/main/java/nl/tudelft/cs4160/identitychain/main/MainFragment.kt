@@ -37,12 +37,30 @@ class MainFragment : Fragment() {
         attestationType.adapter = SpinnerAdapter()
 
         view.addClaimButton.setOnClickListener {
-            val claimCreation = viewModel.createClaim()
-            if (claimCreation == null) {
-                Toast.makeText(activity, "Please select a peer to connect with", Toast.LENGTH_SHORT).show()
+            val parseNumbers = parseNumbers()
+            if (parseNumbers != null) {
+                val (a, b, m) = parseNumbers
+                val claimCreation = viewModel.createClaim(a, b, m)
+                if (claimCreation == null) {
+                    Toast.makeText(activity, "Please select a peer to connect with", Toast.LENGTH_SHORT).show()
+                } else {
+                    claimCreation.subscribe();
+                }
             } else {
-                claimCreation.subscribe();
+                Toast.makeText(activity, "Please fill in all required fields", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    fun parseNumbers(): Triple<Int, Int, Int>? {
+        val a = lowerBound.text.toString().toIntOrNull()
+        val b = upperBound.text.toString().toIntOrNull()
+        val m = value.text.toString().toIntOrNull()
+        //kotlin needs a validation applicative
+        return if (a != null && b != null && m != null) {
+            Triple(a, b, m)
+        } else {
+            null
         }
     }
 

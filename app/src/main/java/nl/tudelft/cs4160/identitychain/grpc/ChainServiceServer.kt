@@ -195,7 +195,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: String): Single<ChainService.Empty> =
             sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: ByteArray): Single<ChainService.Empty> {
+    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: ByteArray, savePrivateResultWithId: (Int) -> Unit): Single<ChainService.Empty> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 

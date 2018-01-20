@@ -64,7 +64,7 @@ open class AttestationRequest : RealmObject() {
     }
 }
 
-open class Peer() : RealmObject() {
+open class Peer : RealmObject() {
     var hostName: String = ""
     var port: Int = 0
     var publicKey: ByteArray = ByteArray(0)
