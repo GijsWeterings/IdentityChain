@@ -14,10 +14,11 @@ import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
 import nl.tudelft.cs4160.identitychain.modals.BiometricAuthenticationFragment
 import nl.tudelft.cs4160.identitychain.modals.MainActivityAuthenticated
+import nl.tudelft.cs4160.identitychain.verification.VerificationFragment
 
 class MainActivity : AppCompatActivity() {
 
-    val fragments = listOf(PeerConnectFragment(), MainFragment(), AttestationFragment())
+    val fragments = listOf(PeerConnectFragment(), MainFragment(), AttestationFragment(), VerificationFragment())
 
     val auth = BiometricAuthenticationFragment()
 
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.peers -> viewPager.setCurrentItem(0, true)
                 R.id.connect -> viewPager.setCurrentItem(1, true)
                 R.id.attestationRequest -> viewPager.setCurrentItem(2, true)
+                R.id.verification -> viewPager.setCurrentItem(3, true)
             }
             true
         }
@@ -75,6 +77,7 @@ class TitleListener(val viewPager: ViewPager, val setTitle: (String) -> Unit, va
             0 -> R.id.peers
             1 -> R.id.connect
             2 -> R.id.attestationRequest
+            3 -> R.id.verification
             else -> R.id.peers
         }
         bottomNavigationBar.selectedItemId = id
