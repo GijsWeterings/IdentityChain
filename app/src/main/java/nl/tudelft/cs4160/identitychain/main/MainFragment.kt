@@ -64,11 +64,6 @@ class MainFragment : Fragment() {
         }
     }
 
-
-    companion object {
-        private val TAG = MainFragment::class.java.toString()
-    }
-
     class SpinnerAdapter : BaseAdapter() {
         val entries = listOf("age")
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -80,10 +75,7 @@ class MainFragment : Fragment() {
         }
 
         override fun getItem(position: Int): Any = entries[position]
-
-
         override fun getItemId(position: Int): Long = position.toLong()
-
         override fun getCount(): Int = entries.size
 
     }

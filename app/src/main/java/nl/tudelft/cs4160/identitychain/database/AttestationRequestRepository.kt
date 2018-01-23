@@ -58,11 +58,10 @@ class FakeRepository : AttestationRequestRepository {
 
     override fun savePrivateData(private: SetupPrivateResult, seq_no: Int) {
         privateData.add(PrivateProof.fromPrivateResult(private, seq_no))
-
     }
 
     override fun privateDataForStuff(seq_no: Int): PrivateProof? =
-          privateData.find { it.block_no == seq_no }
+            privateData.find { it.block_no == seq_no }
 
 
     override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
