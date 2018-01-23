@@ -2,17 +2,14 @@ package nl.tudelft.cs4160.identitychain.peers
 
 import com.google.protobuf.ByteString
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import java.util.*
 
 /**
  * The minimal amount of information required to start a grpc connection to a peer.
  * The port, for now hard coded since every grpc server runs on 8080
  */
-data class PeerConnectionInformation(val host: String) {
-    val port: Int = 8080
-}
+data class PeerConnectionInformation(val host: String, val port: Int = 8080)
 
-fun ChainService.Peer.toPeerConnectionInformation() = PeerConnectionInformation(this.hostname)
+fun ChainService.Peer.toPeerConnectionInformation() = PeerConnectionInformation(this.hostname, this.port)
 
 /**
  * A peer that has just been discovered through @see nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -25,17 +22,10 @@ data class DiscoveredPeer(val connectionInformation: PeerConnectionInformation, 
  *
  * The public key is used to persistently represent the identity of the peer.
  */
-class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray, val name: String) {
-    val port: Int = 8080
+class KeyedPeer(val connectionInformation: PeerConnectionInformation, val publicKey: ByteArray, val name: String, val port: Int = 8080) {
 
     val host: String
         get() = connectionInformation.host
-
-    fun asPeerMessage() = ChainService.Peer.newBuilder()
-            .setHostname(host)
-            .setPort(port)
-            .setPublicKey(ByteString.copyFrom(publicKey))
-            .build()
 }
 
 

@@ -10,13 +10,16 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.AttestationRequest
+import nl.tudelft.cs4160.identitychain.database.PrivateProof
 import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
+import nl.tudelft.cs4160.identitychain.grpc.startNetworkOnComputation
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -36,8 +39,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val server: ChainServiceServer
     private val dbHelper: TrustChainDBHelper = TrustChainDBHelper(app)
 
+    val realm = Realm.getDefaultInstance()
+
     val trustedParty = RangeProofTrustedParty()
-    val zkp = trustedParty.generateProof(30, 18, 100)
     val attestationRequestRepository = RealmAttestationRequestRepository()
 
     val kp by lazy(this::initKeys)
@@ -58,7 +62,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, attestationRequestRepository)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, attestationRequestRepository)
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -111,11 +115,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    fun createClaim(): Single<ChainService.Empty>? {
+    fun createClaim(a: Int, b: Int, m: Int): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
-        val asMessage: ChainService.PublicSetupResult = zkp.first.asMessage()
+        val (public, private) = trustedParty.generateProof(m, a, b)
+        val asMessage: ChainService.PublicSetupResult = public.asMessage()
         val publicPayLoad = asMessage.toByteArray()
-        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad) }
+
+        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, private) }
     }
 
     fun startVerificationAndSigning(request: AttestationRequest) {
@@ -126,13 +132,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 attestationRequestRepository.deleteAttestationRequest(request)
             }
         }
-        server.signAttestationRequest(block.peer, block.block)
+        startNetworkOnComputation { server.signAttestationRequest(block.peer, block.block) }
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
 
     }
 
     override fun onCleared() {
         grpc.shutdownNow()
+        realm.close()
     }
 
     companion object {
