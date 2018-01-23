@@ -53,15 +53,18 @@ class RealmAttestationRequestRepository : AttestationRequestRepository {
 }
 
 class FakeRepository : AttestationRequestRepository {
-    override fun savePrivateData(private: SetupPrivateResult, seq_no: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun privateDataForStuff(seq_no: Int): PrivateProof? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     val attestationRequests = ArrayList<AttestationRequest>()
+    val privateData = ArrayList<PrivateProof>()
+
+    override fun savePrivateData(private: SetupPrivateResult, seq_no: Int) {
+        privateData.add(PrivateProof.fromPrivateResult(private, seq_no))
+
+    }
+
+    override fun privateDataForStuff(seq_no: Int): PrivateProof? =
+          privateData.find { it.block_no == seq_no }
+
+
     override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
         attestationRequests.add(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
     }

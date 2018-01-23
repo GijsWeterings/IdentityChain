@@ -23,8 +23,8 @@ class ChainServiceServerTest {
     val testServerOne = peerAndServerForPort(8080)
     val testServerTwo = peerAndServerForPort(8081)
 
-    val serverTwoPeerItem = PeerConnectionInformation( "localhost", 8081)
     val serverOnePeerItem = PeerConnectionInformation( "localhost", 8080)
+    val serverTwoPeerItem = PeerConnectionInformation( "localhost", 8081)
 
     @Test
     fun initial_crawl_request_should_return_genesis_block() {
