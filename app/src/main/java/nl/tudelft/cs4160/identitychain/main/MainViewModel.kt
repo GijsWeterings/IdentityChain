@@ -19,6 +19,7 @@ import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepositor
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
+import nl.tudelft.cs4160.identitychain.grpc.startNetworkOnComputation
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
 import nl.tudelft.cs4160.identitychain.network.ServiceFactory
@@ -131,7 +132,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 attestationRequestRepository.deleteAttestationRequest(request)
             }
         }
-        server.signAttestationRequest(block.peer, block.block)
+        startNetworkOnComputation { server.signAttestationRequest(block.peer, block.block) }
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
 
     }

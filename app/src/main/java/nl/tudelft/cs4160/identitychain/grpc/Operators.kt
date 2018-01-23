@@ -3,6 +3,7 @@ package nl.tudelft.cs4160.identitychain.grpc
 import com.google.common.util.concurrent.ListenableFuture
 import io.reactivex.Scheduler
 import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 
 fun <A> ListenableFuture<A>.guavaAsSingle(scheduler: Scheduler): Single<A> {
     val worker = scheduler.createWorker()
@@ -25,4 +26,10 @@ fun <A> ListenableFuture<A>.guavaAsSingle(scheduler: Scheduler): Single<A> {
             })
         })
     }
+}
+
+fun <T> startNetworkOnComputation(f: () -> Single<T>): Single<T> {
+    return Single.defer{
+        f()
+    }.subscribeOn(Schedulers.io())
 }

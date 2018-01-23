@@ -200,7 +200,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
         val crawlResponse = ChainService.CrawlResponse.newBuilder().setPeer(me).addAllBlock(crawledBlocks).build()
         val peerChannel = registry.findStub(peer)
-        val keySingle: Single<ChainService.Key> = peerChannel.sendLatestBlocks(crawlResponse).guavaAsSingle(Schedulers.computation())
+        val keySingle: Single<ChainService.Key> = startNetworkOnComputation { peerChannel.sendLatestBlocks(crawlResponse).guavaAsSingle(Schedulers.computation()) }
 
         return keySingle.flatMap { theirPublicKey ->
             val newBlock = signerValidator.createNewBlock(payload, theirPublicKey.publicKey.toByteArray())

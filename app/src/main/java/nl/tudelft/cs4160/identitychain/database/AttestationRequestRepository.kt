@@ -42,7 +42,12 @@ class RealmAttestationRequestRepository : AttestationRequestRepository {
 
     override fun privateDataForStuff(seq_no: Int): PrivateProof? {
         return Realm.getDefaultInstance().use {
-            it.where(PrivateProof::class.java).equalTo("block_no", seq_no).findFirst()
+            val proof = it.where(PrivateProof::class.java).equalTo("block_no", seq_no).findFirst()
+            if (proof != null) {
+                it.copyFromRealm(proof)
+            } else {
+                null
+            }
         }
     }
 }

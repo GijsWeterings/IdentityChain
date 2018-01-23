@@ -2,15 +2,12 @@ package nl.tudelft.cs4160.identitychain.peers
 
 import com.google.protobuf.ByteString
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import java.util.*
 
 /**
  * The minimal amount of information required to start a grpc connection to a peer.
  * The port, for now hard coded since every grpc server runs on 8080
  */
-data class PeerConnectionInformation(val host: String) {
-    val port: Int = 8080
-}
+data class PeerConnectionInformation(val host: String, val port: Int = 8080)
 
 fun ChainService.Peer.toPeerConnectionInformation() = PeerConnectionInformation(this.hostname)
 

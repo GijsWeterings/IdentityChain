@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.identitychain.grpc
 
 import com.google.protobuf.ByteString
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
+import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import nl.tudelft.cs4160.identitychain.Util.Key
@@ -22,8 +23,8 @@ class ChainServiceServerTest {
     val testServerOne = peerAndServerForPort(8080)
     val testServerTwo = peerAndServerForPort(8081)
 
-    val serverTwoPeerItem = PeerConnectionInformation("peerBoy", "localhost", 8081)
-    val serverOnePeerItem = PeerConnectionInformation("peerBoy", "localhost", 8080)
+    val serverTwoPeerItem = PeerConnectionInformation( "localhost", 8081)
+    val serverOnePeerItem = PeerConnectionInformation( "localhost", 8080)
 
     @Test
     fun initial_crawl_request_should_return_genesis_block() {
@@ -38,14 +39,14 @@ class ChainServiceServerTest {
     @Test(expected = Exception::class)
     fun send_random_crap() {
         initial_crawl_request_should_return_genesis_block()
-        val payload = "YO dude what up!"
-        testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload).blockingGet()
+        val payload = "YO dude what up!".toByteArray(charset("UTF-8"))
+        testServerOne.server.sendBlockToKnownPeer(serverTwoPeerItem, payload, zkp.second).blockingGet()
     }
 
     @Test
     fun create_attestion_request() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
-        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad).blockingGet()
+        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad, zkp.second).blockingGet()
         assertTrue(testServerOne.fakeRepository.attestationRequests.any { it.publicKey()?.contentEquals(testServerTwo.peer.publicKey.toByteArray()) ?: false })
         //two genesis block and the newly created half block
         assertTrue(testServerOne.storage.blocks.size == 3)
@@ -56,8 +57,8 @@ class ChainServiceServerTest {
     @Test
     fun test_verify() {
         val publicPayLoad = zkp.first.asMessage().toByteArray()
-        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad).blockingGet()
-        val peer = serverTwoPeerItem.asPeerMessage()
+        testServerTwo.server.sendBlockToKnownPeer(serverOnePeerItem, publicPayLoad, zkp.second).blockingGet()
+        val peer = testServerTwo.peer
         val peerWithKey = ChainService.Peer.newBuilder(peer).setPublicKey(testServerTwo.peer.publicKey).build()
         val verifyProofWith = testServerOne.server.verifyExistingBlock(peerWithKey, 2)
         assertTrue(verifyProofWith.blockingGet())
@@ -75,7 +76,7 @@ class ChainServiceServerTest {
         val me = ChainService.Peer.newBuilder().setHostname("localhost").setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
         val testStorage = TrustChainMemoryStorage(keyPair)
         val fakeRepository = FakeRepository()
-        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, zkp.second, fakeRepository)
+        val chainServiceServer = ChainServiceServer(testStorage, me, keyPair, fakeRepository)
 
         val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
         return TestServer(chainServiceServer, me, testStorage, grpcServer, fakeRepository)
