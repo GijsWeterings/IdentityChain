@@ -1,37 +1,61 @@
 package nl.tudelft.cs4160.identitychain.database
 
+import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
 import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.kotlin.delete
+import io.realm.kotlin.where
 import nl.tudelft.cs4160.identitychain.message.ChainService
 
 interface AttestationRequestRepository {
     fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock)
+    fun privateDataForStuff(seq_no: Int): PrivateProof?
+    fun savePrivateData(private: SetupPrivateResult, seq_no: Int)
 }
 
 class RealmAttestationRequestRepository : AttestationRequestRepository {
 
     override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
-        val realm = Realm.getDefaultInstance()
-
-        realm.executeTransaction {
-            it.copyToRealm(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
+        Realm.getDefaultInstance().use {
+            it.executeTransaction {
+                it.copyToRealm(AttestationRequest.fromHalfBlock(peerTrustChainBlock))
+            }
         }
-
-        realm.close()
     }
 
     fun deleteAttestationRequest(request: AttestationRequest) {
-        val realm = Realm.getDefaultInstance()
-        realm.executeTransaction {
-            request.deleteFromRealm()
+        Realm.getDefaultInstance().use {
+            it.executeTransaction {
+                request.deleteFromRealm()
+            }
         }
 
-        realm.close()
+    }
+
+    override fun savePrivateData(private: SetupPrivateResult, seq_no: Int) {
+        Realm.getDefaultInstance().use {
+            it.executeTransaction {
+                it.copyToRealm(PrivateProof.fromPrivateResult(private, seq_no))
+            }
+        }
+    }
+
+    override fun privateDataForStuff(seq_no: Int): PrivateProof? {
+        return Realm.getDefaultInstance().use {
+            it.where(PrivateProof::class.java).equalTo("block_no", seq_no).findFirst()
+        }
     }
 }
 
 class FakeRepository : AttestationRequestRepository {
+    override fun savePrivateData(private: SetupPrivateResult, seq_no: Int) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun privateDataForStuff(seq_no: Int): PrivateProof? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     val attestationRequests = ArrayList<AttestationRequest>()
     override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
         attestationRequests.add(AttestationRequest.fromHalfBlock(peerTrustChainBlock))

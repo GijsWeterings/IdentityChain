@@ -5,6 +5,10 @@ import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import java.math.BigInteger
 
+/**
+ * Since we only have private proofs of our blocks.
+ * the block_no in our side of the chain should be unique
+ */
 open class PrivateProof(
         @PrimaryKey
         var block_no: Int = 0,
@@ -18,6 +22,7 @@ open class PrivateProof(
 
 
     fun toPrivateResult() = SetupPrivateResult(BigInteger(m1), BigInteger(m2), BigInteger(m3), BigInteger(r1), BigInteger(r2), BigInteger(r3))
+
 
     companion object {
         fun fromPrivateResult(setupPrivateResult: SetupPrivateResult, block_no: Int) =

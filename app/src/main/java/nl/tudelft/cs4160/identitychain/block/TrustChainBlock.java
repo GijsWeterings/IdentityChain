@@ -1,8 +1,5 @@
 package nl.tudelft.cs4160.identitychain.block;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.util.Base64;
-
 import com.google.protobuf.ByteString;
 
 import java.security.KeyPair;
@@ -16,7 +13,6 @@ import java.util.List;
 
 import nl.tudelft.cs4160.identitychain.Util.Key;
 import nl.tudelft.cs4160.identitychain.block.ValidationResult.ValidationStatus;
-import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper;
 import nl.tudelft.cs4160.identitychain.database.TrustChainStorage;
 import nl.tudelft.cs4160.identitychain.message.MessageProto;
 

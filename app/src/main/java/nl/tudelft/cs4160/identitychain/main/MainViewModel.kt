@@ -61,7 +61,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             dbHelper.insertInDB(block)
         }
 
-        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, zkp.second, attestationRequestRepository)
+        val (server, grpc) = ChainServiceServer.createServer(kp, 8080, localIPAddress!!, dbHelper, attestationRequestRepository)
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
@@ -117,14 +117,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun createClaim(a: Int, b: Int, m: Int): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val (public, private) = trustedParty.generateProof(m, a, b)
-        val saveWithId: (Int) -> Unit = { seq_no ->
-            realm.executeTransaction {
-                it.copyToRealm(PrivateProof.fromPrivateResult(private, seq_no))
-            }
-        }
         val asMessage: ChainService.PublicSetupResult = public.asMessage()
         val publicPayLoad = asMessage.toByteArray()
-        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, saveWithId) }
+
+        return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, private) }
     }
 
     fun startVerificationAndSigning(request: AttestationRequest) {

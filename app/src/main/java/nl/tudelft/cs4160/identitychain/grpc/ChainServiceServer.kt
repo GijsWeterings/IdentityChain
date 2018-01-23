@@ -15,19 +15,17 @@ import io.reactivex.schedulers.Schedulers
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.block.ValidationResult
+import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.database.TrustChainStorage
 import nl.tudelft.cs4160.identitychain.message.ChainGrpc
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
-import nl.tudelft.cs4160.identitychain.database.AttestationRequestRepository
 import nl.tudelft.cs4160.identitychain.peers.*
-import java.security.Key
 import java.security.KeyPair
 import java.util.*
 
 class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Peer,
                          keyPair: KeyPair,
-                         val private: SetupPrivateResult,
                          val attestationRequestRepository: AttestationRequestRepository,
                          val registry: ChainClientRegistry = ChainClientRegistry()) : ChainGrpc.ChainImplBase() {
     val TAG = "Chainservice"
@@ -89,8 +87,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     override fun answerChallenge(request: ChainService.Challenge, responseObserver: StreamObserver<ChainService.ChallengeReply>) {
         val publicResult: SetupPublicResult? = this.storage.getBlock(request.pubKey.toByteArray(), request.seqNum)?.asSetupPublic()
+        val private = attestationRequestRepository.privateDataForStuff(request.seqNum)?.toPrivateResult()
 
-        if (publicResult == null) {
+        if (publicResult == null || private == null) {
             responseObserver.onError(NoSuchBlockException())
         } else {
             val interactiveResult = private.answerUniqueChallenge(Challenge(request.s.asBigInt(), request.t.asBigInt()))
@@ -99,11 +98,13 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         }
     }
 
-    fun verifyExistingBlock(peer: ChainService.Peer, seqNum: Int): Single<Boolean> = storage.getBlock(peer.publicKey.toByteArray(), seqNum)?.let { verifyNewBlock(peer, it) } ?: Single.just(false)
+    fun verifyExistingBlock(peer: ChainService.Peer, seqNum: Int): Single<Boolean> = storage.getBlock(peer.publicKey.toByteArray(), seqNum)?.let { verifyNewBlock(peer, it) }
+            ?: Single.just(false)
 
     fun verifyNewBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
         val publicKey = peer.publicKey.toByteArray()
-        val publicResult: SetupPublicResult = block.asSetupPublic() ?: throw IllegalArgumentException("Block did not contain attestation")
+        val publicResult: SetupPublicResult = block.asSetupPublic()
+                ?: throw IllegalArgumentException("Block did not contain attestation")
         val rangeProofVerifier = RangeProofVerifier(publicResult.N, publicResult.a, publicResult.b)
 
         val resultOfAllProofs: List<Single<Boolean>> = (0..10).map {
@@ -192,10 +193,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
         return sendCrawlRequest(peer, myPublicKey, -5)
     }
 
-    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: String): Single<ChainService.Empty> =
-            sendBlockToKnownPeer(peer, payload.toByteArray(charset("UTF-8")))
 
-    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: ByteArray, savePrivateResultWithId: (Int) -> Unit): Single<ChainService.Empty> {
+    fun sendBlockToKnownPeer(peer: PeerConnectionInformation, payload: ByteArray, privateResult: SetupPrivateResult): Single<ChainService.Empty> {
         val sequenceNumberForCrawl = sequenceNumberForCrawl(-5)
         val crawledBlocks = storage.crawl(myPublicKey, sequenceNumberForCrawl)
 
@@ -207,6 +206,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             val newBlock = signerValidator.createNewBlock(payload, theirPublicKey.publicKey.toByteArray())
 
             if (newBlock != null) {
+                attestationRequestRepository.savePrivateData(privateResult, newBlock.sequenceNumber)
                 val trustChainBlock = ChainService.PeerTrustChainBlock.newBuilder().setBlock(newBlock).setPeer(me).build()
                 val recievedCompleteBlock: Single<ChainService.Empty> = peerChannel.sendAttestationRequest(trustChainBlock).guavaAsSingle(Schedulers.computation())
                 recievedCompleteBlock
@@ -276,10 +276,9 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     companion object {
 
         fun createServer(keyPair: KeyPair, port: Int, host: String, dbHelper: TrustChainStorage,
-                         privateStuff: SetupPrivateResult,
                          attestationRequestRepository: AttestationRequestRepository): Pair<ChainServiceServer, Server> {
             val me = ChainService.Peer.newBuilder().setHostname(host).setPort(port).setPublicKey(ByteString.copyFrom(keyPair.public.encoded)).build()
-            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, privateStuff, attestationRequestRepository)
+            val chainServiceServer = ChainServiceServer(dbHelper, me, keyPair, attestationRequestRepository)
 
             val grpcServer = ServerBuilder.forPort(port).addService(chainServiceServer).build().start()
             return Pair(chainServiceServer, grpcServer)
