@@ -1,7 +1,10 @@
 package nl.tudelft.cs4160.identitychain.main
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
@@ -13,6 +16,10 @@ import kotlinx.android.synthetic.main.attestation_creation.view.*
 import nl.tudelft.cs4160.identitychain.R
 import org.jetbrains.anko.linearLayout
 import org.jetbrains.anko.textView
+import android.provider.ContactsContract
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+
 
 class MainFragment : Fragment() {
     private lateinit var viewModel: MainViewModel
@@ -28,8 +35,26 @@ class MainFragment : Fragment() {
         return inflater.inflate(R.layout.attestation_creation, container, false)
     }
 
+    fun fetchDisplayName() {
+        val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
+        c.moveToFirst()
+        name.text = c.getString(c.getColumnIndex("display_name"))
+        val fotoId = c.getString(c.getColumnIndex("photo_uri"))
+
+        if(fotoId != null) {
+            imageView.setImageURI(Uri.parse(fotoId))
+        }
+        c.close()
+
+        if (name.text.equals("")) {
+            name.text = "John Doe"
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fetchDisplayName()
 
         viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
         imageView.setOnLongClickListener(debugMenuListener)
