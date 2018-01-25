@@ -1,6 +1,7 @@
 package nl.tudelft.cs4160.identitychain.verification
 
 import android.arch.lifecycle.*
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
@@ -20,11 +21,9 @@ import nl.tudelft.cs4160.identitychain.main.MainViewModel
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
-import org.jetbrains.anko.button
+import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.recyclerview.v7.recyclerView
-import org.jetbrains.anko.textView
-import org.jetbrains.anko.verticalLayout
 import kotlin.properties.Delegates
 
 class VerificationFragment : DialogFragment() {
@@ -52,10 +51,15 @@ class VerificationFragment : DialogFragment() {
         })
 
         return with(this.context) {
-            recyclerView {
-                layoutManager = LinearLayoutManager(this@with)
-                verificationBlockAdapter = VerificationBlockAdapter(emptyList(), verificationViewModel)
-                adapter = verificationBlockAdapter
+            frameLayout {
+                lparams(matchParent, matchParent)
+                backgroundColor = Color.WHITE
+                textView("hello")
+                recyclerView {
+                    layoutManager = LinearLayoutManager(this@with)
+                    verificationBlockAdapter = VerificationBlockAdapter(emptyList(), verificationViewModel)
+                    adapter = verificationBlockAdapter
+                }
             }
         }
     }
