@@ -36,34 +36,13 @@ class MainFragment : Fragment() {
     }
 
     fun fetchDisplayName() {
-        requestPermissions(arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
+        val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
+        c.moveToFirst()
+        name.text = c.getString(c.getColumnIndex("display_name"))
+        imageView.setImageURI(Uri.parse(c.getString(c.getColumnIndex("photo_uri"))))
+        c.close()
 
-        if (ContextCompat.checkSelfPermission(context,
-                Manifest.permission.WRITE_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                    Manifest.permission.WRITE_CONTACTS)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-                // No explanation needed, we can request the permission.
-            }
-            requestPermissions(arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
-//            ActivityCompat.requestPermissions(activity,
-//                    arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
-
-        }
-        else {
-            val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
-            c.moveToFirst()
-            name.text = c.getString(c.getColumnIndex("display_name"))
-            imageView.setImageURI(Uri.parse(c.getString(c.getColumnIndex("photo_uri"))))
-            c.close()
-        }
-        if(name.text.equals("")) {
+        if (name.text.equals("")) {
             name.text = "John Doe"
         }
     }
