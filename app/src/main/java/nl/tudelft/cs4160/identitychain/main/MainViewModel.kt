@@ -21,6 +21,7 @@ import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepositor
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
+import nl.tudelft.cs4160.identitychain.grpc.createMetaZkp
 import nl.tudelft.cs4160.identitychain.grpc.startNetworkOnComputation
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
@@ -133,11 +134,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    fun createClaim(a: Int, b: Int, m: Int): Single<ChainService.Empty>? {
+    fun createClaim(a: Int, b: Int, m: Int, type: String): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val (public, private) = trustedParty.generateProof(m, a, b)
-        val asMessage: ChainService.PublicSetupResult = public.asMessage()
-        val publicPayLoad = asMessage.toByteArray()
+        val zkp: ChainService.PublicSetupResult = public.asMessage()
+        val publicPayLoad = createMetaZkp(kp.public.encoded, type, zkp).toByteArray()
 
         return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, private) }
     }

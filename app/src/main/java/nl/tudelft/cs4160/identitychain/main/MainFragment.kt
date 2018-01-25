@@ -59,13 +59,14 @@ class MainFragment : Fragment() {
         viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
         imageView.setOnLongClickListener(debugMenuListener)
 
-        attestationType.adapter = SpinnerAdapter()
+        val spinnerAdapter = SpinnerAdapter()
+        attestationType.adapter = spinnerAdapter
 
         view.addClaimButton.setOnClickListener {
             val parseNumbers = parseNumbers()
             if (parseNumbers != null) {
                 val (a, b, m) = parseNumbers
-                val claimCreation = viewModel.createClaim(a, b, m)
+                val claimCreation = viewModel.createClaim(a, b, m, spinnerAdapter.entries[attestationType.selectedItemPosition])
                 if (claimCreation == null) {
                     Toast.makeText(activity, "Please select a peer to connect with", Toast.LENGTH_SHORT).show()
                 } else {

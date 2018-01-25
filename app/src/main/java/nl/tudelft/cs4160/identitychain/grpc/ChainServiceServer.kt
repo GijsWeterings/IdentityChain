@@ -5,7 +5,6 @@ import com.google.protobuf.ByteString
 import com.zeroknowledgeproof.rangeProof.Challenge
 import com.zeroknowledgeproof.rangeProof.RangeProofVerifier
 import com.zeroknowledgeproof.rangeProof.SetupPrivateResult
-import com.zeroknowledgeproof.rangeProof.SetupPublicResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
@@ -86,7 +85,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     }
 
     override fun answerChallenge(request: ChainService.Challenge, responseObserver: StreamObserver<ChainService.ChallengeReply>) {
-        val publicResult: SetupPublicResult? = this.storage.getBlock(request.pubKey.toByteArray(), request.seqNum)?.asSetupPublic()
+        val publicResult: ChainService.MetaZkp? = this.storage.getBlock(request.pubKey.toByteArray(), request.seqNum)?.asMetaZkp()
         val private = attestationRequestRepository.privateDataForStuff(request.seqNum)?.toPrivateResult()
 
         if (publicResult == null || private == null) {
@@ -103,8 +102,8 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
 
     fun verifyNewBlock(peer: ChainService.Peer, block: MessageProto.TrustChainBlock): Single<Boolean> {
         val publicKey = peer.publicKey.toByteArray()
-        val publicResult: SetupPublicResult = block.asSetupPublic()
-                ?: throw IllegalArgumentException("Block did not contain attestation")
+        val metaZkp: ChainService.MetaZkp = block.asMetaZkp()
+        val publicResult = metaZkp.zkp.asZkp()
         val rangeProofVerifier = RangeProofVerifier(publicResult.N, publicResult.a, publicResult.b)
 
         val resultOfAllProofs: List<Single<Boolean>> = (0..10).map {
@@ -286,6 +285,6 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
     }
 }
 
-fun MessageProto.TrustChainBlock.asSetupPublic(): SetupPublicResult? {
-    return ChainService.PublicSetupResult.parseFrom(this.transaction).asZkp()
+fun MessageProto.TrustChainBlock.asMetaZkp(): ChainService.MetaZkp {
+    return ChainService.MetaZkp.parseFrom(this.transaction)
 }

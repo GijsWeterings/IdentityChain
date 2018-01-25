@@ -75,6 +75,15 @@ open class AttestationRequest : RealmObject() {
 
     fun publicKey() = peer?.publicKey
 
+    fun metaDataText(): String {
+        val transaction = ChainService.PeerTrustChainBlock.parseFrom(block)
+                .block.transaction
+
+        val metaZkp = ChainService.MetaZkp.parseFrom(transaction)
+
+        return "${metaZkp.meta} from: ${metaZkp.zkp.a} to: ${metaZkp.zkp.b}"
+    }
+
     companion object {
         fun fromHalfBlock(block: ChainService.PeerTrustChainBlock): AttestationRequest {
             val realmPeer = Peer().apply {
@@ -86,7 +95,7 @@ open class AttestationRequest : RealmObject() {
 
             return AttestationRequest().apply {
                 //verify that the transaction is indeed a public result, but store it as bytes.
-                ChainService.PublicSetupResult.parseFrom(block.block.transaction)
+                ChainService.MetaZkp.parseFrom(block.block.transaction)
                 this.block = block.toByteArray()
                 peer = realmPeer
             }

@@ -8,6 +8,15 @@ import com.zeroknowledgeproof.rangeProof.SetupPublicResult
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import java.math.BigInteger
 
+
+fun createMetaZkp(ownerKey: ByteArray, type: String, zkp: ChainService.PublicSetupResult): ChainService.MetaZkp {
+    return ChainService.MetaZkp.newBuilder()
+            .setMeta(type)
+            .setZkp(zkp)
+            .setOwnerKey(ByteString.copyFrom(ownerKey))
+            .build()
+}
+
 fun SetupPublicResult.asMessage(): ChainService.PublicSetupResult {
     return ChainService.PublicSetupResult.newBuilder()
             .setC(this.c.asByteString())

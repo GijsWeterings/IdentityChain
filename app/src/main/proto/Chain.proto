@@ -7,10 +7,6 @@ package message;
 option java_package = "nl.tudelft.cs4160.identitychain.message";
 option java_outer_classname = "ChainService";
 
-message MetaBlock {
-    TrustChainBlock halfBlock = 1;
-    int32 metaData = 2;
-}
 
 message Peer {
     string hostname = 1;
@@ -35,6 +31,12 @@ message CrawlResponse {
 
 message Empty {
 
+}
+
+message MetaZkp {
+    PublicSetupResult zkp = 1;
+    bytes ownerKey = 2;
+    string meta = 3;
 }
 
 message PublicSetupResult {
@@ -95,5 +97,5 @@ service Chain {
     rpc getPublicKey (Empty) returns (Key);
     rpc sendLatestBlocks (CrawlResponse) returns (Key);
     rpc answerChallenge (Challenge) returns (ChallengeReply);
-    rpc sendSignedBlock(PeerTrustChainBlock) returns (Empty);
+    rpc sendSignedBlock (PeerTrustChainBlock) returns (Empty);
 }

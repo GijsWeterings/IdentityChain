@@ -70,6 +70,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
         var rejectButton: ImageButton by Delegates.notNull()
         var verifyAttestationButton: ImageButton by Delegates.notNull()
         var nameTextView: TextView by Delegates.notNull()
+        var descriptionTextView : TextView by Delegates.notNull()
         val view = with(parent.context) {
             cardView {
                 lparams(width = matchParent) {
@@ -88,7 +89,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
                         nameTextView = textView()
                     }
 
-                    textView("Age greater than 18")
+                    descriptionTextView = textView()
                     publicKeyTextView = textView()
                 }
 
@@ -101,7 +102,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
             }
         }
 
-        return AttestationViewHolder(view, publicKeyTextView, rejectButton, verifyAttestationButton, nameTextView)
+        return AttestationViewHolder(view, publicKeyTextView, rejectButton, verifyAttestationButton, nameTextView, descriptionTextView)
     }
 
     private fun @AnkoViewDslMarker _LinearLayout.confirmationButton(imageSize: Int, resource: Int): ImageButton {
@@ -121,6 +122,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
             holder.name.text = item.publicKey()?.let { nameForContact(realm, it) } ?: "Unknown peer"
 
             holder.publicKey.text = keyAsText.takeLast(20)
+            holder.descriptionTextView.text = item.metaDataText()
 
             holder.rejectButton.setOnClickListener {
                 realm.executeTransaction {
@@ -146,7 +148,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
 }
 
 class AttestationViewHolder(view: View, val publicKey: TextView, val rejectButton: ImageButton,
-                            val verifyAttestationButton: ImageButton, val name: TextView) : RecyclerView.ViewHolder(view)
+                            val verifyAttestationButton: ImageButton, val name: TextView, val descriptionTextView: TextView) : RecyclerView.ViewHolder(view)
 
 
 
