@@ -48,7 +48,6 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
             clickedItems.onNext(selectedPeer.peer)
         }
 
-        holder.verifyWithPeer.setOnClickListener {  }
 
         //contact hasn't been named yet
         if (contactName == null) {
@@ -87,7 +86,6 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val name = view.peerName
     val publicKey = view.publicKey
     val cardView = view.peerCardView
-    val verifyWithPeer = view.verifyWithPeer
 
     internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
         val selectedPeer = peers[this.adapterPosition]
