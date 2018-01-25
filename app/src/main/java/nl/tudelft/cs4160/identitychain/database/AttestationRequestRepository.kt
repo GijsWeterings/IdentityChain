@@ -6,14 +6,23 @@ import io.realm.RealmObject
 import io.realm.kotlin.delete
 import io.realm.kotlin.where
 import nl.tudelft.cs4160.identitychain.message.ChainService
+import nl.tudelft.cs4160.identitychain.network.AccessPeer
 
 interface AttestationRequestRepository {
     fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock)
     fun privateDataForStuff(seq_no: Int): PrivateProof?
     fun savePrivateData(private: SetupPrivateResult, seq_no: Int)
+    fun getAccess(publicKey: ByteArray): Boolean
 }
 
 class RealmAttestationRequestRepository : AttestationRequestRepository {
+    override fun getAccess(publicKey: ByteArray): Boolean {
+        return Realm.getDefaultInstance().use {
+             it.where(AccessPeer::class.java)
+                    .equalTo("publicKey", publicKey)
+                    .findFirst()?.access ?: false
+        }
+    }
 
     override fun saveAttestationRequest(peerTrustChainBlock: ChainService.PeerTrustChainBlock) {
         Realm.getDefaultInstance().use {
@@ -53,6 +62,8 @@ class RealmAttestationRequestRepository : AttestationRequestRepository {
 }
 
 class FakeRepository : AttestationRequestRepository {
+    override fun getAccess(publicKey: ByteArray): Boolean = true
+
     val attestationRequests = ArrayList<AttestationRequest>()
     val privateData = ArrayList<PrivateProof>()
 

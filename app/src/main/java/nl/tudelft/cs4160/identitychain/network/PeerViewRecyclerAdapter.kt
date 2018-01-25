@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
+import io.realm.RealmObject
 import kotlinx.android.synthetic.main.peer_view.view.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
@@ -33,6 +34,7 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         val publicKey = selectedPeer.peer.publicKey
         val contactName = viewModel.nameForPublicKey(publicKey)
 
+        holder.access.isChecked = viewModel.accessForPublicKey(publicKey)
         holder.name.text = contactName ?: selectedPeer.peer.name
         holder.publicKey.text = Peer.bytesToHex(publicKey).takeLast(20)
         val view = holder.cardView
@@ -43,6 +45,10 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
             clickedItems.onNext(selectedPeer.peer)
         }
 
+        holder.access.setOnCheckedChangeListener({ _, checked ->
+            val peer = peers[holder.adapterPosition]
+            viewModel.onCheckedChanged(peer, checked)
+        })
 
         //contact hasn't been named yet
         if (contactName == null) {
@@ -80,6 +86,8 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         peers.add(SelectablePeer(selected, item))
         val size = peers.size
 
+        viewModel.ensureAccessPeerExists(item)
+
         this.notifyItemInserted(size - 1)
     }
 
@@ -90,6 +98,7 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val name = view.peerName
     val publicKey = view.publicKey
     val cardView = view.peerCardView
+    val access = view.verifyCheckBox
 
     internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
         val selectedPeer = peers[this.adapterPosition]
@@ -105,6 +114,11 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             return Color.TRANSPARENT
         }
     }
+}
+
+open class AccessPeer() : RealmObject() {
+    var publicKey: ByteArray = ByteArray(0)
+    var access: Boolean = false
 }
 
 internal data class SelectablePeer(var selected: Boolean, val peer: KeyedPeer)

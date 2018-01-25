@@ -6,6 +6,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.LiveDataReactiveStreams
 import android.arch.lifecycle.MutableLiveData
 import android.util.Log
+import android.widget.Toast
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
@@ -59,7 +60,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun select(peer: KeyedPeer) {
         selectedPeer.value = peer
         //they get saved to the db eagerly in a do on success.
-        server.crawlPeer(peer.connectionInformation).subscribe({}, { Log.e(TAG, it.message) })
+        startNetworkOnComputation { server.crawlPeer(peer.connectionInformation) }.subscribe({}, { Log.e(TAG, it.message) })
     }
 
     fun initializeServiceFactory(): ServiceFactory {
@@ -91,8 +92,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (peer != null) {
             verifyDisposable.replace(startNetworkOnComputation({ server.verifyExistingBlock(peer.toPeerMessage(), seqNo) })
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ verificationEvents.value = it }, {}))
+                    .subscribe({ verificationEvents.value = it }, {
+                        showNoAccessToast()
+                    }))
         }
+    }
+
+    private fun showNoAccessToast() {
+        Toast.makeText(getApplication(), "No verification access!", Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -159,7 +166,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         startNetworkOnComputation { server.signAttestationRequest(block.peer, block.block) }
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete, { showNoAccessToast() })
     }
 
     override fun onCleared() {

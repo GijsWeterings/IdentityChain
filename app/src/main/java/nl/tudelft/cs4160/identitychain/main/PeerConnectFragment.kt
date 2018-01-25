@@ -17,7 +17,9 @@ import io.realm.Realm
 import kotlinx.android.synthetic.main.peer_connect_fragment.*
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.network.AccessPeer
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
+import nl.tudelft.cs4160.identitychain.network.SelectablePeer
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 import nl.tudelft.cs4160.identitychain.peers.PeerContact
 import nl.tudelft.cs4160.identitychain.peers.nameForContact
@@ -111,7 +113,37 @@ class PeerConnectViewModel : ViewModel() {
 
     fun nameForPublicKey(publicKey: ByteArray): String? = nameForContact(realm, publicKey)
 
+    fun accessForPublicKey(publicKey: ByteArray): Boolean = findAccessPeer(publicKey)?.access
+            ?: false
+
+    private fun findAccessPeer(publicKey: ByteArray): AccessPeer? {
+        return realm.where(AccessPeer::class.java)
+                .equalTo("publicKey", publicKey)
+                .findFirst()
+    }
+
     override fun onCleared() {
         realm.close()
+    }
+
+    internal fun onCheckedChanged(peer: SelectablePeer, checked: Boolean) {
+        val findFirst = realm.where(AccessPeer::class.java)
+                .equalTo("publicKey", peer.peer.publicKey)
+                .findFirst()
+
+        realm.executeTransaction {
+            findFirst?.access = checked
+        }
+    }
+
+    fun ensureAccessPeerExists(item: KeyedPeer) {
+        val peer = findAccessPeer(item.publicKey)
+        if (peer == null) {
+            realm.executeTransaction {
+                val accessPeer = AccessPeer()
+                accessPeer.publicKey = item.publicKey
+                it.copyToRealm(accessPeer)
+            }
+        }
     }
 }

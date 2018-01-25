@@ -6,26 +6,7 @@ import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 
 fun <A> ListenableFuture<A>.guavaAsSingle(scheduler: Scheduler): Single<A> {
-    val worker = scheduler.createWorker()
-    return Single.create { emitter ->
-        this.addListener({
-            try {
-                //the future should be done here
-                emitter.onSuccess(this.get())
-            } catch (t: Throwable) {
-                emitter.onError(t)
-            }
-
-        }, {
-            worker.schedule({
-                try {
-                    it.run()
-                } finally {
-                    worker.dispose()
-                }
-            })
-        })
-    }
+    return Single.fromFuture(this, Schedulers.io())
 }
 
 /**
@@ -36,7 +17,7 @@ fun <A> ListenableFuture<A>.guavaAsSingle(scheduler: Scheduler): Single<A> {
  * This runs that code in the back ground aswell
  */
 fun <T> startNetworkOnComputation(f: () -> Single<T>): Single<T> {
-    return Single.defer{
+    return Single.defer {
         f()
     }.subscribeOn(Schedulers.io())
 }

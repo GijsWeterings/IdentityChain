@@ -77,11 +77,14 @@ message Key {
 }
 
 message Challenge {
+    //pubKey for the block
     bytes pubKey = 1;
     int32 seqNum = 2;
     // actual challenge numbers
     bytes s = 3;
     bytes t = 4;
+
+    bytes accessPubKey = 5;
 }
 
 message ChallengeReply {
