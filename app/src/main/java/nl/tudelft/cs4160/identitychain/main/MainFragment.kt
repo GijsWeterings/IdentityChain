@@ -1,7 +1,9 @@
 package nl.tudelft.cs4160.identitychain.main
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
@@ -13,6 +15,11 @@ import kotlinx.android.synthetic.main.attestation_creation.view.*
 import nl.tudelft.cs4160.identitychain.R
 import org.jetbrains.anko.linearLayout
 import org.jetbrains.anko.textView
+import android.provider.ContactsContract
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+import org.jetbrains.anko.support.v4.act
+
 
 class MainFragment : Fragment() {
     private lateinit var viewModel: MainViewModel
@@ -28,8 +35,33 @@ class MainFragment : Fragment() {
         return inflater.inflate(R.layout.attestation_creation, container, false)
     }
 
+    fun fetchDisplayName() {
+        if (ContextCompat.checkSelfPermission(context,
+                Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
+                    Manifest.permission.READ_CONTACTS)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(activity,
+                        arrayOf(Manifest.permission.READ_CONTACTS), 1)
+            }
+        }
+        val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
+        c.moveToFirst()
+        name.text = c.getString(c.getColumnIndex("display_name"))
+        c.close()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fetchDisplayName()
 
         viewModel = ViewModelProviders.of(activity).get(MainViewModel::class.java)
         imageView.setOnLongClickListener(debugMenuListener)
