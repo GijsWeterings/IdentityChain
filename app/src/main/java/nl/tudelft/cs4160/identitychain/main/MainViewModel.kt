@@ -47,8 +47,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val attestationRequestRepository = RealmAttestationRequestRepository()
     val verifyDisposable = SerialDisposable()
 
-    private val _verifyEvents: MutableLiveData<ChainService.PublicSetupResult> = MutableLiveData()
-    val verifyEvents: LiveData<ChainService.PublicSetupResult> = _verifyEvents
     val verificationEvents: MutableLiveData<Boolean> = MutableLiveData()
 
 
@@ -80,7 +78,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun proofSelected(pair: Pair<Int,ChainService.PublicSetupResult>) {
         val (seqNo, block) = pair
-        _verifyEvents.value = block
 
         val peer = selectedPeer.value
         if (peer != null) {
