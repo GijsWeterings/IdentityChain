@@ -41,13 +41,15 @@ class SplashActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissionsR
     }
 
     fun proceedToApplication(timeOut: Long) {
-        Handler().postDelayed({
-            // This method will be executed once the timer is over
-            val i = Intent(this, MainActivity::class.java)
-            startActivity(i)
-            // close this activity
-            finish()
-        }, timeOut)
+        runOnUiThread {
+            Handler().postDelayed({
+                // This method will be executed once the timer is over
+                val i = Intent(this, MainActivity::class.java)
+                startActivity(i)
+                // close this activity
+                finish()
+            }, timeOut)
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {

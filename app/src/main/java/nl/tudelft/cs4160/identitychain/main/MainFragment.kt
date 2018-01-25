@@ -39,7 +39,11 @@ class MainFragment : Fragment() {
         val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
         c.moveToFirst()
         name.text = c.getString(c.getColumnIndex("display_name"))
-        imageView.setImageURI(Uri.parse(c.getString(c.getColumnIndex("photo_uri"))))
+        val fotoId = c.getString(c.getColumnIndex("photo_uri"))
+
+        if(fotoId != null) {
+            imageView.setImageURI(Uri.parse(fotoId))
+        }
         c.close()
 
         if (name.text.equals("")) {
