@@ -4,6 +4,7 @@ import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
@@ -18,7 +19,6 @@ import org.jetbrains.anko.textView
 import android.provider.ContactsContract
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
-import org.jetbrains.anko.support.v4.act
 
 
 class MainFragment : Fragment() {
@@ -36,11 +36,13 @@ class MainFragment : Fragment() {
     }
 
     fun fetchDisplayName() {
+        requestPermissions(arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
+
         if (ContextCompat.checkSelfPermission(context,
-                Manifest.permission.READ_CONTACTS)
+                Manifest.permission.WRITE_CONTACTS)
                 != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                    Manifest.permission.READ_CONTACTS)) {
+                    Manifest.permission.WRITE_CONTACTS)) {
 
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
@@ -48,14 +50,22 @@ class MainFragment : Fragment() {
 
             } else {
                 // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(activity,
-                        arrayOf(Manifest.permission.READ_CONTACTS), 1)
             }
+            requestPermissions(arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
+//            ActivityCompat.requestPermissions(activity,
+//                    arrayOf(Manifest.permission.WRITE_CONTACTS), 2)
+
         }
-        val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
-        c.moveToFirst()
-        name.text = c.getString(c.getColumnIndex("display_name"))
-        c.close()
+        else {
+            val c = context.contentResolver.query(ContactsContract.Profile.CONTENT_URI, null, null, null, null)
+            c.moveToFirst()
+            name.text = c.getString(c.getColumnIndex("display_name"))
+            imageView.setImageURI(Uri.parse(c.getString(c.getColumnIndex("photo_uri"))))
+            c.close()
+        }
+        if(name.text.equals("")) {
+            name.text = "John Doe"
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
