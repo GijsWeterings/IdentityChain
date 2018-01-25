@@ -39,12 +39,7 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 
         holder.itemView.setOnClickListener {
-            previouslySelected?.toggleColorForSelection(peers)
-            //if we click the same item twice it should stay disabled
-            if (previouslySelected != holder) {
-                holder.toggleColorForSelection(peers)
-            }
-            previouslySelected = holder
+            select(holder)
             clickedItems.onNext(selectedPeer.peer)
         }
 
@@ -63,6 +58,15 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         }
     }
 
+    fun select(holder: RecyclerViewHolder) {
+        previouslySelected?.toggleColorForSelection(peers)
+        //if we click the same item twice it should stay disabled
+        if (previouslySelected != holder) {
+            holder.toggleColorForSelection(peers)
+        }
+        previouslySelected = holder
+    }
+
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
         return if (selectedPeer.selected) {
@@ -72,8 +76,8 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         }
     }
 
-    fun addItem(item: KeyedPeer) {
-        peers.add(SelectablePeer(false, item))
+    fun addItem(item: KeyedPeer, selected: Boolean) {
+        peers.add(SelectablePeer(selected, item))
         val size = peers.size
 
         this.notifyItemInserted(size - 1)

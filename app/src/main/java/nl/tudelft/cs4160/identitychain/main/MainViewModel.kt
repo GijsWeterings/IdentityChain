@@ -10,6 +10,7 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.disposables.Disposables
 import io.reactivex.disposables.SerialDisposable
 import io.realm.Realm
@@ -36,7 +37,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val selectedPeer: MutableLiveData<KeyedPeer> = MutableLiveData()
     val serviceFactory = initializeServiceFactory()
     val peerSelection: LiveData<KeyedPeer> = selectedPeer
-    val keyedPeers: LiveData<KeyedPeer>
+    private val mutableKeyedPeers: MutableLiveData<KeyedPeer> = MutableLiveData()
+    val keyedPeers: LiveData<KeyedPeer> = mutableKeyedPeers
 
     private val grpc: Server
     private val server: ChainServiceServer
@@ -47,6 +49,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val trustedParty = RangeProofTrustedParty()
     val attestationRequestRepository = RealmAttestationRequestRepository()
     val verifyDisposable = SerialDisposable()
+    val serviceDiscoveryDisposable: Disposable
 
     val verificationEvents: MutableLiveData<Boolean> = MutableLiveData()
 
@@ -74,7 +77,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
-        keyedPeers = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer))
+        serviceDiscoveryDisposable = serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({mutableKeyedPeers.value = it})
+
     }
 
     fun proofSelected(pair: Pair<Int,ChainService.PublicSetupResult>) {
@@ -157,6 +163,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         verifyDisposable.dispose()
+        serviceDiscoveryDisposable.dispose()
         grpc.shutdownNow()
         realm.close()
     }

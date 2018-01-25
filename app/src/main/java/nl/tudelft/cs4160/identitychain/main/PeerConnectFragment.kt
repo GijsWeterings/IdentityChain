@@ -46,9 +46,11 @@ class PeerConnectFragment : Fragment() {
         val peerViewRecyclerAdapter = PeerViewRecyclerAdapter(createNameDialog(), peerViewModel)
         view.discoveryList.adapter = peerViewRecyclerAdapter
 
-
+        val selectedPeer = viewModel.peerSelection.value
         viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
-            peerViewRecyclerAdapter.addItem(it!!)
+            if(it != null) {
+                peerViewRecyclerAdapter.addItem(it, it == selectedPeer)
+            }
         })
 
         val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it) })
