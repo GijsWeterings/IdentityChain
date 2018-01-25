@@ -82,7 +82,7 @@ class MainFragment : Fragment() {
         val b = upperBound.text.toString().toIntOrNull()
         val m = value.text.toString().toIntOrNull()
         //kotlin needs a validation applicative
-        return if (a != null && b != null && m != null) {
+        return if (a != null && b != null && m != null && a != 0) {
             Triple(a, b, m)
         } else {
             null

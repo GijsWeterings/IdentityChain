@@ -62,10 +62,17 @@ class VerificationFragment : DialogFragment() {
         }
     }
 
-    private fun blocksForKey(keyPeer: KeyedPeer) = trustChainStorage.allBlocks
-            .filter { it.publicKey == ByteString.copyFrom(keyPeer.publicKey) }
+    private fun blocksForKey(keyPeer: KeyedPeer): List<MessageProto.TrustChainBlock> {
+        val allBlocks = trustChainStorage.allBlocks
 
-    companion object {
+        val block = allBlocks[3]
+        val sameKeys = block.linkPublicKey == block.publicKey
+
+        val goodBlocks = allBlocks.filter { it.publicKey == ByteString.copyFrom(keyPeer.publicKey) }
+        return goodBlocks
+    }
+
+        companion object {
         val TAG = "verification fragment"
     }
 
