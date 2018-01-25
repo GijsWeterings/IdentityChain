@@ -20,10 +20,4 @@
         android:title="requests"
         android:checkable="true"
         app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/verification"
-        android:icon="@drawable/ic_explore_white_24px"
-        android:title="verify"
-        android:checkable="true"
-        app:showAsAction="ifRoom" />
 </menu>
