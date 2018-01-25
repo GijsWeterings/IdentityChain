@@ -48,7 +48,7 @@ class PeerConnectFragment : Fragment() {
 
         val selectedPeer = viewModel.peerSelection.value
         viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
-            if(it != null) {
+            if (it != null) {
                 peerViewRecyclerAdapter.addItem(it, it == selectedPeer)
             }
         })

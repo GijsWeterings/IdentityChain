@@ -57,8 +57,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val kp by lazy(this::initKeys)
 
     fun select(peer: KeyedPeer) {
-
         selectedPeer.value = peer
+        //they get saved to the db eagerly in a do on success.
+        server.crawlPeer(peer.connectionInformation).subscribe({}, { Log.e(TAG, it.message) })
     }
 
     fun initializeServiceFactory(): ServiceFactory {
@@ -79,18 +80,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         this.server = server
         serviceDiscoveryDisposable = serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({mutableKeyedPeers.value = it})
+                .subscribe({ mutableKeyedPeers.value = it })
 
     }
 
-    fun proofSelected(pair: Pair<Int,ChainService.PublicSetupResult>) {
-        val (seqNo, block) = pair
+    fun proofSelected(pair: Pair<Int, ChainService.PublicSetupResult>) {
+        val (seqNo, _) = pair
 
         val peer = selectedPeer.value
         if (peer != null) {
             verifyDisposable.replace(startNetworkOnComputation({ server.verifyExistingBlock(peer.toPeerMessage(), seqNo) })
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({verificationEvents.value = it}, {}))
+                    .subscribe({ verificationEvents.value = it }, {}))
         }
     }
 
