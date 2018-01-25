@@ -2,6 +2,7 @@ package nl.tudelft.cs4160.identitychain.verification
 
 import android.arch.lifecycle.*
 import android.os.Bundle
+import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -26,7 +27,7 @@ import org.jetbrains.anko.textView
 import org.jetbrains.anko.verticalLayout
 import kotlin.properties.Delegates
 
-class VerificationFragment : Fragment() {
+class VerificationFragment : DialogFragment() {
     private lateinit var mainViewModel: MainViewModel
     private lateinit var verificationViewModel: VerificationFragmentViewModel
     private lateinit var trustChainStorage: TrustChainStorage

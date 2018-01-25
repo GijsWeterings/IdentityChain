@@ -12,9 +12,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.realm.Realm
+import kotlinx.android.synthetic.main.peer_connect_fragment.*
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
@@ -22,6 +24,7 @@ import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 import nl.tudelft.cs4160.identitychain.peers.PeerContact
 import nl.tudelft.cs4160.identitychain.peers.nameForContact
+import nl.tudelft.cs4160.identitychain.verification.VerificationFragment
 import org.jetbrains.anko.customView
 import org.jetbrains.anko.editText
 import org.jetbrains.anko.noButton
@@ -55,6 +58,20 @@ class PeerConnectFragment : Fragment() {
         disposables.add(disposable)
 
         return view
+    }
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        peerSelectButton()
+    }
+
+    fun peerSelectButton() {
+        verifyWithPeer.setOnClickListener {
+            if (viewModel.peerSelection.value != null) {
+                VerificationFragment().show(activity.supportFragmentManager, "verification")
+            } else {
+                Toast.makeText(activity, "please select a peer", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun createNameDialog(): Single<String> = Single.create<String> { em ->
