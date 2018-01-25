@@ -28,7 +28,6 @@ import kotlin.properties.Delegates
 
 class VerificationFragment : DialogFragment() {
     private lateinit var mainViewModel: MainViewModel
-    private lateinit var verificationViewModel: VerificationFragmentViewModel
     private lateinit var trustChainStorage: TrustChainStorage
     private lateinit var verificationBlockAdapter: VerificationBlockAdapter
 
@@ -36,7 +35,6 @@ class VerificationFragment : DialogFragment() {
         super.onCreate(savedInstanceState)
         val provider = ViewModelProviders.of(this.activity)
         mainViewModel = provider[MainViewModel::class.java]
-        verificationViewModel = provider[VerificationFragmentViewModel::class.java]
         trustChainStorage = TrustChainDBHelper(this.activity)
     }
 
@@ -57,7 +55,7 @@ class VerificationFragment : DialogFragment() {
                 textView("hello")
                 recyclerView {
                     layoutManager = LinearLayoutManager(this@with)
-                    verificationBlockAdapter = VerificationBlockAdapter(emptyList(), verificationViewModel)
+                    verificationBlockAdapter = VerificationBlockAdapter(emptyList(), mainViewModel, {this@VerificationFragment.dismiss()})
                     adapter = verificationBlockAdapter
                 }
             }
@@ -73,24 +71,20 @@ class VerificationFragment : DialogFragment() {
 
 }
 
-fun tryParsePublicResult(block: MessageProto.TrustChainBlock): ChainService.PublicSetupResult? =
-        try {
-            ChainService.PublicSetupResult.parseFrom(block.transaction)
-        } catch (otherData: InvalidProtocolBufferException) {
-            null
-        }
-
-class VerificationFragmentViewModel : ViewModel() {
-    private val _verifyEvents: MutableLiveData<ChainService.PublicSetupResult> = MutableLiveData()
-    val verifyEvents: LiveData<ChainService.PublicSetupResult> = _verifyEvents
-
-    fun proofSelected(block: ChainService.PublicSetupResult) {
-        _verifyEvents.value = block
+fun tryParsePublicResult(block: MessageProto.TrustChainBlock): Pair<Int,ChainService.PublicSetupResult>? {
+    if (block.transaction.isEmpty) {
+        return null
+    }
+    try {
+        return block.sequenceNumber.to(ChainService.PublicSetupResult.parseFrom(block.transaction))
+    } catch (otherData: InvalidProtocolBufferException) {
+        return null
     }
 }
 
 
-class VerificationBlockAdapter(var data: List<ChainService.PublicSetupResult>, val verificationViewModel: VerificationFragmentViewModel)
+class VerificationBlockAdapter(var data: List<Pair<Int,ChainService.PublicSetupResult>>, val verificationViewModel: MainViewModel,
+                               val dismiss: () -> Unit)
     : RecyclerView.Adapter<VerificationBlockViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VerificationBlockViewHolder {
@@ -112,9 +106,10 @@ class VerificationBlockAdapter(var data: List<ChainService.PublicSetupResult>, v
     override fun getItemCount(): Int = data.size
 
     override fun onBindViewHolder(holder: VerificationBlockViewHolder, position: Int) {
-        val publicSetupResult = data[position]
+        val (seq, publicSetupResult) = data[position]
         holder.range.text = "${publicSetupResult.a} - ${publicSetupResult.b}"
         holder.verify.setOnClickListener {
+            dismiss()
             verificationViewModel.proofSelected(data[holder.adapterPosition])
         }
     }

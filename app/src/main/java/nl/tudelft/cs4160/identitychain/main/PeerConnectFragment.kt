@@ -30,6 +30,7 @@ import org.jetbrains.anko.editText
 import org.jetbrains.anko.noButton
 import org.jetbrains.anko.support.v4.alert
 import org.jetbrains.anko.yesButton
+import java.time.Duration
 import kotlin.properties.Delegates
 
 
@@ -52,6 +53,17 @@ class PeerConnectFragment : Fragment() {
 
         viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
             peerViewRecyclerAdapter.addItem(it!!)
+        })
+
+
+        viewModel.verificationEvents.observe(this, Observer<Boolean> {
+            val text = if(it == true) {
+                "success!"
+            } else {
+                "invalid :("
+            }
+
+            Toast.makeText(activity, text, Toast.LENGTH_LONG).show()
         })
 
         val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it) })

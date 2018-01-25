@@ -10,6 +10,8 @@ import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposables
+import io.reactivex.disposables.SerialDisposable
 import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
@@ -43,10 +45,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val trustedParty = RangeProofTrustedParty()
     val attestationRequestRepository = RealmAttestationRequestRepository()
+    val verifyDisposable = SerialDisposable()
+
+    private val _verifyEvents: MutableLiveData<ChainService.PublicSetupResult> = MutableLiveData()
+    val verifyEvents: LiveData<ChainService.PublicSetupResult> = _verifyEvents
+    val verificationEvents: MutableLiveData<Boolean> = MutableLiveData()
+
 
     val kp by lazy(this::initKeys)
 
     fun select(peer: KeyedPeer) {
+
         selectedPeer.value = peer
     }
 
@@ -67,6 +76,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         this.grpc = grpc
         this.server = server
         keyedPeers = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer))
+    }
+
+    fun proofSelected(pair: Pair<Int,ChainService.PublicSetupResult>) {
+        val (seqNo, block) = pair
+        _verifyEvents.value = block
+
+        val peer = selectedPeer.value
+        if (peer != null) {
+            verifyDisposable.replace(startNetworkOnComputation({ server.verifyExistingBlock(peer.toPeerMessage(), seqNo) })
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({verificationEvents.value = it}, {}))
+        }
     }
 
     /**
@@ -137,6 +158,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        verifyDisposable.dispose()
         grpc.shutdownNow()
         realm.close()
     }
