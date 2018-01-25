@@ -95,7 +95,7 @@ class BiometricAuthenticationFragment : DialogFragment() {
 }
 
 class BiometricAuthenticationViewModel(application: Application) : AndroidViewModel(application) {
-    private val fingerprintManager = application.getSystemService(FingerprintManager::class.java)
+    private val fingerprintManager: FingerprintManager? = application.getSystemService(FingerprintManager::class.java)
     private val sharedAuthenication = skipIfNoFingerPrintScanner().share()
 
     val uiColors: LiveData<Boolean> = LiveDataReactiveStreams.fromPublisher(sharedAuthenication)
@@ -137,13 +137,14 @@ class BiometricAuthenticationViewModel(application: Application) : AndroidViewMo
             val authListener = AuthListener(it)
             val cancel = CancellationSignal()
 
-            fingerprintManager.authenticate(null, cancel, 0, authListener, null)
+            fingerprintManager?.authenticate(null, cancel, 0, authListener, null)
 
             it.setDisposable(Disposables.fromAction(cancel::cancel))
         }
     }
 
-    private fun deviceHasFingerPrintScanner() = fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
+    private fun deviceHasFingerPrintScanner() =
+            fingerprintManager?.let{ it.isHardwareDetected && it.hasEnrolledFingerprints() } ?: false
 }
 
 class AuthListener(val em: ObservableEmitter<Boolean>) : FingerprintManager.AuthenticationCallback() {
