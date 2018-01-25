@@ -1,8 +1,6 @@
 package nl.tudelft.cs4160.identitychain.verification
 
-import android.arch.lifecycle.Observer
-import android.arch.lifecycle.ViewModel
-import android.arch.lifecycle.ViewModelProviders
+import android.arch.lifecycle.*
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
@@ -11,26 +9,34 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
 import com.google.protobuf.ByteString
-import io.realm.Realm
+import com.google.protobuf.InvalidProtocolBufferException
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.database.TrustChainStorage
 import nl.tudelft.cs4160.identitychain.main.MainViewModel
+import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.message.MessageProto
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
+import org.jetbrains.anko.button
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.recyclerview.v7.recyclerView
 import org.jetbrains.anko.textView
 import org.jetbrains.anko.verticalLayout
+import kotlin.properties.Delegates
 
 class VerificationFragment : Fragment() {
     private lateinit var mainViewModel: MainViewModel
+    private lateinit var verificationViewModel: VerificationFragmentViewModel
     private lateinit var trustChainStorage: TrustChainStorage
     private lateinit var verificationBlockAdapter: VerificationBlockAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mainViewModel = ViewModelProviders.of(this.activity)[MainViewModel::class.java]
+        val provider = ViewModelProviders.of(this.activity)
+        mainViewModel = provider[MainViewModel::class.java]
+        verificationViewModel = provider[VerificationFragmentViewModel::class.java]
         trustChainStorage = TrustChainDBHelper(this.activity)
     }
 
@@ -39,7 +45,7 @@ class VerificationFragment : Fragment() {
             if (keyPeer != null) {
                 val blocksForKey: List<MessageProto.TrustChainBlock> = blocksForKey(keyPeer)
                 Log.i(TAG, "blocks for key size: ${blocksForKey.size}")
-                verificationBlockAdapter.data = blocksForKey
+                verificationBlockAdapter.data = blocksForKey.mapNotNull(::tryParsePublicResult)
                 verificationBlockAdapter.notifyDataSetChanged()
             }
         })
@@ -47,7 +53,7 @@ class VerificationFragment : Fragment() {
         return with(this.context) {
             recyclerView {
                 layoutManager = LinearLayoutManager(this@with)
-                verificationBlockAdapter = VerificationBlockAdapter(emptyList(), Realm.getDefaultInstance())
+                verificationBlockAdapter = VerificationBlockAdapter(emptyList(), verificationViewModel)
                 adapter = verificationBlockAdapter
             }
         }
@@ -59,31 +65,55 @@ class VerificationFragment : Fragment() {
     companion object {
         val TAG = "verification fragment"
     }
+
 }
+
+fun tryParsePublicResult(block: MessageProto.TrustChainBlock): ChainService.PublicSetupResult? =
+        try {
+            ChainService.PublicSetupResult.parseFrom(block.transaction)
+        } catch (otherData: InvalidProtocolBufferException) {
+            null
+        }
 
 class VerificationFragmentViewModel : ViewModel() {
+    private val _verifyEvents: MutableLiveData<ChainService.PublicSetupResult> = MutableLiveData()
+    val verifyEvents: LiveData<ChainService.PublicSetupResult> = _verifyEvents
 
+    fun proofSelected(block: ChainService.PublicSetupResult) {
+        _verifyEvents.value = block
+    }
 }
 
 
-class VerificationBlockAdapter(var data: List<MessageProto.TrustChainBlock>, val nameLookUp: Realm) : RecyclerView.Adapter<VerificationBlockViewHolder>() {
+class VerificationBlockAdapter(var data: List<ChainService.PublicSetupResult>, val verificationViewModel: VerificationFragmentViewModel)
+    : RecyclerView.Adapter<VerificationBlockViewHolder>() {
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VerificationBlockViewHolder {
-        return VerificationBlockViewHolder(with(parent) {
+        var range: TextView by Delegates.notNull()
+        var verify: Button by Delegates.notNull()
+        val view = with(parent) {
             cardView {
                 verticalLayout {
                     textView("type age")
-                    textView(" a - b")
+                    range = textView()
                     textView("validity")
+                    verify = button("verify!")
                 }
             }
-        })
+        }
+        return VerificationBlockViewHolder(view, range, verify)
     }
 
     override fun getItemCount(): Int = data.size
 
-    override fun onBindViewHolder(holder: VerificationBlockViewHolder?, position: Int) {
-
+    override fun onBindViewHolder(holder: VerificationBlockViewHolder, position: Int) {
+        val publicSetupResult = data[position]
+        holder.range.text = "${publicSetupResult.a} - ${publicSetupResult.b}"
+        holder.verify.setOnClickListener {
+            verificationViewModel.proofSelected(data[holder.adapterPosition])
+        }
     }
+
 }
 
-class VerificationBlockViewHolder(view: View) : RecyclerView.ViewHolder(view)
+class VerificationBlockViewHolder(view: View, val range: TextView, val verify: Button) : RecyclerView.ViewHolder(view)

@@ -134,7 +134,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         startNetworkOnComputation { server.signAttestationRequest(block.peer, block.block) }
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
-
     }
 
     override fun onCleared() {
