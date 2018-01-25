@@ -34,7 +34,7 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         val contactName = viewModel.nameForPublicKey(publicKey)
 
         holder.name.text = contactName ?: selectedPeer.peer.name
-        holder.publicKey.text = Peer.bytesToHex(publicKey).take(20)
+        holder.publicKey.text = Peer.bytesToHex(publicKey).takeLast(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 

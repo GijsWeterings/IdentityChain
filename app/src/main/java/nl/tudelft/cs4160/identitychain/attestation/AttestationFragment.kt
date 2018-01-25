@@ -120,7 +120,7 @@ class AttestationAdapter(data: OrderedRealmCollection<AttestationRequest>, updat
             val keyAsText = Peer.bytesToHex(item.publicKey())
             holder.name.text = item.publicKey()?.let { nameForContact(realm, it) } ?: "Unknown peer"
 
-            holder.publicKey.text = keyAsText.take(20)
+            holder.publicKey.text = keyAsText.takeLast(20)
 
             holder.rejectButton.setOnClickListener {
                 realm.executeTransaction {
