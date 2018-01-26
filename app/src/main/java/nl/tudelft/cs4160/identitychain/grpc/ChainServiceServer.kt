@@ -125,7 +125,7 @@ class ChainServiceServer(val storage: TrustChainStorage, val me: ChainService.Pe
             registry.findStub(peer.toPeerConnectionInformation()).answerChallenge(challengeMessage).guavaAsSingle(Schedulers.io()).map {
                 val challengeReply = it.asZkp()(challenge.s, challenge.t)
                 rangeProofVerifier.interactiveVerify(publicResult, challengeReply)
-            }.onErrorReturn { false }
+            }
         }
 
         return Flowable.fromIterable(resultOfAllProofs).flatMapSingle { it }.all { it }
