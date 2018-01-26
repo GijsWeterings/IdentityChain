@@ -52,7 +52,6 @@ class VerificationFragment : DialogFragment() {
             frameLayout {
                 lparams(matchParent, matchParent)
                 backgroundColor = Color.WHITE
-                textView("hello")
                 recyclerView {
                     layoutManager = LinearLayoutManager(this@with)
                     verificationBlockAdapter = VerificationBlockAdapter(emptyList(), mainViewModel, { this@VerificationFragment.dismiss() })
