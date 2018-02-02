@@ -52,6 +52,8 @@ This protocol checks all parameters of the zero-knowledge proof.
 
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_D23F1922FC49974EDFBD88A6346CDFAE74E84C1DE46F49ADA4BEFEA008B1107D_1517592721914_photo_2018-02-02_18-31-36.jpg)
 
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_C50C09168F44C67D47C02E9002CB691AB9FCFB08351883DCAC77195AEA8F3704_1517596707116_peer-view.png)
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_C50C09168F44C67D47C02E9002CB691AB9FCFB08351883DCAC77195AEA8F3704_1517596731835_verify.png)
 
 
 
