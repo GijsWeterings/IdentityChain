@@ -10,9 +10,6 @@ Students:
 - @Recognition2
 - @eanker
 
-Repository:
-https://github.com/GijsWeterings/IdentityChain
-
 ## Self-Sovereign Identity
 
 IdentityChain is a Self-Sovereign Identity app based on [TrustChain](https://www.sciencedirect.com/science/article/pii/S0167739X17318988). It aims to facilitate a system where identity can be decentralized, and give control of the use of identity data back to the user. Identity in this case is built up from all attestations made between the user and other parties. Each block on the TrustChain is signed by the user and a second party, and contains a zero knowledge proof.
