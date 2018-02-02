@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
+import io.realm.RealmObject
 import kotlinx.android.synthetic.main.peer_view.view.*
 import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
@@ -33,20 +34,21 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         val publicKey = selectedPeer.peer.publicKey
         val contactName = viewModel.nameForPublicKey(publicKey)
 
+        holder.access.isChecked = viewModel.accessForPublicKey(publicKey)
         holder.name.text = contactName ?: selectedPeer.peer.name
         holder.publicKey.text = Peer.bytesToHex(publicKey).takeLast(20)
         val view = holder.cardView
         view.setCardBackgroundColor(colorForSelection(selectedPeer, view))
 
         holder.itemView.setOnClickListener {
-            previouslySelected?.toggleColorForSelection(peers)
-            //if we click the same item twice it should stay disabled
-            if (previouslySelected != holder) {
-                holder.toggleColorForSelection(peers)
-            }
-            previouslySelected = holder
+            select(holder)
             clickedItems.onNext(selectedPeer.peer)
         }
+
+        holder.access.setOnCheckedChangeListener({ _, checked ->
+            val peer = peers[holder.adapterPosition]
+            viewModel.onCheckedChanged(peer, checked)
+        })
 
         //contact hasn't been named yet
         if (contactName == null) {
@@ -62,6 +64,15 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         }
     }
 
+    fun select(holder: RecyclerViewHolder) {
+        previouslySelected?.toggleColorForSelection(peers)
+        //if we click the same item twice it should stay disabled
+        if (previouslySelected != holder) {
+            holder.toggleColorForSelection(peers)
+        }
+        previouslySelected = holder
+    }
+
 
     private fun colorForSelection(selectedPeer: SelectablePeer, view: CardView): Int {
         return if (selectedPeer.selected) {
@@ -71,9 +82,11 @@ class PeerViewRecyclerAdapter(val nameDialog: Single<String>, val viewModel: Pee
         }
     }
 
-    fun addItem(item: KeyedPeer) {
-        peers.add(SelectablePeer(false, item))
+    fun addItem(item: KeyedPeer, selected: Boolean) {
+        peers.add(SelectablePeer(selected, item))
         val size = peers.size
+
+        viewModel.ensureAccessPeerExists(item)
 
         this.notifyItemInserted(size - 1)
     }
@@ -85,6 +98,7 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val name = view.peerName
     val publicKey = view.publicKey
     val cardView = view.peerCardView
+    val access = view.verifyCheckBox
 
     internal fun toggleColorForSelection(peers: List<SelectablePeer>) {
         val selectedPeer = peers[this.adapterPosition]
@@ -100,6 +114,11 @@ class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             return Color.TRANSPARENT
         }
     }
+}
+
+open class AccessPeer() : RealmObject() {
+    var publicKey: ByteArray = ByteArray(0)
+    var access: Boolean = false
 }
 
 internal data class SelectablePeer(var selected: Boolean, val peer: KeyedPeer)

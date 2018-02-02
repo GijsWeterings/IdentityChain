@@ -20,5 +20,4 @@
         android:title="requests"
         android:checkable="true"
         app:showAsAction="ifRoom" />
-
 </menu>

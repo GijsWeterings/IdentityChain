@@ -5,23 +5,25 @@ import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v7.app.AlertDialog
 import android.support.v7.widget.LinearLayoutManager
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.realm.Realm
+import kotlinx.android.synthetic.main.peer_connect_fragment.*
 import kotlinx.android.synthetic.main.peer_connect_fragment.view.*
-import nl.tudelft.cs4160.identitychain.Peer
 import nl.tudelft.cs4160.identitychain.R
+import nl.tudelft.cs4160.identitychain.network.AccessPeer
 import nl.tudelft.cs4160.identitychain.network.PeerViewRecyclerAdapter
+import nl.tudelft.cs4160.identitychain.network.SelectablePeer
 import nl.tudelft.cs4160.identitychain.peers.KeyedPeer
 import nl.tudelft.cs4160.identitychain.peers.PeerContact
 import nl.tudelft.cs4160.identitychain.peers.nameForContact
+import nl.tudelft.cs4160.identitychain.verification.VerificationFragment
 import org.jetbrains.anko.customView
 import org.jetbrains.anko.editText
 import org.jetbrains.anko.noButton
@@ -46,15 +48,31 @@ class PeerConnectFragment : Fragment() {
         val peerViewRecyclerAdapter = PeerViewRecyclerAdapter(createNameDialog(), peerViewModel)
         view.discoveryList.adapter = peerViewRecyclerAdapter
 
-
+        val selectedPeer = viewModel.peerSelection.value
         viewModel.keyedPeers.observe(this, Observer<KeyedPeer> {
-            peerViewRecyclerAdapter.addItem(it!!)
+            if (it != null) {
+                peerViewRecyclerAdapter.addItem(it, it == selectedPeer)
+            }
         })
 
         val disposable = peerViewRecyclerAdapter.selection().subscribe({ viewModel.select(it) })
         disposables.add(disposable)
 
         return view
+    }
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        peerSelectButton()
+    }
+
+    fun peerSelectButton() {
+        verifyWithPeer.setOnClickListener {
+            if (viewModel.peerSelection.value != null) {
+                VerificationFragment().show(activity.supportFragmentManager, "verification")
+            } else {
+                Toast.makeText(activity, "please select a peer", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun createNameDialog(): Single<String> = Single.create<String> { em ->
@@ -95,7 +113,37 @@ class PeerConnectViewModel : ViewModel() {
 
     fun nameForPublicKey(publicKey: ByteArray): String? = nameForContact(realm, publicKey)
 
+    fun accessForPublicKey(publicKey: ByteArray): Boolean = findAccessPeer(publicKey)?.access
+            ?: false
+
+    private fun findAccessPeer(publicKey: ByteArray): AccessPeer? {
+        return realm.where(AccessPeer::class.java)
+                .equalTo("publicKey", publicKey)
+                .findFirst()
+    }
+
     override fun onCleared() {
         realm.close()
+    }
+
+    internal fun onCheckedChanged(peer: SelectablePeer, checked: Boolean) {
+        val findFirst = realm.where(AccessPeer::class.java)
+                .equalTo("publicKey", peer.peer.publicKey)
+                .findFirst()
+
+        realm.executeTransaction {
+            findFirst?.access = checked
+        }
+    }
+
+    fun ensureAccessPeerExists(item: KeyedPeer) {
+        val peer = findAccessPeer(item.publicKey)
+        if (peer == null) {
+            realm.executeTransaction {
+                val accessPeer = AccessPeer()
+                accessPeer.publicKey = item.publicKey
+                it.copyToRealm(accessPeer)
+            }
+        }
     }
 }

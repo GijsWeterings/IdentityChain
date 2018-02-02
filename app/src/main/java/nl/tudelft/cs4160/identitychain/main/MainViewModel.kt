@@ -6,10 +6,14 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.LiveDataReactiveStreams
 import android.arch.lifecycle.MutableLiveData
 import android.util.Log
+import android.widget.Toast
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
 import io.grpc.Server
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.disposables.Disposables
+import io.reactivex.disposables.SerialDisposable
 import io.realm.Realm
 import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
@@ -19,6 +23,7 @@ import nl.tudelft.cs4160.identitychain.database.RealmAttestationRequestRepositor
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.ChainServiceServer
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
+import nl.tudelft.cs4160.identitychain.grpc.createMetaZkp
 import nl.tudelft.cs4160.identitychain.grpc.startNetworkOnComputation
 import nl.tudelft.cs4160.identitychain.message.ChainService
 import nl.tudelft.cs4160.identitychain.peers.PeerConnectionInformation
@@ -33,7 +38,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val selectedPeer: MutableLiveData<KeyedPeer> = MutableLiveData()
     val serviceFactory = initializeServiceFactory()
     val peerSelection: LiveData<KeyedPeer> = selectedPeer
-    val keyedPeers: LiveData<KeyedPeer>
+    private val mutableKeyedPeers: MutableLiveData<KeyedPeer> = MutableLiveData()
+    val keyedPeers: LiveData<KeyedPeer> = mutableKeyedPeers
 
     private val grpc: Server
     private val server: ChainServiceServer
@@ -43,11 +49,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val trustedParty = RangeProofTrustedParty()
     val attestationRequestRepository = RealmAttestationRequestRepository()
+    val verifyDisposable = SerialDisposable()
+    val serviceDiscoveryDisposable: Disposable
+
+    val verificationEvents: MutableLiveData<Boolean> = MutableLiveData()
+
 
     val kp by lazy(this::initKeys)
 
     fun select(peer: KeyedPeer) {
         selectedPeer.value = peer
+        //they get saved to the db eagerly in a do on success.
+        startNetworkOnComputation { server.crawlPeer(peer.connectionInformation) }.subscribe({}, { Log.e(TAG, it.message) })
     }
 
     fun initializeServiceFactory(): ServiceFactory {
@@ -66,7 +79,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         Log.i(TAG, "created server")
         this.grpc = grpc
         this.server = server
-        keyedPeers = LiveDataReactiveStreams.fromPublisher(serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer))
+        serviceDiscoveryDisposable = serviceFactory.startPeerDiscovery().flatMapSingle(server::keyForPeer)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ mutableKeyedPeers.value = it })
+
+    }
+
+    fun proofSelected(pair: Pair<Int, ChainService.PublicSetupResult>) {
+        val (seqNo, _) = pair
+
+        val peer = selectedPeer.value
+        if (peer != null) {
+            verifyDisposable.replace(startNetworkOnComputation({ server.verifyExistingBlock(peer.toPeerMessage(), seqNo) })
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ verificationEvents.value = it }, {
+                        showNoAccessToast()
+                    }))
+        }
+    }
+
+    private fun showNoAccessToast() {
+        Toast.makeText(getApplication(), "No verification access!", Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -115,11 +148,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return null
         }
 
-    fun createClaim(a: Int, b: Int, m: Int): Single<ChainService.Empty>? {
+    fun createClaim(a: Int, b: Int, m: Int, type: String): Single<ChainService.Empty>? {
         val peeritem = peerSelection.value
         val (public, private) = trustedParty.generateProof(m, a, b)
-        val asMessage: ChainService.PublicSetupResult = public.asMessage()
-        val publicPayLoad = asMessage.toByteArray()
+        val zkp: ChainService.PublicSetupResult = public.asMessage()
+        val publicPayLoad = createMetaZkp(kp.public.encoded, type, zkp).toByteArray()
 
         return peeritem?.let { server.sendBlockToKnownPeer(it.connectionInformation, publicPayLoad, private) }
     }
@@ -133,11 +166,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         startNetworkOnComputation { server.signAttestationRequest(block.peer, block.block) }
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete)
-
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(delete, { showNoAccessToast() })
     }
 
     override fun onCleared() {
+        verifyDisposable.dispose()
+        serviceDiscoveryDisposable.dispose()
         grpc.shutdownNow()
         realm.close()
     }

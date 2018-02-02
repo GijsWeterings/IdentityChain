@@ -1,4 +1,3 @@
-import android.content.Context
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.zeroknowledgeproof.rangeProof.RangeProofTrustedParty
@@ -6,10 +5,9 @@ import nl.tudelft.cs4160.identitychain.Util.Key
 import nl.tudelft.cs4160.identitychain.block.TrustChainBlock
 import nl.tudelft.cs4160.identitychain.database.TrustChainDBHelper
 import nl.tudelft.cs4160.identitychain.grpc.asMessage
-import nl.tudelft.cs4160.identitychain.grpc.asSetupPublic
+import nl.tudelft.cs4160.identitychain.grpc.asMetaZkp
 import nl.tudelft.cs4160.identitychain.grpc.asZkp
 import nl.tudelft.cs4160.identitychain.message.ChainService
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -31,7 +29,7 @@ class SqlTest {
         dbHelper.insertInDB(newBlock)
 
         //get the block out
-        println(dbHelper.getBlock(keyPair.public.encoded, newBlock.sequenceNumber).asSetupPublic())
+        println(dbHelper.getBlock(keyPair.public.encoded, newBlock.sequenceNumber).asMetaZkp())
     }
 
     @Test

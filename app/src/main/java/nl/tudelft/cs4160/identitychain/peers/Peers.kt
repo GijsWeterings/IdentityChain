@@ -26,6 +26,12 @@ class KeyedPeer(val connectionInformation: PeerConnectionInformation, val public
 
     val host: String
         get() = connectionInformation.host
+
+    fun toPeerMessage() = ChainService.Peer.newBuilder()
+            .setHostname(host)
+            .setPort(port)
+            .setPublicKey(ByteString.copyFrom(publicKey))
+            .build()
 }
 
 

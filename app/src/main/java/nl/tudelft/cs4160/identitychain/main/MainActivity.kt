@@ -1,7 +1,7 @@
 package nl.tudelft.cs4160.identitychain.main
 
 
-import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
@@ -9,6 +9,7 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import nl.tudelft.cs4160.identitychain.R
 import nl.tudelft.cs4160.identitychain.attestation.AttestationFragment
@@ -44,6 +45,17 @@ class MainActivity : AppCompatActivity() {
 
         viewPager.setCurrentItem(0, false)
 
+
+        val viewModel = ViewModelProviders.of(this)[MainViewModel::class.java]
+        viewModel.verificationEvents.observe(this, Observer<Boolean> {
+            val text = if (it == true) {
+                "success!"
+            } else {
+                "invalid :("
+            }
+
+            Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+        })
         val authenticationViewModel = ViewModelProviders.of(this)[MainActivityAuthenticated::class.java]
         if (!supportFragmentManager.fragments.contains(auth) && !authenticationViewModel.authenticated) {
             auth.show(supportFragmentManager, "authenticator")
